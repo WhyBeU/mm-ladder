@@ -10,8 +10,10 @@ from mm_ladder.models.yearly_cup import YearlyCup
 class TestSeason:
     def _cup(self, session) -> YearlyCup:
         cup = YearlyCup(
-            year=2024, name="2024 Cup",
-            starts_on=date(2024, 1, 1), ends_on=date(2024, 12, 31),
+            year=2024,
+            name="2024 Cup",
+            starts_on=date(2024, 1, 1),
+            ends_on=date(2024, 12, 31),
         )
         session.add(cup)
         session.flush()

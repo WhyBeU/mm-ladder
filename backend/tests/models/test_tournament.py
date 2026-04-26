@@ -10,8 +10,10 @@ from mm_ladder.models.tournament import Tournament
 class TestTournament:
     def _season(self, session) -> Season:
         s = Season(
-            name="LCI Season", set_code="LCI",
-            starts_on=date(2023, 11, 17), ends_on=date(2024, 2, 8),
+            name="LCI Season",
+            set_code="LCI",
+            starts_on=date(2023, 11, 17),
+            ends_on=date(2024, 2, 8),
         )
         session.add(s)
         session.flush()

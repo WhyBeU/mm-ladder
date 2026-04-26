@@ -12,8 +12,10 @@ from mm_ladder.models.tournament_participant import TournamentParticipant
 class TestTournamentParticipant:
     def _fixtures(self, session):
         season = Season(
-            name="LCI Season", set_code="LCI",
-            starts_on=date(2023, 11, 17), ends_on=date(2024, 2, 8),
+            name="LCI Season",
+            set_code="LCI",
+            starts_on=date(2023, 11, 17),
+            ends_on=date(2024, 2, 8),
         )
         session.add(season)
         session.flush()
