@@ -32,6 +32,30 @@ poetry env use $(mise which python)
 poetry install
 ```
 
+## Database migrations (Alembic)
+
+All commands must be run from the `backend/` directory.
+
+```bash
+# Apply all pending migrations (creates mm_ladder.db on first run)
+poetry run alembic upgrade head
+
+# Roll back to a specific revision (or 'base' to undo everything)
+poetry run alembic downgrade base
+
+# Show current migration state
+poetry run alembic current
+
+# Show migration history
+poetry run alembic history --verbose
+
+# Generate a new auto-detected migration after changing a model
+poetry run alembic revision --autogenerate -m "describe the change"
+# ⚠ Always review generated files in alembic/versions/ before applying
+```
+
+The database file (`mm_ladder.db`) is gitignored. Each developer runs `alembic upgrade head` locally. Tests use an in-memory SQLite instance via `Base.metadata.create_all` — Alembic is not involved in test setup.
+
 ## Running the toolchain
 
 ```bash

@@ -1,0 +1,80 @@
+name: Backend Version Check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/**"
+
+jobs:
+  check-version-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install semver
+        run: npm install -g semver
+
+      - name: Extract current branch version
+        id: current-version
+        run: |
+          VERSION=$(grep -oP '(?<=^version = ")[^"]*' backend/pyproject.toml)
+          echo "Current version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Extract main branch version
+        id: main-version
+        run: |
+          VERSION=$(git show origin/main:backend/pyproject.toml | grep -oP '(?<=^version = ")[^"]*')
+          echo "Main version: $VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Validate semantic version format
+        run: |
+          if [ -z "$CURRENT_VERSION" ]; then
+            echo "Version is empty" >&2
+            exit 1
+          fi
+          COERCE=$(semver --coerce "$CURRENT_VERSION")
+          if [ "$COERCE" != "$CURRENT_VERSION" ]; then
+            echo "$CURRENT_VERSION is not a valid semantic version (pre-release not allowed)" >&2
+            exit 1
+          fi
+        env:
+          CURRENT_VERSION: ${{ steps.current-version.outputs.version }}
+
+      - name: Check version was incremented
+        run: |
+          POSSIBLE=()
+          for level in major minor patch; do
+            POSSIBLE+=($(semver -i $level "$MAIN_VERSION"))
+          done
+          if [[ " ${POSSIBLE[*]} " =~ " ${CURRENT_VERSION} " ]]; then
+            echo "Version $CURRENT_VERSION is a valid increment of $MAIN_VERSION"
+          else
+            echo "Version $CURRENT_VERSION must be a major/minor/patch increment of $MAIN_VERSION" >&2
+            echo "Valid options: ${POSSIBLE[*]}" >&2
+            exit 1
+          fi
+        env:
+          CURRENT_VERSION: ${{ steps.current-version.outputs.version }}
+          MAIN_VERSION: ${{ steps.main-version.outputs.version }}
+
+      - name: Check CHANGELOG entry exists
+        run: |
+          if grep -q "## \[$CURRENT_VERSION\]" backend/CHANGELOG.md; then
+            echo "CHANGELOG.md contains an entry for version $CURRENT_VERSION"
+          else
+            echo "CHANGELOG.md does not contain an entry for version $CURRENT_VERSION" >&2
+            echo "Expected format: ## [$CURRENT_VERSION] - YYYY-MM-DD" >&2
+            exit 1
+          fi
+        env:
+          CURRENT_VERSION: ${{ steps.current-version.outputs.version }}
