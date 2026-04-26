@@ -1,5 +1,6 @@
-import pytest
 from datetime import date
+
+import pytest
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.exc import IntegrityError
 

@@ -1,6 +1,6 @@
 import pytest
 from sqlalchemy import create_engine, event
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from mm_ladder.models.base import Base
 

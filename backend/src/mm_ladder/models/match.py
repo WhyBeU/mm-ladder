@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from .base import Base, _now
+from .base import Base, utc_now
 from .player import Player
 from .tournament import Tournament
 
@@ -32,7 +32,7 @@ class Match(Base):
     games_b: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     game_draws: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=_now, nullable=False
+        DateTime(timezone=True), default=utc_now, nullable=False
     )
 
     tournament: Mapped[Tournament] = relationship(Tournament, back_populates="matches")

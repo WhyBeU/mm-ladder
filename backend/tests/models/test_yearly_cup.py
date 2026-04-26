@@ -1,5 +1,6 @@
-import pytest
 from datetime import date
+
+import pytest
 from sqlalchemy.exc import IntegrityError
 
 from mm_ladder.models.yearly_cup import YearlyCup

@@ -1,9 +1,9 @@
 from mm_ladder.models.base import Base
-from mm_ladder.models import player                    # noqa: F401
-from mm_ladder.models import yearly_cup                # noqa: F401
-from mm_ladder.models import season                    # noqa: F401
-from mm_ladder.models import tournament                # noqa: F401
-from mm_ladder.models import tournament_participant    # noqa: F401
-from mm_ladder.models import match                     # noqa: F401
+from mm_ladder.models.match import Match
+from mm_ladder.models.player import Player
+from mm_ladder.models.season import Season
+from mm_ladder.models.tournament import Tournament
+from mm_ladder.models.tournament_participant import TournamentParticipant
+from mm_ladder.models.yearly_cup import YearlyCup
 
-__all__ = ["Base"]
+__all__ = ["Base", "Match", "Player", "Season", "Tournament", "TournamentParticipant", "YearlyCup"]
