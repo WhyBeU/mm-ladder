@@ -35,6 +35,8 @@ select = ["E", "F", "W", "I", "UP", "B"]
 pythonVersion = "3.13"
 typeCheckingMode = "strict"
 include = ["src", "tests"]
+venvPath = "."
+venv = ".venv"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
