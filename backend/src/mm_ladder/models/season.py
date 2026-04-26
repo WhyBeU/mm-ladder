@@ -24,3 +24,6 @@ class Season(Base, TimestampMixin):
         ForeignKey("yearly_cup.id", name="fk_season_yearly_cup"), nullable=True
     )
     qualifier_count: Mapped[int] = mapped_column(Integer, default=2, nullable=False)
+
+    yearly_cup: Mapped["YearlyCup | None"] = relationship("YearlyCup", back_populates="seasons")
+    tournaments: Mapped[list["Tournament"]] = relationship("Tournament", back_populates="season")
