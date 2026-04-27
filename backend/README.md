@@ -56,6 +56,32 @@ poetry run alembic revision --autogenerate -m "describe the change"
 
 The database file (`mm_ladder.db`) is gitignored. Each developer runs `alembic upgrade head` locally. Tests use an in-memory SQLite instance via `Base.metadata.create_all` — Alembic is not involved in test setup.
 
+## Running the API server
+
+All commands must be run from the `backend/` directory.
+
+```bash
+# 1. Apply migrations (creates mm_ladder.db on first run)
+poetry run alembic upgrade head
+
+# 2. Start the development server (hot reload)
+poetry run uvicorn mm_ladder.app:app --reload --port 8000
+```
+
+| URL | Description |
+|-----|-------------|
+| `http://localhost:8000/docs` | Swagger UI — interactive endpoint explorer |
+| `http://localhost:8000/redoc` | ReDoc — alternative API docs |
+| `http://localhost:8000/openapi.json` | Raw OpenAPI schema |
+| `http://localhost:8000/health` | Health check |
+
+### Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `DATABASE_URL` | `sqlite+aiosqlite:///./mm_ladder.db` | SQLAlchemy async DB URL |
+| `ENV` | `development` | `development` = coloured logs; anything else = JSON logs |
+
 ## Running the toolchain
 
 ```bash

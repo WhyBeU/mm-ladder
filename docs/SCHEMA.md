@@ -14,6 +14,7 @@ mm-ladder is a leaderboard for **Magic Mates Monday**, a weekly Booster Draft FN
 | ORM        | SQLAlchemy 2.0 (typed `Mapped[...]` style)         |
 | Migrations | Alembic                                            |
 | DB engine  | SQLite (file on disk) for dev; Postgres later      |
+| Schemas    | Pydantic v2 (`BaseModel`, `@computed_field`)       |
 | Packaging  | Poetry (pyproject.toml + poetry.lock)              |
 | Tests      | pytest, in-memory SQLite per test                  |
 
@@ -179,15 +180,16 @@ erDiagram
 | id            | int PK         |                                        |
 | tournament_id | FK Tournament  |                                        |
 | player_id     | FK Player      |                                        |
-| match_wins    | int, default 0 |                                        |
-| match_losses  | int, default 0 |                                        |
-| match_draws   | int, default 0 |                                        |
-| created_at    | datetime       |                                        |
-| updated_at    | datetime       |                                        |
+| match_wins    | int, default 0  |                                        |
+| match_losses  | int, default 0  |                                        |
+| match_draws   | int, default 0  |                                        |
+| points        | int, computed   | `match_wins * 3 + match_draws`, DB-persisted |
+| created_at    | datetime        |                                        |
+| updated_at    | datetime        |                                        |
 
 Unique constraint: `(tournament_id, player_id)`.
 
-**Derived — points:** `(match_wins × 3) + (match_draws × 1)`. Not stored; computed on read.
+**`points` — DB-persisted Computed column:** `Computed("match_wins * 3 + match_draws", persisted=True)`. The DB owns the calculation; the column is stored and queryable directly. Exposed as a plain `int` in `TournamentParticipantRead`.
 
 **Decision — primary leaderboard source:** this table is what the leaderboard reads. For backfilled (legacy) events it is the only source of truth. For events with `has_match_detail = true` it is a materialised aggregate of Match rows, kept in sync at write time. This dual-mode design allows a clean migration path from aggregate-only data to full round detail.
 
@@ -210,7 +212,7 @@ Unique constraint: `(tournament_id, player_id)`.
 
 Constraint: `player_a_id <> player_b_id`.
 
-**Derived — outcome:** winner is determined by comparing `games_a` vs `games_b`; not stored to avoid redundancy. Supported score lines: `2-0`, `2-1`, `1-1-1`, `1-0-1`, `0-0-1`.
+**`outcome` — Pydantic `@computed_field`:** `A_WINS` / `B_WINS` / `DRAW`, derived in `MatchRead` by comparing `games_a` vs `games_b`. Not stored in the DB. Supported score lines: `2-0`, `2-1`, `1-1-1`, `1-0-1`, `0-0-1`.
 
 **Decision — optional round detail:** Match rows only exist for new events where round-by-round data is captured. Absence of Match rows for a Tournament does not indicate missing data — it indicates the event was backfilled at aggregate level.
 
@@ -237,9 +239,14 @@ Qualifiers are **computed on read**: the top `qualifier_count` players by win % 
 
 ---
 
+## Completed phases
+
+- SQLAlchemy 2.0 models + Alembic migrations (schema + seed data)
+- Pydantic v2 read/create schemas for all 6 tables
+- FastAPI service layer (async, full CRUD, structlog, custom errors)
+
 ## Out of Scope (future phases)
 
-- FastAPI service layer
 - React UI / leaderboard view
 - Auth (no User table; mm-ladder is currently read-only-fed)
 - Manual cup-qualifier overrides (`CupQualifier` table)
