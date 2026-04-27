@@ -11,11 +11,11 @@ from sqlalchemy.orm import Session, sessionmaker
 from mm_ladder.app import create_app
 from mm_ladder.models.base import Base
 
-
 # ── Sync fixtures (kept for test_imports.py and any future sync tests) ────────
 
+
 @pytest.fixture(scope="function")
-def engine() -> Generator[Engine, None, None]:
+def engine() -> Generator[Engine]:
     eng = create_engine("sqlite:///:memory:")
 
     @event.listens_for(eng, "connect")
@@ -31,7 +31,7 @@ def engine() -> Generator[Engine, None, None]:
 
 
 @pytest.fixture(scope="function")
-def session(engine: Engine) -> Generator[Session, None, None]:
+def session(engine: Engine) -> Generator[Session]:
     factory = sessionmaker(bind=engine, expire_on_commit=False)
     with factory() as s:
         yield s
@@ -39,8 +39,9 @@ def session(engine: Engine) -> Generator[Session, None, None]:
 
 # ── Async fixtures (for API tests) ───────────────────────────────────────────
 
+
 @pytest_asyncio.fixture  # type: ignore[misc]
-async def async_engine() -> AsyncGenerator[AsyncEngine, None]:
+async def async_engine() -> AsyncGenerator[AsyncEngine]:
     eng = create_async_engine("sqlite+aiosqlite:///:memory:")
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -51,14 +52,14 @@ async def async_engine() -> AsyncGenerator[AsyncEngine, None]:
 
 
 @pytest_asyncio.fixture  # type: ignore[misc]
-async def async_session(async_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
+async def async_session(async_engine: AsyncEngine) -> AsyncGenerator[AsyncSession]:
     factory = async_sessionmaker(async_engine, expire_on_commit=False)
     async with factory() as s:
         yield s
 
 
 @pytest_asyncio.fixture  # type: ignore[misc]
-async def client(async_engine: AsyncEngine) -> AsyncGenerator[AsyncClient, None]:
+async def client(async_engine: AsyncEngine) -> AsyncGenerator[AsyncClient]:
     app = create_app()
     app.state.session_factory = async_sessionmaker(async_engine, expire_on_commit=False)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:

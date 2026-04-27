@@ -18,6 +18,7 @@ router = APIRouter(prefix="/tournaments", tags=["tournaments"])
 
 # ── Tournament CRUD ────────────────────────────────────────────────────────────
 
+
 @router.get("/", response_model=list[TournamentRead])
 async def list_tournaments(service: TournamentServiceDep) -> list[TournamentRead]:
     return [TournamentRead.model_validate(t) for t in await service.list()]
@@ -54,10 +55,9 @@ async def delete_tournament(tournament_id: int, service: TournamentServiceDep) -
 
 # ── Participants (nested) ──────────────────────────────────────────────────────
 
+
 @router.get("/{tournament_id}/participants", response_model=list[TournamentParticipantRead])
-async def list_participants(
-    tournament_id: int, service: ParticipantServiceDep
-) -> list[TournamentParticipantRead]:
+async def list_participants(tournament_id: int, service: ParticipantServiceDep) -> list[TournamentParticipantRead]:
     return [TournamentParticipantRead.model_validate(p) for p in await service.list(tournament_id)]
 
 
@@ -100,13 +100,12 @@ async def patch_participant(
 
 
 @router.delete("/{tournament_id}/participants/{participant_id}", status_code=http_status.HTTP_204_NO_CONTENT)
-async def delete_participant(
-    tournament_id: int, participant_id: int, service: ParticipantServiceDep
-) -> None:
+async def delete_participant(tournament_id: int, participant_id: int, service: ParticipantServiceDep) -> None:
     await service.delete(tournament_id, participant_id)
 
 
 # ── Matches (nested) ───────────────────────────────────────────────────────────
+
 
 @router.get("/{tournament_id}/matches", response_model=list[MatchRead])
 async def list_matches(tournament_id: int, service: MatchServiceDep) -> list[MatchRead]:

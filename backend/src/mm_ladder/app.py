@@ -23,7 +23,7 @@ async def health() -> JSONResponse:
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     configure_logging(dev=os.getenv("ENV", "development") == "development")
     engine = make_engine(os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./mm_ladder.db"))
     app.state.session_factory = make_session_factory(engine)

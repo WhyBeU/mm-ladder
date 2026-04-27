@@ -12,7 +12,7 @@ from mm_ladder.services.tournament_participant import TournamentParticipantServi
 from mm_ladder.services.yearly_cup import YearlyCupService
 
 
-async def get_session(request: Request) -> AsyncGenerator[AsyncSession, None]:
+async def get_session(request: Request) -> AsyncGenerator[AsyncSession]:
     async with request.app.state.session_factory() as session:
         yield session
 
