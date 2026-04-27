@@ -243,10 +243,10 @@ Qualifiers are **computed on read**: the top `qualifier_count` players by win % 
 
 - SQLAlchemy 2.0 models + Alembic migrations (schema + seed data)
 - Pydantic v2 read/create schemas for all 6 tables
+- FastAPI service layer (async, full CRUD, structlog, custom errors)
 
 ## Out of Scope (future phases)
 
-- FastAPI service layer
 - React UI / leaderboard view
 - Auth (no User table; mm-ladder is currently read-only-fed)
 - Manual cup-qualifier overrides (`CupQualifier` table)
