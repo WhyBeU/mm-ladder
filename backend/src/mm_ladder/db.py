@@ -1,10 +1,9 @@
-from sqlalchemy import Engine, create_engine
-from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 
 
-def make_engine(url: str = "sqlite:///./mm_ladder.db") -> Engine:
-    return create_engine(url)
+def make_engine(url: str = "sqlite+aiosqlite:///./mm_ladder.db") -> AsyncEngine:
+    return create_async_engine(url)
 
 
-def make_session_factory(engine: Engine) -> sessionmaker[Session]:
-    return sessionmaker(bind=engine, expire_on_commit=False)
+def make_session_factory(engine: AsyncEngine) -> async_sessionmaker[AsyncSession]:
+    return async_sessionmaker(engine, expire_on_commit=False)
