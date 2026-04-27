@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.3.0] - 2026-04-27
+
+### Added
+
+- FastAPI async HTTP layer: `app.py` with `create_app()` factory and lifespan (engine setup/teardown)
+- `logger.py` — structlog with `ConsoleRenderer` (dev/colours) and `JSONRenderer` (prod), controlled by `ENV` env var
+- `errors.py` — `NotFoundError` (404) and `ConflictError` (409) with FastAPI exception handlers; `IntegrityError` mapped to 409
+- `deps.py` — `SessionDep` + per-service dependency aliases (`PlayerServiceDep`, `MatchServiceDep`, etc.)
+- `interface/` package — request-only schemas (`*CreateRequest`, `*UpdateRequest`, `*PatchRequest`) for all 6 resources
+- `services/` package — class-based services (`PlayerService`, `YearlyCupService`, `SeasonService`, `TournamentService`, `TournamentParticipantService`, `MatchService`) injected with `AsyncSession`
+- `MatchService` auto-toggles `Tournament.has_match_detail` on first/last match create/delete
+- `routes/` package — 4 router files covering 37 endpoints; `routes/tournament.py` bundles participants and matches under `/tournaments/{id}/`
+- `GET /health` endpoint returning `{"status": "ok"}`
+- `main.py` — uvicorn entry point for `python -m mm_ladder.main`
+- `db.py` rewritten to async (`AsyncEngine` / `async_sessionmaker` / `aiosqlite`)
+- 74 API smoke tests with per-function in-memory SQLite isolation via `ASGITransport`
+- `docs/API.md` — full endpoint reference
+
+### Changed
+
+- `db.py` engine and session factory switched from sync SQLAlchemy to async (`aiosqlite` driver)
+
 ## [0.2.0] - 2026-04-26
 
 ### Added

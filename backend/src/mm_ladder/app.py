@@ -6,6 +6,7 @@ from fastapi import APIRouter, FastAPI
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
+from mm_ladder import __version__
 from mm_ladder.db import make_engine, make_session_factory
 from mm_ladder.errors import ConflictError, NotFoundError, conflict_handler, integrity_error_handler, not_found_handler
 from mm_ladder.logger import configure_logging
@@ -34,7 +35,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 def create_app() -> FastAPI:
     app = FastAPI(
         title="mm-ladder API",
-        version="0.2.0",
+        version=__version__,
         description="Draft league ladder tracker for Magic Mates Monday",
         lifespan=lifespan,
     )
