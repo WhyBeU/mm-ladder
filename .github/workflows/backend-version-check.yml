@@ -32,7 +32,11 @@ jobs:
       - name: Extract main branch version
         id: main-version
         run: |
-          VERSION=$(git show origin/main:backend/pyproject.toml | grep -oP '(?<=^version = ")[^"]*')
+          if git show origin/main:backend/pyproject.toml > /dev/null 2>&1; then
+            VERSION=$(git show origin/main:backend/pyproject.toml | grep -oP '(?<=^version = ")[^"]*')
+          else
+            VERSION="0.0.0"
+          fi
           echo "Main version: $VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
