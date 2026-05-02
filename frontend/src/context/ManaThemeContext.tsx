@@ -18,18 +18,18 @@ const ManaThemeContext = createContext<ManaThemeContextValue>({
   setTheme: () => {},
 });
 
-export function ManaThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ManaColor>(DEFAULT);
+function readSavedTheme(): ManaColor {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && (VALID as readonly string[]).includes(saved)) {
+      return saved as ManaColor;
+    }
+  } catch {}
+  return DEFAULT;
+}
 
-  // Hydrate once on mount (SSR-safe)
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved && (VALID as readonly string[]).includes(saved)) {
-        setThemeState(saved as ManaColor);
-      }
-    } catch {}
-  }, []);
+export function ManaThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setThemeState] = useState<ManaColor>(readSavedTheme);
 
   // Apply to <html> + persist
   useEffect(() => {

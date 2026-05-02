@@ -94,7 +94,7 @@ export default function ManaSwitcher({ size = "default" }: ManaSwitcherProps) {
             key={code}
             type="button"
             role="radio"
-            aria-pressed={active}
+            aria-checked={active}
             aria-label={THEME_NAMES[code]}
             title={THEME_NAMES[code]}
             onClick={() => setTheme(code)}

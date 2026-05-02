@@ -196,7 +196,7 @@ interface LeaderboardData {
   refetch: () => void;
 }
 
-function useLeaderboardData(_: { seasonId: number | string; tournamentId: number | string | null }): LeaderboardData {
+function useLeaderboardData(_params: { seasonId: number | string; tournamentId: number | string | null }): LeaderboardData {
   return {
     seasons: [],
     tournaments: [],
@@ -222,14 +222,13 @@ export default function LeaderboardPage({ initialSeasonId }: LeaderboardPageProp
   const { seasons, tournaments, players, isFetching, lastUpdated, refetch } =
     useLeaderboardData({ seasonId, tournamentId });
 
-  useEffect(() => {
-    if (!seasonId && seasons.length) {
-      const current = seasons.find((s) => s.is_current) ?? seasons[0];
-      setSeasonId(current.id);
-    }
+  const effectiveSeasonId = useMemo(() => {
+    if (seasonId) return seasonId;
+    const current = seasons.find((s) => s.is_current) ?? seasons[0];
+    return current?.id ?? "";
   }, [seasonId, seasons]);
 
-  const selectedSeason     = useMemo(() => seasons.find((s) => s.id === seasonId), [seasons, seasonId]);
+  const selectedSeason     = useMemo(() => seasons.find((s) => s.id === effectiveSeasonId), [seasons, effectiveSeasonId]);
   const selectedTournament = useMemo(() => tournaments.find((t) => t.id === tournamentId), [tournaments, tournamentId]);
 
   const handleSeasonChange = (id: string) => {
@@ -249,7 +248,7 @@ export default function LeaderboardPage({ initialSeasonId }: LeaderboardPageProp
       <div className="hidden md:block w-72 lg:w-80 shrink-0 sticky top-0 h-screen z-10">
         <NavSidebar
           seasons={seasons}
-          selectedSeasonId={seasonId}
+          selectedSeasonId={effectiveSeasonId}
           onSeasonChange={handleSeasonChange}
           tournaments={tournaments}
           selectedTournamentId={tournamentId}
@@ -269,7 +268,7 @@ export default function LeaderboardPage({ initialSeasonId }: LeaderboardPageProp
           <div className="md:hidden fixed inset-y-0 left-0 w-80 max-w-[85vw] z-50 shadow-2xl">
             <NavSidebar
               seasons={seasons}
-              selectedSeasonId={seasonId}
+              selectedSeasonId={effectiveSeasonId}
               onSeasonChange={handleSeasonChange}
               tournaments={tournaments}
               selectedTournamentId={tournamentId}
