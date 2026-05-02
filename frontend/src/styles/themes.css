@@ -1,0 +1,175 @@
+/* =========================================================
+   MM Ladder — Mana Theme Variables
+   ---------------------------------------------------------
+   Import this in your global stylesheet (e.g. src/index.css)
+   AFTER the @tailwind directives:
+
+     @tailwind base;
+     @tailwind components;
+     @tailwind utilities;
+     @import './themes.css';
+
+   Switch theme at runtime by setting the attribute on <html>:
+     document.documentElement.setAttribute('data-mana', 'R');
+
+   Valid codes: 'W' | 'U' | 'B' | 'R' | 'G'
+   Default (no attribute set) = Blue (U).
+   ========================================================= */
+
+/* BLUE (U) — Island. Default. */
+:root,
+[data-mana="U"] {
+  --ink-950: #0B1220;
+  --ink-900: #101a2e;
+  --ink-850: #15233d;
+  --ink-800: #1c2c4a;
+  --ink-700: #243556;
+  --ink-600: #324573;
+
+  --primary-50:  #e8f4f7;
+  --primary-100: #c6e3eb;
+  --primary-200: #8ec5d3;
+  --primary-300: #5aa6b8;
+  --primary-400: #338a9e;
+  --primary-500: #1a6b80;
+  --primary-600: #125468;
+  --primary-700: #0d4252;
+  --primary-800: #0a3340;
+  --primary-900: #072530;
+
+  --bg-radial-1: rgba(26, 107, 128, 0.18);
+  --bg-radial-2: rgba(232, 172, 40, 0.08);
+}
+
+/* BLACK (B) — Swamp. Deep purple-black. */
+[data-mana="B"] {
+  --ink-950: #0d0a14;
+  --ink-900: #14111e;
+  --ink-850: #1c1827;
+  --ink-800: #261f33;
+  --ink-700: #322a44;
+  --ink-600: #443a5a;
+
+  --primary-50:  #f1ebf5;
+  --primary-100: #d9c8e0;
+  --primary-200: #b294be;
+  --primary-300: #8a619a;
+  --primary-400: #6b3f7d;
+  --primary-500: #522d61;
+  --primary-600: #41244d;
+  --primary-700: #321c3c;
+  --primary-800: #25152d;
+  --primary-900: #180e1e;
+
+  --bg-radial-1: rgba(82, 45, 97, 0.22);
+  --bg-radial-2: rgba(232, 172, 40, 0.06);
+}
+
+/* RED (R) — Mountain. Volcanic clay-rust. */
+[data-mana="R"] {
+  --ink-950: #1a0f0c;
+  --ink-900: #241612;
+  --ink-850: #2e1d18;
+  --ink-800: #3a2520;
+  --ink-700: #4a3028;
+  --ink-600: #5e3d33;
+
+  --primary-50:  #fbece6;
+  --primary-100: #f4ccbb;
+  --primary-200: #e9967e;
+  --primary-300: #dc6749;
+  --primary-400: #c84a2a;
+  --primary-500: #a53a1f;
+  --primary-600: #862d18;
+  --primary-700: #682213;
+  --primary-800: #4b180d;
+  --primary-900: #2c0e07;
+
+  --bg-radial-1: rgba(200, 74, 42, 0.18);
+  --bg-radial-2: rgba(232, 172, 40, 0.10);
+}
+
+/* GREEN (G) — Forest. Mossy verdant. */
+[data-mana="G"] {
+  --ink-950: #0a140d;
+  --ink-900: #0f1d13;
+  --ink-850: #15281b;
+  --ink-800: #1d3424;
+  --ink-700: #25422e;
+  --ink-600: #34553e;
+
+  --primary-50:  #e8f3e9;
+  --primary-100: #c5e0c8;
+  --primary-200: #8fc196;
+  --primary-300: #5fa168;
+  --primary-400: #3d8447;
+  --primary-500: #2c6936;
+  --primary-600: #22542b;
+  --primary-700: #1a4122;
+  --primary-800: #133019;
+  --primary-900: #0a1f10;
+
+  --bg-radial-1: rgba(44, 105, 54, 0.20);
+  --bg-radial-2: rgba(232, 172, 40, 0.08);
+}
+
+/* WHITE (W) — Plains. Dark theme with warm parchment cast. */
+[data-mana="W"] {
+  --ink-950: #15130d;
+  --ink-900: #1f1c14;
+  --ink-850: #29251b;
+  --ink-800: #353023;
+  --ink-700: #443e2e;
+  --ink-600: #574f3c;
+
+  --primary-50:  #fbf6e6;
+  --primary-100: #f4e6b5;
+  --primary-200: #e9cf76;
+  --primary-300: #d6b651;
+  --primary-400: #b8983a;
+  --primary-500: #957a2c;
+  --primary-600: #786124;
+  --primary-700: #5b4a1c;
+  --primary-800: #403413;
+  --primary-900: #251e0b;
+
+  --bg-radial-1: rgba(184, 152, 58, 0.18);
+  --bg-radial-2: rgba(232, 172, 40, 0.10);
+}
+
+/* Smooth surface transitions when the theme changes */
+body,
+.themed-surface {
+  transition:
+    background-color 400ms ease,
+    border-color 400ms ease,
+    box-shadow 400ms ease;
+}
+
+/* Body uses themed background gradients */
+body {
+  font-family: 'Open Sans', system-ui, sans-serif;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, var(--bg-radial-1), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, var(--bg-radial-2), transparent 60%),
+    var(--ink-950);
+  color: #e8eef7;
+  min-height: 100vh;
+}
+
+/* Optional grain overlay — subtle paper texture so surfaces don't read flat */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode: overlay;
+  z-index: 0;
+}
+
+/* Utility: tabular numerals for stats */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MM Ladder — Frontend
 
-## Getting Started
+Next.js 15 (App Router) frontend for the MM Ladder API. Displays a live draft-league leaderboard with a 5-way Magic: The Gathering mana colour theme switcher.
 
-First, run the development server:
+## Setup
 
 ```bash
+cd frontend
+npm install
+cp .env.local.example .env.local   # then edit if needed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Default | Description |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | Base URL of the FastAPI backend |
 
-## Learn More
+Copy `.env.local.example` to `.env.local` and adjust for your environment. `.env.local` is gitignored.
 
-To learn more about Next.js, take a look at the following resources:
+## Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start dev server with hot reload |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint |
+| `npm run type-check` | TypeScript check (`tsc --noEmit`) |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Architecture
 
-## Deploy on Vercel
+```
+src/
+├── app/
+│   ├── layout.tsx          # Root HTML shell — fonts, ManaThemeProvider, data-mana default
+│   ├── page.tsx            # "/" route — renders <LeaderboardPage />
+│   └── globals.css         # Tailwind v4 @theme tokens + @utility sheen classes
+├── components/
+│   ├── LeaderboardPage.tsx # Top-level page: layout, filter state, data hook
+│   ├── Leaderboard.tsx     # Sortable ranked table with medal treatment
+│   ├── NavSidebar.tsx      # Season selector + tournament list
+│   └── ManaSwitcher.tsx    # 5-button mana theme radio group
+├── context/
+│   └── ManaThemeContext.tsx # Runtime theme state — reads/writes localStorage
+└── styles/
+    └── themes.css          # CSS variable palettes for W/U/B/R/G mana themes
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Mana theme system
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Themes are driven by a `data-mana` attribute on `<html>` (values: `W` `U` `B` `R` `G`). `themes.css` defines CSS custom properties (`--ink-*`, `--primary-*`, `--bg-radial-*`) for each value. Tailwind utilities like `bg-ink-950` and `text-primary-300` reference these vars via `@theme` in `globals.css`, so switching the attribute instantly repaints every themed surface.
+
+`ManaThemeContext` manages the attribute and persists the selection to `localStorage` under `mm-ladder:mana-theme`.
+
+### Server vs client components
+
+`layout.tsx` and `page.tsx` are server components (no directive). Every interactive component (`"use client"`) opts in explicitly — `ManaThemeProvider`, `ManaSwitcher`, `NavSidebar`, `Leaderboard`, `LeaderboardPage`.
+
+## Connecting to the backend
+
+Start the FastAPI backend:
+
+```bash
+cd backend
+poetry run uvicorn mm_ladder.main:app --reload
+# API docs at http://localhost:8000/docs
+```
+
+The frontend reads `NEXT_PUBLIC_API_URL` for all fetch calls. With the default `.env.local`, requests go to `http://localhost:8000`.
