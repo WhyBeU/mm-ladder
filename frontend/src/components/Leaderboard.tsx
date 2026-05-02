@@ -150,8 +150,8 @@ export default function Leaderboard({ players = [], season = "" }: LeaderboardPr
         const bv = (b.is_anonymous ? "~" : (b.display_name ?? "")).toLowerCase();
         return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
       }
-      const av = sortKey === "record" ? a.match_wins : (a as Record<string, number>)[sortKey];
-      const bv = sortKey === "record" ? b.match_wins : (b as Record<string, number>)[sortKey];
+      const av = sortKey === "record" ? a.match_wins : (a as unknown as Record<string, number>)[sortKey];
+      const bv = sortKey === "record" ? b.match_wins : (b as unknown as Record<string, number>)[sortKey];
       return sortDir === "asc" ? av - bv : bv - av;
     });
 
