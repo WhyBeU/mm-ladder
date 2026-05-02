@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError
 
@@ -38,6 +39,15 @@ def create_app() -> FastAPI:
         version=__version__,
         description="Draft league ladder tracker for Magic Mates Monday",
         lifespan=lifespan,
+    )
+
+    # CORS — allow the frontend dev server and future production origin
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000").split(","),
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     # Exception handlers

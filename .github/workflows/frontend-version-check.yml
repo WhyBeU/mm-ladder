@@ -1,10 +1,10 @@
-name: Backend Version Check
+name: Frontend Version Check
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - "backend/**"
+      - "frontend/**"
 
 jobs:
   check-version-changelog:
@@ -25,15 +25,15 @@ jobs:
       - name: Extract current branch version
         id: current-version
         run: |
-          VERSION=$(grep -oP '(?<=^version = ")[^"]*' backend/pyproject.toml)
+          VERSION=$(jq -r '.version' frontend/package.json)
           echo "Current version: $VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Extract main branch version
         id: main-version
         run: |
-          if git show origin/main:backend/pyproject.toml > /dev/null 2>&1; then
-            VERSION=$(git show origin/main:backend/pyproject.toml | grep -oP '(?<=^version = ")[^"]*')
+          if git show origin/main:frontend/package.json > /dev/null 2>&1; then
+            VERSION=$(git show origin/main:frontend/package.json | jq -r '.version')
           else
             VERSION="0.0.0"
           fi
@@ -73,7 +73,7 @@ jobs:
 
       - name: Check CHANGELOG entry exists
         run: |
-          if grep -q "## \[$CURRENT_VERSION\]" backend/CHANGELOG.md; then
+          if grep -q "## \[$CURRENT_VERSION\]" frontend/CHANGELOG.md; then
             echo "CHANGELOG.md contains an entry for version $CURRENT_VERSION"
           else
             echo "CHANGELOG.md does not contain an entry for version $CURRENT_VERSION" >&2

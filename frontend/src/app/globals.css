@@ -1,0 +1,91 @@
+@import "tailwindcss";
+@import "../styles/themes.css";
+
+@theme {
+  /* Themed colors — reference runtime CSS vars set by [data-mana] on <html> */
+  --color-ink-950: var(--ink-950);
+  --color-ink-900: var(--ink-900);
+  --color-ink-850: var(--ink-850);
+  --color-ink-800: var(--ink-800);
+  --color-ink-700: var(--ink-700);
+  --color-ink-600: var(--ink-600);
+
+  --color-primary-50:  var(--primary-50);
+  --color-primary-100: var(--primary-100);
+  --color-primary-200: var(--primary-200);
+  --color-primary-300: var(--primary-300);
+  --color-primary-400: var(--primary-400);
+  --color-primary-500: var(--primary-500);
+  --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+  --color-primary-800: var(--primary-800);
+  --color-primary-900: var(--primary-900);
+
+  /* Static colors */
+  --color-accent-50:  #fdf6e3;
+  --color-accent-100: #fbe9b6;
+  --color-accent-200: #f6d77a;
+  --color-accent-300: #f0c14b;
+  --color-accent-400: #e8ac28;
+  --color-accent-500: #c8901a;
+  --color-accent-600: #9e6f12;
+  --color-accent-700: #76520d;
+  --color-accent-800: #503809;
+  --color-accent-900: #2c1f05;
+
+  --color-silver-300: #d8dde5;
+  --color-silver-400: #9aa9c2;
+  --color-silver-500: #6b7a93;
+
+  --color-bronze-300: #d4a373;
+  --color-bronze-400: #b87333;
+  --color-bronze-500: #8b5a2b;
+
+  --color-win:        #22c55e;
+  --color-win-soft:   #16a34a;
+  --color-loss:       #ef4444;
+  --color-loss-soft:  #dc2626;
+  --color-draw:       #94a3b8;
+  --color-draw-soft:  #64748b;
+
+  --color-parchment:       #e8eef7;
+  --color-parchment-muted: #9aa9c2;
+  --color-parchment-faint: #6b7a93;
+
+  /* Fonts */
+  --font-sans:    "Open Sans", system-ui, sans-serif;
+  --font-display: Cinzel, serif;
+  --font-mono:    ui-monospace, SFMono-Regular, monospace;
+
+  /* Border radius */
+  --radius-card: 0.875rem;
+
+  /* Shadows */
+  --shadow-card:        0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 24px -12px rgba(0,0,0,0.6);
+  --shadow-card-hover:  0 1px 0 rgba(255,255,255,0.06) inset, 0 12px 32px -10px rgba(0,0,0,0.7);
+  --shadow-gold-glow:   0 0 0 1px rgba(232,172,40,0.45), 0 0 24px -4px rgba(232,172,40,0.35);
+  --shadow-silver-glow: 0 0 0 1px rgba(154,169,194,0.35), 0 0 20px -6px rgba(154,169,194,0.30);
+  --shadow-bronze-glow: 0 0 0 1px rgba(184,115,51,0.35), 0 0 20px -6px rgba(184,115,51,0.30);
+  --shadow-teal-glow:   0 0 0 1px rgba(26,107,128,0.5), 0 0 20px -6px rgba(26,107,128,0.5);
+}
+
+@utility bg-gold-sheen {
+  background-image: linear-gradient(135deg, #f0c14b 0%, #e8ac28 45%, #9e6f12 100%);
+}
+
+@utility bg-silver-sheen {
+  background-image: linear-gradient(135deg, #e1e6ee 0%, #b6c0d0 45%, #6b7a93 100%);
+}
+
+@utility bg-bronze-sheen {
+  background-image: linear-gradient(135deg, #d4a373 0%, #b87333 45%, #6e441f 100%);
+}
+
+@utility bg-card-sheen {
+  background-image: linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 40%, rgba(0,0,0,0.15) 100%);
+}
+
+@utility scroll-pretty {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-700) transparent;
+}
