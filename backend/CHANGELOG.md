@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.1] - 2026-05-03
+
+### Added
+
+- `CORSMiddleware` configured to allow the frontend dev server (`http://localhost:3000` by default, overridable via `CORS_ORIGINS` env var) — unblocks browser fetch from the Next.js frontend
+
 ## [0.3.0] - 2026-04-27
 
 ### Added
