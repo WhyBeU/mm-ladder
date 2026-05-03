@@ -64,6 +64,14 @@ function computeStats(scopedEvents: MMLEvent[], scopeStandings: StandingEntry[])
   };
 }
 
+function relativeTime(date: Date): string {
+  const diff = Date.now() - date.getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min} minute${min === 1 ? "" : "s"} ago`;
+  return `${Math.floor(min / 60)} hours ago`;
+}
+
 // ---------- Page ----------
 export default function LeaderboardPage() {
   const [scope, setScope] = useState<Scope>({ kind: "season", cupId: 1, seasonId: 3 });
@@ -109,14 +117,6 @@ export default function LeaderboardPage() {
   const heroCtx = {
     season: scope.kind === "alltime" ? null : (scope.kind === "cup" ? null : season),
     cup:    scope.kind === "alltime" ? null : cup,
-  };
-
-  const relativeTime = (date: Date) => {
-    const diff = Date.now() - date.getTime();
-    const min = Math.floor(diff / 60000);
-    if (min < 1) return "just now";
-    if (min < 60) return `${min} minute${min === 1 ? "" : "s"} ago`;
-    return `${Math.floor(min / 60)} hours ago`;
   };
 
   return (

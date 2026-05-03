@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { Trophy } from "lucide-react";
 import type { Scope, YearlyCup, Season, MMLEvent } from "@/lib/types";
 import { fmtDate } from "@/components/bits";
 
@@ -19,9 +18,6 @@ function isActive(scope: Scope, test: Partial<Scope>): boolean {
 }
 
 export default function NavSidebar({ scope, setScope, yearlyCups, seasons, events, onClose }: NavSidebarProps) {
-  const isCupOpen = scope.kind !== "alltime";
-  const currentCup = scope.cupId ? yearlyCups.find(y => y.id === scope.cupId) : null;
-
   return (
     <aside style={{
       height: "100vh", display: "flex", flexDirection: "column",
@@ -209,7 +205,7 @@ interface EventRowProps {
   onClick: () => void;
 }
 
-function EventRow({ event, active, expanded, onClick }: EventRowProps) {
+function EventRow({ event, active, expanded: _expanded, onClick }: EventRowProps) {
   const total = event.pods.reduce((s, p) => s + p.participant_count, 0);
   const allBackfill = event.pods.every(p => !p.has_match_detail);
   return (
