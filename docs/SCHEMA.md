@@ -237,18 +237,3 @@ Qualifiers are **computed on read**: the top `qualifier_count` players by win % 
 
 **Decision:** a materialised table will be added only when manual override cases arise (ties, player declines). Premature materialisation would add write-path complexity with no current benefit.
 
----
-
-## Completed phases
-
-- SQLAlchemy 2.0 models + Alembic migrations (schema + seed data)
-- Pydantic v2 read/create schemas for all 6 tables
-- FastAPI service layer (async, full CRUD, structlog, custom errors)
-
-## Out of Scope (future phases)
-
-- React UI / leaderboard view
-- Auth (no User table; mm-ladder is currently read-only-fed)
-- Manual cup-qualifier overrides (`CupQualifier` table)
-- ELO computation (infrastructure is ready via Match table)
-- Postgres deployment (one connection-string swap + `alembic upgrade head`)

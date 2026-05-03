@@ -7,7 +7,7 @@ A draft league ladder tracker for Magic Mates Monday.
 | Component | Description |
 |-----------|-------------|
 | [`backend/`](backend/README.md) | FastAPI async REST API + SQLite database layer |
-| [`frontend/`](frontend/README.md) | Next.js 15 leaderboard UI with mana colour themes |
+| [`frontend/`](frontend/README.md) | Next.js 16 leaderboard UI with mana colour themes |
 
 ## Dev setup
 

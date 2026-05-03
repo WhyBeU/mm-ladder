@@ -30,7 +30,7 @@
 
 ### Added
 
-- Next.js 15 App Router scaffold (TypeScript, Tailwind v4, ESLint, React Compiler)
+- Next.js 16 App Router scaffold (TypeScript, Tailwind v4, ESLint, React Compiler)
 - Mana theme system: 5 CSS variable palettes (W/U/B/R/G) swapped via `[data-mana]` on `<html>`, persisted in `localStorage` under `mm-ladder:mana-theme`
 - `ManaThemeContext` — React Context providing `theme` / `setTheme`, SSR-safe hydration (default `U` on server, corrected on client mount)
 - `ManaSwitcher` — 5-button mana symbol radio group wired to `ManaThemeContext`
