@@ -1,6 +1,6 @@
 # MM Ladder — Frontend
 
-Next.js 15 (App Router) frontend for the MM Ladder API. Displays a live draft-league leaderboard with a 5-way Magic: The Gathering mana colour theme switcher.
+Next.js 16 (App Router) frontend for the MM Ladder API. Displays a live draft-league leaderboard with hierarchical scope navigation (All-time → Yearly Cup → Season → Event → Pod) and a 5-way Magic: The Gathering mana colour theme switcher.
 
 ## Setup
 
@@ -35,14 +35,20 @@ Copy `.env.local.example` to `.env.local` and adjust for your environment. `.env
 ```
 src/
 ├── app/
-│   ├── layout.tsx          # Root HTML shell — fonts, ManaThemeProvider, data-mana default
+│   ├── layout.tsx          # Root HTML shell — fonts (Inter, Cinzel), Keyrune CDN, ManaThemeProvider
 │   ├── page.tsx            # "/" route — renders <LeaderboardPage />
-│   └── globals.css         # Tailwind v4 @theme tokens + @utility sheen classes
+│   └── globals.css         # Tailwind v4 @theme tokens + @utility classes (eyebrow, pulse-soft, set-placard)
 ├── components/
-│   ├── LeaderboardPage.tsx # Top-level page: layout, filter state, data hook
-│   ├── Leaderboard.tsx     # Sortable ranked table with medal treatment
-│   ├── NavSidebar.tsx      # Season selector + tournament list
-│   └── ManaSwitcher.tsx    # 5-button mana theme radio group
+│   ├── LeaderboardPage.tsx # Top-level page: scope state, layout, mobile drawer, breadcrumb
+│   ├── Leaderboard.tsx     # Sortable ranked table — rank delta, streak chips, sparkline, expandable rows
+│   ├── NavSidebar.tsx      # Hierarchical scope tree (All-time → Cup → Season → Event → Pod)
+│   ├── SeasonHero.tsx      # Title card (set symbol watermark, cup progress) + leader card + StatsStrip
+│   ├── Podium.tsx          # Top-3 gold/silver/bronze cards
+│   ├── ManaSwitcher.tsx    # 5-button mana theme radio group
+│   └── bits.tsx            # Shared UI atoms: PlayerAvatar, RankDelta, StreakChips, Sparkline, PointsByEventChart
+├── lib/
+│   ├── types.ts            # TypeScript types: Scope, YearlyCup, Season, MMLEvent, StandingEntry, SeasonStats
+│   └── mockData.ts         # Typed mock dataset — 30 players, 5 seasons, 6 events; computed standings
 ├── context/
 │   └── ManaThemeContext.tsx # Runtime theme state — reads/writes localStorage
 └── styles/

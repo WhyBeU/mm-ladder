@@ -1,306 +1,229 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Trophy, X, RefreshCw } from "lucide-react";
-
-import Leaderboard from "@/components/Leaderboard";
-import { NavSidebar } from "@/components/NavSidebar";
+import { useState, useMemo, useEffect } from "react";
+import type { Scope, StandingEntry, SeasonStats, MMLEvent } from "@/lib/types";
+import {
+  yearlyCups, seasons, events, players,
+  standings as seasonStandings, allTimeStandings, cupStandings,
+  eventStandings, podStandings,
+} from "@/lib/mockData";
+import NavSidebar from "@/components/NavSidebar";
 import ManaSwitcher from "@/components/ManaSwitcher";
-import type { Season, Tournament } from "@/components/NavSidebar";
-import type { Player } from "@/components/Leaderboard";
+import Leaderboard from "@/components/Leaderboard";
+import { SeasonHero, StatsStrip } from "@/components/SeasonHero";
+import { Podium } from "@/components/Podium";
 
-const LOCALE = "en-AU";
+// ---------- Scope breadcrumb ----------
+function ScopeBreadcrumb({ scope, onPart }: { scope: Scope; onPart: (s: Scope) => void }) {
+  const parts: { label: string; onClick: () => void }[] = [];
+  parts.push({ label: "All-time", onClick: () => onPart({ kind: "alltime" }) });
+  if (scope.cupId != null) {
+    const cup = yearlyCups.find(y => y.id === scope.cupId);
+    if (cup) parts.push({ label: cup.name, onClick: () => onPart({ kind: "cup", cupId: cup.id }) });
+  }
+  if (scope.seasonId != null) {
+    const s = seasons.find(x => x.id === scope.seasonId);
+    if (s) parts.push({ label: s.name, onClick: () => onPart({ kind: "season", cupId: s.yearly_cup_id, seasonId: s.id }) });
+  }
+  if (scope.eventId != null) {
+    const e = events.find(x => x.id === scope.eventId);
+    if (e) parts.push({ label: `MMM #${e.number}`, onClick: () => onPart({ kind: "event", cupId: scope.cupId, seasonId: scope.seasonId, eventId: e.id }) });
+  }
+  if (scope.podId != null) {
+    const e = events.find(x => x.id === scope.eventId);
+    const pod = e?.pods.find(p => p.id === scope.podId);
+    if (pod) parts.push({ label: pod.name.replace(/^MMM #\d+\s*·\s*/, "Pod "), onClick: () => {} });
+  }
 
-const formatDateShort = (iso: string | null | undefined) => {
-  if (!iso) return "";
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString(LOCALE, { weekday: "short", day: "numeric", month: "short" });
-};
+  return (
+    <div className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", lineHeight: 1.5 }}>
+      {parts.map((p, i) => (
+        <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          {i > 0 && <span style={{ color: "color-mix(in srgb, var(--parchment-faint) 50%, transparent)" }}>›</span>}
+          {i < parts.length - 1
+            ? <button onClick={p.onClick} style={{ background: "none", border: "none", color: "var(--parchment-muted)", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", letterSpacing: "inherit", textTransform: "inherit", fontWeight: "inherit" }}>{p.label}</button>
+            : <span style={{ color: "var(--parchment)" }}>{p.label}</span>}
+        </span>
+      ))}
+    </div>
+  );
+}
 
-const formatRelative = (date: Date | null) => {
-  if (!date) return "—";
+// ---------- Helpers ----------
+function computeStats(scopedEvents: MMLEvent[], scopeStandings: StandingEntry[]): SeasonStats {
+  const totalParticipants = scopedEvents.reduce((s, e) => s + e.pods.reduce((a, p) => a + p.participant_count, 0), 0);
+  const totalMatches = scopeStandings.reduce((s, p) => s + p.match_wins + p.match_losses + p.match_draws, 0) / 2;
+  const podCount = scopedEvents.reduce((s, e) => s + e.pods.length, 0);
+  return {
+    events: scopedEvents.length,
+    pods: podCount,
+    players: scopeStandings.length,
+    matches: Math.round(totalMatches),
+    matchesPerEvent: podCount ? totalMatches / podCount : 0,
+    avgAttendance: podCount ? totalParticipants / podCount : 0,
+  };
+}
+
+function relativeTime(date: Date): string {
   const diff = Date.now() - date.getTime();
-  const sec = Math.floor(diff / 1000);
-  if (sec < 60) return "just now";
-  const min = Math.floor(sec / 60);
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "just now";
   if (min < 60) return `${min} minute${min === 1 ? "" : "s"} ago`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} hour${hr === 1 ? "" : "s"} ago`;
-  const day = Math.floor(hr / 24);
-  if (day < 7) return `${day} day${day === 1 ? "" : "s"} ago`;
-  return date.toLocaleDateString(LOCALE);
-};
-
-const formatAbsolute = (date: Date | null) =>
-  date ? date.toLocaleString(LOCALE, {
-    weekday: "short", day: "numeric", month: "short", year: "numeric",
-    hour: "numeric", minute: "2-digit",
-  }) : "";
-
-interface PageHeaderProps {
-  season?: Season;
-  tournament?: Tournament | null;
-  onRefresh: () => void;
-  isRefreshing: boolean;
+  return `${Math.floor(min / 60)} hours ago`;
 }
 
-function PageHeader({ season, tournament, onRefresh, isRefreshing }: PageHeaderProps) {
-  return (
-    <header className="hidden md:block sticky top-0 z-20 bg-ink-950/85 backdrop-blur border-b border-ink-700">
-      <div className="px-6 lg:px-10 py-4 flex items-center justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.25em] text-parchment-faint">
-            <span>Standings</span>
-            <span className="text-parchment-faint/60">·</span>
-            <span className="text-parchment-muted">
-              {tournament ? `${tournament.name} · ${formatDateShort(tournament.date)}` : "Full season"}
-            </span>
-          </div>
-          <h1 className="font-display text-2xl lg:text-3xl text-parchment tracking-wide mt-0.5 truncate">
-            {season?.name ?? "MM Ladder"}
-          </h1>
-        </div>
-        <div className="flex items-center gap-4 shrink-0">
-          <ManaSwitcher />
-          <button
-            type="button"
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            className="hidden lg:flex items-center gap-1.5 text-xs text-parchment-muted hover:text-parchment transition-colors disabled:opacity-50"
-            title="Refresh data"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
-        </div>
-      </div>
-    </header>
-  );
-}
-
-interface MobileTopBarProps {
-  onMenuClick: () => void;
-  season?: Season;
-  tournament?: Tournament | null;
-}
-
-function MobileTopBar({ onMenuClick, season, tournament }: MobileTopBarProps) {
-  return (
-    <div className="md:hidden sticky top-0 z-30 bg-ink-950/85 backdrop-blur border-b border-ink-700">
-      <div className="px-4 py-3 flex items-center gap-3">
-        <button
-          type="button"
-          onClick={onMenuClick}
-          className="p-1.5 rounded-md text-parchment-muted hover:text-parchment hover:bg-ink-800 transition-colors"
-          aria-label="Open menu"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-            strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="4" x2="20" y1="6" y2="6"/>
-            <line x1="4" x2="20" y1="12" y2="12"/>
-            <line x1="4" x2="20" y1="18" y2="18"/>
-          </svg>
-        </button>
-        <div className="min-w-0 flex-1">
-          <div className="font-display text-base text-parchment truncate leading-tight">
-            {season?.name ?? "MM Ladder"}
-          </div>
-          <div className="text-[10px] uppercase tracking-widest text-parchment-faint truncate">
-            {tournament ? tournament.name : "All tournaments"}
-          </div>
-        </div>
-        <div className="shrink-0">
-          <ManaSwitcher size="sm" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-interface FilterStripProps {
-  tournament?: Tournament | null;
-  onClear: () => void;
-}
-
-function FilterStrip({ tournament, onClear }: FilterStripProps) {
-  if (!tournament) return null;
-  return (
-    <div className="themed-surface mb-5 flex items-center justify-between gap-3
-                    bg-ink-850/60 border border-accent-400/30 rounded-card px-4 py-2.5">
-      <div className="flex items-center gap-3 min-w-0">
-        <Trophy className="w-4 h-4 text-accent-400 shrink-0" />
-        <div className="min-w-0">
-          <div className="text-xs text-parchment-faint uppercase tracking-widest">Filtered to</div>
-          <div className="text-sm text-parchment font-semibold truncate">
-            {tournament.name}
-            <span className="text-parchment-muted font-normal">
-              {" · "}{formatDateShort(tournament.date)}
-              {" · "}{tournament.participant_count} players
-            </span>
-          </div>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={onClear}
-        className="text-xs text-primary-300 hover:text-accent-400 transition-colors uppercase tracking-widest flex items-center gap-1 shrink-0"
-      >
-        <X className="w-3 h-3" />
-        <span className="hidden sm:inline">Clear filter</span>
-        <span className="sm:hidden">Clear</span>
-      </button>
-    </div>
-  );
-}
-
-interface PageFooterProps {
-  lastUpdated: Date | null;
-  playerCount?: number;
-}
-
-function PageFooter({ lastUpdated, playerCount }: PageFooterProps) {
+// ---------- Page ----------
+export default function LeaderboardPage() {
+  const [scope, setScope] = useState<Scope>({ kind: "season", cupId: 1, seasonId: 3 });
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [lastUpdated] = useState(new Date());
   const [, setTick] = useState(0);
+
   useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 60_000);
+    const id = setInterval(() => setTick(t => t + 1), 60_000);
     return () => clearInterval(id);
   }, []);
 
-  return (
-    <footer className="mt-10 px-4 sm:px-6 lg:px-10 py-6 border-t border-ink-700/60">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 text-xs text-parchment-faint">
-        <div className="flex items-center gap-2">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-win animate-pulse" />
-          <span>
-            Last updated{" "}
-            <span className="text-parchment-muted" title={formatAbsolute(lastUpdated)}>
-              {formatRelative(lastUpdated)}
-            </span>
-            {playerCount != null && <> · {playerCount} active players</>}
-          </span>
-        </div>
-        <div className="uppercase tracking-widest">Magic Mates Monday @ Chromatic Games</div>
-      </div>
-    </footer>
-  );
-}
+  // Resolve context
+  const cup    = scope.cupId    ? yearlyCups.find(y => y.id === scope.cupId)   ?? null : null;
+  const season = scope.seasonId ? seasons.find(s => s.id === scope.seasonId)   ?? null : null;
+  const event  = scope.eventId  ? events.find(e => e.id === scope.eventId)     ?? null : null;
 
-// ---------------------------------------------------------------
-// Data hook — STUB. Replace with TanStack Query in Step 5.
-// ---------------------------------------------------------------
-interface LeaderboardData {
-  seasons: Season[];
-  tournaments: Tournament[];
-  players: Player[];
-  isFetching: boolean;
-  lastUpdated: Date;
-  refetch: () => void;
-}
+  // Standings for scope
+  const scopeStandings = useMemo((): StandingEntry[] => {
+    if (scope.kind === "alltime") return allTimeStandings;
+    if (scope.kind === "cup")     return cupStandings;
+    if (scope.kind === "season")  return seasonStandings;
+    if (scope.kind === "event" && scope.eventId)  return eventStandings(scope.eventId);
+    if (scope.kind === "pod"   && scope.podId != null) return podStandings(scope.podId);
+    return [];
+  }, [scope]);
 
-function useLeaderboardData(_params: { seasonId: number | string; tournamentId: number | string | null }): LeaderboardData {
-  return {
-    seasons: [],
-    tournaments: [],
-    players: [],
-    isFetching: false,
-    lastUpdated: new Date(),
-    refetch: () => {},
-  };
-}
+  // Scoped events
+  const scopedEvents = useMemo((): MMLEvent[] => {
+    if (scope.kind === "alltime") return events;
+    if (scope.kind === "cup")     return events.filter(e => seasons.find(s => s.id === e.season_id)?.yearly_cup_id === scope.cupId);
+    if (scope.kind === "season")  return events.filter(e => e.season_id === scope.seasonId);
+    if (scope.kind === "event" && event) return [event];
+    if (scope.kind === "pod"   && event) return [event];
+    return [];
+  }, [scope, event]);
 
-// ---------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------
-interface LeaderboardPageProps {
-  initialSeasonId?: string;
-}
+  const stats = useMemo(() => computeStats(scopedEvents, scopeStandings), [scopedEvents, scopeStandings]);
+  const leader = scopeStandings[0];
 
-export default function LeaderboardPage({ initialSeasonId }: LeaderboardPageProps = {}) {
-  const [seasonId, setSeasonId]       = useState<number | string>(initialSeasonId ?? "");
-  const [tournamentId, setTournamentId] = useState<number | string | null>(null);
-  const [drawerOpen, setDrawerOpen]   = useState(false);
+  const showPodium = (scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime") && scopeStandings.length >= 3;
 
-  const { seasons, tournaments, players, isFetching, lastUpdated, refetch } =
-    useLeaderboardData({ seasonId, tournamentId });
-
-  const effectiveSeasonId = useMemo(() => {
-    if (seasonId) return seasonId;
-    const current = seasons.find((s) => s.is_current) ?? seasons[0];
-    return current?.id ?? "";
-  }, [seasonId, seasons]);
-
-  const selectedSeason     = useMemo(() => seasons.find((s) => s.id === effectiveSeasonId), [seasons, effectiveSeasonId]);
-  const selectedTournament = useMemo(() => tournaments.find((t) => t.id === tournamentId), [tournaments, tournamentId]);
-
-  const handleSeasonChange = (id: string) => {
-    setSeasonId(id);
-    setTournamentId(null);
-  };
-
-  const handleTournamentChange = (id: number | string | null) => {
-    setTournamentId(id);
-    setDrawerOpen(false);
+  const heroCtx = {
+    season: scope.kind === "alltime" ? null : (scope.kind === "cup" ? null : season),
+    cup:    scope.kind === "alltime" ? null : cup,
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div style={{ display: "flex", minHeight: "100vh", overflowX: "hidden" }}>
 
       {/* Desktop sidebar */}
-      <div className="hidden md:block w-72 lg:w-80 shrink-0 sticky top-0 h-screen z-10">
-        <NavSidebar
-          seasons={seasons}
-          selectedSeasonId={effectiveSeasonId}
-          onSeasonChange={handleSeasonChange}
-          tournaments={tournaments}
-          selectedTournamentId={tournamentId}
-          onTournamentChange={handleTournamentChange}
-          isLoading={isFetching && !players.length}
-        />
+      <div className="hidden md:block" style={{ flexShrink: 0, position: "sticky", top: 0, height: "100vh" }}>
+        <NavSidebar scope={scope} setScope={setScope} yearlyCups={yearlyCups} seasons={seasons} events={events} />
       </div>
 
       {/* Mobile drawer */}
       {drawerOpen && (
         <>
           <div
-            className="md:hidden fixed inset-0 bg-ink-950/70 backdrop-blur-sm z-40"
+            className="md:hidden"
             onClick={() => setDrawerOpen(false)}
-            aria-hidden="true"
+            style={{ position: "fixed", inset: 0, background: "rgba(11,18,32,0.7)", backdropFilter: "blur(4px)", zIndex: 40 }}
           />
-          <div className="md:hidden fixed inset-y-0 left-0 w-80 max-w-[85vw] z-50 shadow-2xl">
-            <NavSidebar
-              seasons={seasons}
-              selectedSeasonId={effectiveSeasonId}
-              onSeasonChange={handleSeasonChange}
-              tournaments={tournaments}
-              selectedTournamentId={tournamentId}
-              onTournamentChange={handleTournamentChange}
-              onClose={() => setDrawerOpen(false)}
-              isLoading={isFetching && !players.length}
-            />
+          <div className="md:hidden" style={{ position: "fixed", inset: "0 auto 0 0", width: 296, zIndex: 50, boxShadow: "0 24px 64px -8px rgba(0,0,0,0.7)" }}>
+            <NavSidebar scope={scope} setScope={(s) => { setScope(s); setDrawerOpen(false); }} yearlyCups={yearlyCups} seasons={seasons} events={events} onClose={() => setDrawerOpen(false)} />
           </div>
         </>
       )}
 
       {/* Main column */}
-      <div className="flex-1 min-w-0 flex flex-col">
-        <MobileTopBar
-          onMenuClick={() => setDrawerOpen(true)}
-          season={selectedSeason}
-          tournament={selectedTournament}
-        />
-        <PageHeader
-          season={selectedSeason}
-          tournament={selectedTournament}
-          onRefresh={refetch}
-          isRefreshing={isFetching}
-        />
-        <main className="flex-1 px-4 sm:px-6 lg:px-10 py-6 md:py-8">
-          <FilterStrip
-            tournament={selectedTournament}
-            onClear={() => setTournamentId(null)}
+      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+
+        {/* Mobile top bar */}
+        <div className="md:hidden" style={{
+          position: "sticky", top: 0, zIndex: 30,
+          background: "color-mix(in srgb, var(--ink-950) 85%, transparent)",
+          backdropFilter: "blur(8px)",
+          borderBottom: "1px solid var(--ink-700)",
+          padding: "12px 16px",
+          display: "flex", alignItems: "center", gap: 12,
+        }}>
+          <button onClick={() => setDrawerOpen(true)} style={{ background: "none", border: "none", color: "var(--parchment-muted)", cursor: "pointer", padding: 4, display: "flex" }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+          </button>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="font-display" style={{ fontSize: 16, color: "var(--parchment)", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {season?.name ?? cup?.name ?? "MM Ladder"}
+            </div>
+          </div>
+          <ManaSwitcher size="sm" />
+        </div>
+
+        {/* Desktop sticky header */}
+        <header style={{
+          position: "sticky", top: 0, zIndex: 20,
+          background: "color-mix(in srgb, var(--ink-950) 88%, transparent)",
+          backdropFilter: "blur(8px)",
+          borderBottom: "1px solid var(--ink-700)",
+          padding: "14px 32px",
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
+        }} className="hidden md:flex">
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <ScopeBreadcrumb scope={scope} onPart={setScope} />
+            <h2 className="font-display" style={{ margin: "2px 0 0", fontSize: 22, color: "var(--parchment)", letterSpacing: "0.02em" }}>Magic Mates Draft Ladder</h2>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+            <ManaSwitcher />
+            <button style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              background: "transparent", border: "none", color: "var(--parchment-muted)",
+              fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 4v5h-5" /></svg>
+              Refresh
+            </button>
+          </div>
+        </header>
+
+        {/* Main content */}
+        <main style={{ flex: 1, padding: "28px 32px 32px", maxWidth: 1320, width: "100%", margin: "0 auto" }}>
+          <SeasonHero
+            scope={scope}
+            season={heroCtx.season}
+            cup={heroCtx.cup}
+            event={event}
+            leader={leader}
+            stats={stats}
+            eventsCount={scopedEvents.length}
           />
-          <Leaderboard players={players} season={selectedSeason?.name} />
+          <StatsStrip stats={stats} totalPlayers={players.length} />
+          {showPodium && <Podium standings={scopeStandings} />}
+          <Leaderboard
+            standings={scopeStandings}
+            scope={scope}
+            season={season}
+            scopedEvents={scopedEvents}
+          />
         </main>
-        <PageFooter lastUpdated={lastUpdated} playerCount={players.length} />
+
+        {/* Footer */}
+        <footer style={{
+          marginTop: 24, padding: "20px 32px",
+          borderTop: "1px solid color-mix(in srgb, var(--ink-700) 60%, transparent)",
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          fontSize: 11, color: "var(--parchment-faint)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="pulse-soft" style={{ width: 6, height: 6, borderRadius: 3, background: "var(--win)", display: "inline-block" }} />
+            <span>Last updated <span style={{ color: "var(--parchment-muted)" }}>{relativeTime(lastUpdated)}</span> · {stats.players} players in scope</span>
+          </div>
+          <div className="eyebrow">Magic Mates Monday @ Chromatic Games</div>
+        </footer>
       </div>
     </div>
   );

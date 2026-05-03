@@ -1,382 +1,424 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, X, Trophy, ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import type { StandingEntry, MMLEvent, Scope, Season } from "@/lib/types";
+import { fmtPct, fmtAvg, PlayerAvatar, RankDelta, StreakChips, Sparkline, PointsByEventChart } from "@/components/bits";
 
-export interface Player {
-  id: number | string;
-  display_name: string | null;
-  points: number;
-  match_wins: number;
-  match_losses: number;
-  match_draws: number;
-  tournaments_played: number;
-  is_anonymous?: boolean;
-}
-
-type SortKey = "points" | "display_name" | "record" | "tournaments_played";
+type SortKey = "points" | "display_name" | "match_wins" | "win_pct" | "avg_pts" | "tournaments_played";
 type SortDir = "asc" | "desc";
-
-const initials = (name: string | null) => {
-  if (!name) return "??";
-  const parts = name.trim().split(/\s+/);
-  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase();
-};
-
-const winPct = (p: Player) => {
-  const total = p.match_wins + p.match_losses + p.match_draws;
-  return total === 0 ? 0 : (p.match_wins / total) * 100;
-};
-
-const rankRowStyles = (rank: number) => {
-  if (rank === 1) return "border-accent-400/30 hover:border-accent-400/60 hover:shadow-gold-glow";
-  if (rank === 2) return "border-silver-400/25 hover:border-silver-400/50 hover:shadow-silver-glow";
-  if (rank === 3) return "border-bronze-400/25 hover:border-bronze-400/50 hover:shadow-bronze-glow";
-  return "border-ink-700 hover:border-primary-500/50 hover:shadow-card-hover";
-};
-
-const rankEdgeBar = (rank: number) => {
-  if (rank === 1) return "bg-gold-sheen";
-  if (rank === 2) return "bg-silver-sheen";
-  if (rank === 3) return "bg-bronze-sheen";
-  return null;
-};
-
-const rankNumberColor = (rank: number) => {
-  if (rank === 1) return "text-accent-400";
-  if (rank === 2) return "text-silver-300";
-  if (rank === 3) return "text-bronze-300";
-  return "text-parchment-muted";
-};
-
-interface SortHeaderProps {
-  label: string;
-  columnKey: string;
-  sortKey: string;
-  sortDir: SortDir;
-  onSort: (key: string) => void;
-  align?: "left" | "center" | "right";
-}
-
-function SortHeader({ label, columnKey, sortKey, sortDir, onSort, align = "left" }: SortHeaderProps) {
-  const active = sortKey === columnKey;
-  const ChevronIcon = active
-    ? (sortDir === "desc" ? ChevronDown : ChevronUp)
-    : ChevronsUpDown;
-
-  const justify =
-    align === "right"  ? "justify-end"    :
-    align === "center" ? "justify-center" :
-    "justify-start";
-
-  return (
-    <button
-      type="button"
-      onClick={() => onSort(columnKey)}
-      className={`flex items-center gap-1 ${justify} w-full text-[11px] uppercase tracking-widest
-                  ${active ? "text-accent-400" : "text-parchment-faint hover:text-parchment-muted"}
-                  transition-colors`}
-    >
-      <span>{label}</span>
-      <ChevronIcon className="w-3 h-3" />
-    </button>
-  );
-}
-
-interface PlayerAvatarProps {
-  player: Player;
-  rank: number;
-  showMedal: boolean;
-}
-
-function PlayerAvatar({ player, rank, showMedal }: PlayerAvatarProps) {
-  if (player.is_anonymous) {
-    return (
-      <div className="w-9 h-9 rounded-full bg-ink-700 flex items-center justify-center text-parchment-muted">
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M12 4a8 8 0 1 0 8 8 8 8 0 0 0-8-8Zm0 4a3 3 0 1 1-3 3 3 3 0 0 1 3-3Zm0 14a7.94 7.94 0 0 1-6-2.74A6 6 0 0 1 12 16a6 6 0 0 1 6 3.26A7.94 7.94 0 0 1 12 22Z"/>
-        </svg>
-      </div>
-    );
-  }
-
-  const baseClasses = "w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm";
-
-  if (showMedal && rank === 1) return <div className={`${baseClasses} bg-gold-sheen text-ink-950 shadow-gold-glow`}>{initials(player.display_name)}</div>;
-  if (showMedal && rank === 2) return <div className={`${baseClasses} bg-silver-sheen text-ink-950`}>{initials(player.display_name)}</div>;
-  if (showMedal && rank === 3) return <div className={`${baseClasses} bg-bronze-sheen text-ink-950`}>{initials(player.display_name)}</div>;
-
-  return (
-    <div className={`${baseClasses} bg-primary-700 ring-1 ring-primary-500/40 text-parchment`}>
-      {initials(player.display_name)}
-    </div>
-  );
-}
+type Density = "comfy" | "compact";
 
 interface LeaderboardProps {
-  players?: Player[];
-  season?: string;
+  standings: StandingEntry[];
+  scope: Scope;
+  season?: Season | null;
+  scopedEvents: MMLEvent[];
+  showSparklines?: boolean;
+  showStreak?: boolean;
+  showCupLine?: boolean;
+  density?: Density;
 }
 
-export default function Leaderboard({ players = [], season = "" }: LeaderboardProps) {
-  const [search, setSearch]   = useState("");
+export default function Leaderboard({
+  standings,
+  scope,
+  season,
+  scopedEvents,
+  showSparklines = true,
+  showStreak = true,
+  showCupLine = true,
+  density = "comfy",
+}: LeaderboardProps) {
+  const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("points");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [expanded, setExpanded] = useState<number | null>(null);
 
-  const showMedals = sortKey === "points" && sortDir === "desc";
-
-  const handleSort = (key: string) => {
-    const k = key as SortKey;
-    if (sortKey === k) {
-      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
-    } else {
-      setSortKey(k);
-      setSortDir(k === "display_name" ? "asc" : "desc");
-    }
+  const handleSort = (k: SortKey) => {
+    if (sortKey === k) setSortDir(d => d === "desc" ? "asc" : "desc");
+    else { setSortKey(k); setSortDir(k === "display_name" ? "asc" : "desc"); }
   };
 
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
-
-    let out = players.filter((p) => {
-      if (!q) return true;
-      if (p.is_anonymous) return false;
-      return (p.display_name ?? "").toLowerCase().includes(q);
-    });
-
+    let out = standings.filter(p => !q || p.display_name.toLowerCase().includes(q));
     out = [...out].sort((a, b) => {
       if (sortKey === "display_name") {
-        const av = (a.is_anonymous ? "~" : (a.display_name ?? "")).toLowerCase();
-        const bv = (b.is_anonymous ? "~" : (b.display_name ?? "")).toLowerCase();
+        const av = a.display_name.toLowerCase(), bv = b.display_name.toLowerCase();
         return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
       }
-      const av = sortKey === "record" ? a.match_wins : (a as unknown as Record<string, number>)[sortKey];
-      const bv = sortKey === "record" ? b.match_wins : (b as unknown as Record<string, number>)[sortKey];
+      const av = a[sortKey as keyof StandingEntry] as number;
+      const bv = b[sortKey as keyof StandingEntry] as number;
       return sortDir === "asc" ? av - bv : bv - av;
     });
-
     return out;
-  }, [players, search, sortKey, sortDir]);
+  }, [search, sortKey, sortDir, standings]);
+
+  const showMedals = sortKey === "points" && sortDir === "desc";
+  const qualifierCount = season?.qualifier_count ?? 2;
+  const padY = density === "compact" ? 8 : 12;
+  const showDelta = scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime";
+  const showAvg   = scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime";
+  const eventLabel = scope.kind === "pod" || scope.kind === "event" ? "Rounds" : "Events";
+  const cupLineEnabled = showCupLine && scope.kind === "season" && !!season?.yearly_cup_id;
+
+  // Build grid template
+  const cols: string[] = [];
+  cols.push("44px");
+  if (showDelta) cols.push("52px");
+  cols.push("minmax(0, 1.6fr)");
+  cols.push("70px");
+  cols.push("96px");
+  cols.push("70px");
+  if (showAvg) cols.push("78px");
+  cols.push("90px");
+  cols.push("24px");
+  const colTemplate = cols.join(" ");
 
   return (
-    <main className="max-w-5xl mx-auto px-4 sm:px-5 py-8 md:py-12">
-
-      {/* Header */}
-      <header className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="inline-block w-2 h-2 rounded-full bg-accent-400 shadow-gold-glow" />
-          <span className="text-xs tracking-[0.25em] uppercase text-parchment-muted">Leaderboard</span>
-        </div>
-        <div className="flex items-end justify-between flex-wrap gap-2">
-          <div>
-            <h1 className="font-display text-3xl md:text-4xl text-parchment tracking-wide">MM Ladder</h1>
-            <p className="text-parchment-muted mt-1 text-sm">Magic Mates Monday · Chromatic Games</p>
-          </div>
-          {season && (
-            <span className="text-xs text-parchment-faint tracking-widest uppercase">{season}</span>
-          )}
-        </div>
-      </header>
-
-      {/* Search */}
-      <div className="mb-5">
-        <label className="relative block">
-          <span className="sr-only">Search players</span>
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-parchment-faint" />
+    <section>
+      {/* Search bar */}
+      <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14 }}>
+        <div style={{ position: "relative", flex: 1 }}>
+          <svg style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "var(--parchment-faint)" }} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" />
+          </svg>
           <input
-            type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
             placeholder="Search players…"
-            className="themed-surface w-full bg-ink-850 border border-ink-700
-                       rounded-card pl-10 pr-10 py-2.5 text-sm text-parchment
-                       placeholder:text-parchment-faint
-                       focus:outline-none focus:border-primary-500/60 focus:ring-2 focus:ring-primary-500/20
-                       transition-colors"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => setSearch("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-parchment-faint hover:text-parchment-muted transition-colors"
-              aria-label="Clear search"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </label>
-      </div>
-
-      {/* Desktop table */}
-      <div className="hidden md:block">
-        <div className="grid grid-cols-12 gap-3 px-4 py-2 items-center">
-          <div className="col-span-1"><SortHeader label="Rank"        columnKey="points"             {...{ sortKey, sortDir, onSort: handleSort }} /></div>
-          <div className="col-span-4"><SortHeader label="Player"      columnKey="display_name"       {...{ sortKey, sortDir, onSort: handleSort }} /></div>
-          <div className="col-span-2"><SortHeader label="Pts"         columnKey="points"             {...{ sortKey, sortDir, onSort: handleSort }} align="right" /></div>
-          <div className="col-span-2"><SortHeader label="W–L–D"       columnKey="record"             {...{ sortKey, sortDir, onSort: handleSort }} align="center" /></div>
-          <div className="col-span-1"><span className="block text-[11px] uppercase tracking-widest text-parchment-faint text-center">Win %</span></div>
-          <div className="col-span-2"><SortHeader label="Tournaments" columnKey="tournaments_played" {...{ sortKey, sortDir, onSort: handleSort }} align="right" /></div>
-        </div>
-
-        <ul className="space-y-2">
-          {rows.map((player, i) => {
-            const rank      = i + 1;
-            const medalRank = showMedals && rank <= 3 ? rank : 0;
-            const edgeBar   = medalRank ? rankEdgeBar(medalRank) : null;
-
-            return (
-              <li
-                key={player.id}
-                className={`themed-surface relative grid grid-cols-12 gap-3 items-center
-                            bg-ink-850 hover:bg-ink-800 border rounded-card px-4 py-3
-                            shadow-card transition-all duration-200
-                            ${medalRank ? rankRowStyles(medalRank) : "border-ink-700 hover:border-primary-500/50 hover:shadow-card-hover"}`}
-              >
-                {edgeBar && <span className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-full ${edgeBar}`} />}
-
-                <div className="col-span-1 flex items-center gap-2">
-                  {medalRank === 1 && <Trophy className="w-4 h-4 text-accent-400" />}
-                  <span className={`font-display text-2xl font-bold ${medalRank ? rankNumberColor(medalRank) : "text-parchment-muted"}`}>{rank}</span>
-                </div>
-
-                <div className="col-span-4">
-                  <div className="flex items-center gap-3">
-                    <PlayerAvatar player={player} rank={rank} showMedal={!!medalRank} />
-                    <div className="min-w-0">
-                      {player.is_anonymous ? (
-                        <div className="font-semibold text-parchment-muted italic truncate">Anonymous Planeswalker</div>
-                      ) : (
-                        <div className="font-semibold text-parchment truncate">{player.display_name}</div>
-                      )}
-                      <div className="text-xs text-parchment-faint">{player.tournaments_played} events</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="col-span-2 text-right">
-                  <span className={`font-display text-xl tabular-nums ${medalRank === 1 ? "text-accent-400" : "text-parchment"}`}>{player.points}</span>
-                </div>
-
-                <div className="col-span-2 text-center tabular-nums text-sm">
-                  <span className="text-win font-semibold">{player.match_wins}</span>
-                  <span className="text-parchment-faint">–</span>
-                  <span className="text-loss font-semibold">{player.match_losses}</span>
-                  <span className="text-parchment-faint">–</span>
-                  <span className="text-draw font-semibold">{player.match_draws}</span>
-                </div>
-
-                <div className="col-span-1 text-center tabular-nums text-sm text-parchment-muted">
-                  {winPct(player).toFixed(0)}%
-                </div>
-
-                <div className="col-span-2 text-right tabular-nums text-parchment">
-                  {player.tournaments_played}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-
-      {/* Mobile layout */}
-      <div className="md:hidden">
-        <div className="flex items-center gap-2 mb-3">
-          <label className="text-xs uppercase tracking-widest text-parchment-faint" htmlFor="mobile-sort">Sort</label>
-          <select
-            id="mobile-sort"
-            value={`${sortKey}:${sortDir}`}
-            onChange={(e) => {
-              const [k, d] = e.target.value.split(":");
-              setSortKey(k as SortKey);
-              setSortDir(d as SortDir);
+            className="themed-surface"
+            style={{
+              width: "100%", background: "var(--ink-850)",
+              border: "1px solid var(--ink-700)", borderRadius: "var(--radius-card)",
+              padding: "10px 14px 10px 36px", fontSize: 14, color: "var(--parchment)",
+              fontFamily: "inherit", outline: "none",
             }}
-            className="themed-surface bg-ink-850 border border-ink-700 rounded-md
-                       text-sm text-parchment px-2 py-1.5
-                       focus:outline-none focus:border-primary-500/60"
-          >
-            <option value="points:desc">Points (high → low)</option>
-            <option value="points:asc">Points (low → high)</option>
-            <option value="display_name:asc">Name (A → Z)</option>
-            <option value="display_name:desc">Name (Z → A)</option>
-            <option value="record:desc">Wins (high → low)</option>
-            <option value="tournaments_played:desc">Tournaments (high → low)</option>
-          </select>
+          />
         </div>
-
-        <ul className="space-y-2">
-          {rows.map((player, i) => {
-            const rank      = i + 1;
-            const medalRank = showMedals && rank <= 3 ? rank : 0;
-            const edgeBar   = medalRank ? rankEdgeBar(medalRank) : null;
-
-            return (
-              <li
-                key={player.id}
-                className={`themed-surface relative bg-ink-850 hover:bg-ink-800
-                            border rounded-card px-4 py-3 shadow-card transition-all duration-200
-                            ${medalRank ? rankRowStyles(medalRank) : "border-ink-700"}`}
-              >
-                {edgeBar && <span className={`absolute left-0 top-3 bottom-3 w-[3px] rounded-full ${edgeBar}`} />}
-
-                <div className="flex items-center gap-3">
-                  <div className="flex flex-col items-center w-8 shrink-0">
-                    {medalRank === 1 && <Trophy className="w-4 h-4 text-accent-400" />}
-                    <span className={`font-display text-xl font-bold ${medalRank ? rankNumberColor(medalRank) : "text-parchment-muted"}`}>{rank}</span>
-                  </div>
-                  <PlayerAvatar player={player} rank={rank} showMedal={!!medalRank} />
-                  <div className="flex-1 min-w-0">
-                    {player.is_anonymous ? (
-                      <div className="font-semibold text-parchment-muted italic truncate">Anonymous Planeswalker</div>
-                    ) : (
-                      <div className="font-semibold text-parchment truncate">{player.display_name}</div>
-                    )}
-                    <div className="text-xs text-parchment-faint">
-                      {player.tournaments_played} events · {winPct(player).toFixed(0)}% win
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <div className={`font-display text-xl tabular-nums ${medalRank === 1 ? "text-accent-400" : "text-parchment"}`}>{player.points}</div>
-                    <div className="text-[10px] uppercase tracking-widest text-parchment-faint">pts</div>
-                  </div>
-                </div>
-
-                <div className="mt-2.5 pt-2.5 border-t border-ink-700/60 flex items-center justify-between">
-                  <span className="text-[10px] uppercase tracking-widest text-parchment-faint">Record</span>
-                  <div className="tabular-nums text-sm">
-                    <span className="text-win font-semibold">{player.match_wins}W</span>
-                    <span className="text-parchment-faint mx-1">·</span>
-                    <span className="text-loss font-semibold">{player.match_losses}L</span>
-                    <span className="text-parchment-faint mx-1">·</span>
-                    <span className="text-draw font-semibold">{player.match_draws}D</span>
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+        <div style={{ fontSize: 11, color: "var(--parchment-faint)", letterSpacing: "0.12em", textTransform: "uppercase", display: "flex", gap: 16 }}>
+          <span><span style={{ color: "var(--accent-300)", fontWeight: 700 }}>{rows.length}</span> showing</span>
+          <span>{standings.length} total</span>
+        </div>
       </div>
 
-      {/* Empty state */}
+      {/* Column headers */}
+      <div style={{ display: "grid", gridTemplateColumns: colTemplate, gap: 8, padding: "8px 16px", alignItems: "center" }}>
+        <SortHead label="#"     k="points"           align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        {showDelta && <span className="eyebrow">Move</span>}
+        <SortHead label="Player" k="display_name"    align="left"   sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        <SortHead label="Pts"   k="points"           align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        <SortHead label="W–L–D" k="match_wins"       align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        <SortHead label="Win %" k="win_pct"          align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        {showAvg && <SortHead label="Avg" k="avg_pts" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+        <span className="eyebrow" style={{ textAlign: "right" }}>
+          {showSparklines && showAvg ? "Form" : eventLabel}
+        </span>
+        <span />
+      </div>
+
+      {/* Rows */}
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+        {rows.map(p => {
+          const rank = p.rank;
+          const isMedal = showMedals && rank <= 3;
+          const cupLine = cupLineEnabled && showMedals && rank === qualifierCount && rows.length > qualifierCount;
+          const isExpanded = expanded === p.player_id;
+
+          const medalEdge =
+            rank === 1 ? "linear-gradient(180deg, var(--accent-300), var(--accent-500))" :
+            rank === 2 ? "linear-gradient(180deg, #e1e6ee, #6b7a93)" :
+            rank === 3 ? "linear-gradient(180deg, #d4a373, #6e441f)" : null;
+
+          const borderColor = isMedal
+            ? (rank === 1 ? "color-mix(in srgb, var(--accent-400) 35%, transparent)"
+              : rank === 2 ? "color-mix(in srgb, var(--silver-400) 30%, transparent)"
+              : "color-mix(in srgb, var(--bronze-400) 30%, transparent)")
+            : "var(--ink-700)";
+
+          return (
+            <li key={p.player_id}>
+              {cupLine && (
+                <div style={{ position: "relative", padding: "4px 0", borderBottom: "1px dashed color-mix(in srgb, var(--accent-400) 50%, transparent)", marginBottom: 2 }}>
+                  <span style={{
+                    position: "absolute", right: 0, top: -10,
+                    fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase",
+                    background: "color-mix(in srgb, var(--accent-400) 16%, var(--ink-950))",
+                    border: "1px solid color-mix(in srgb, var(--accent-400) 35%, transparent)",
+                    color: "var(--accent-300)", fontWeight: 700,
+                    padding: "2px 8px", borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 5,
+                  }}>
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14l-1 8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4L5 4Zm5 13h4l1 3H9l1-3Z" /></svg>
+                    Cup qualifier line · top {qualifierCount}
+                  </span>
+                </div>
+              )}
+
+              <button
+                onClick={() => setExpanded(isExpanded ? null : p.player_id)}
+                className="themed-surface"
+                style={{
+                  position: "relative", width: "100%", textAlign: "left", cursor: "pointer",
+                  display: "grid", gridTemplateColumns: colTemplate, gap: 8, alignItems: "center",
+                  background: "var(--ink-900)",
+                  border: `1px solid ${borderColor}`,
+                  borderRadius: "var(--radius-card)",
+                  padding: `${padY}px 16px`,
+                  color: "var(--parchment)", fontFamily: "inherit",
+                  boxShadow: isMedal ? "var(--shadow-card)" : "none",
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = "var(--ink-850)")}
+                onMouseLeave={e => (e.currentTarget.style.background = "var(--ink-900)")}
+              >
+                {medalEdge && (
+                  <span style={{ position: "absolute", left: 0, top: 10, bottom: 10, width: 3, borderRadius: 2, background: medalEdge }} />
+                )}
+
+                {/* Rank */}
+                <div style={{ textAlign: "center" }}>
+                  <span className="font-display" style={{
+                    fontSize: 22, fontWeight: 700, fontVariantNumeric: "tabular-nums",
+                    color: rank === 1 ? "var(--accent-300)" : rank === 2 ? "var(--silver-300)" : rank === 3 ? "var(--bronze-300)" : "var(--parchment-muted)",
+                  }}>{rank}</span>
+                </div>
+
+                {/* Delta */}
+                {showDelta && <div><RankDelta delta={p.delta} /></div>}
+
+                {/* Player */}
+                <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                  <PlayerAvatar name={p.display_name} rank={rank} size={density === "compact" ? 32 : 36} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.display_name}</div>
+                    <div style={{ fontSize: 11, color: "var(--parchment-faint)", display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                      <span style={{ fontVariantNumeric: "tabular-nums" }}>{p.tournaments_played} {eventLabel.toLowerCase()}</span>
+                      {showStreak && p.streak && (
+                        <>
+                          <span style={{ width: 3, height: 3, background: "var(--parchment-faint)", borderRadius: "50%" }} />
+                          <StreakChips streak={p.streak} />
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Points */}
+                <div style={{ textAlign: "right" }}>
+                  <span className="font-display" style={{ fontSize: 20, color: rank === 1 ? "var(--accent-300)" : "var(--parchment)", fontVariantNumeric: "tabular-nums" }}>{p.points}</span>
+                </div>
+
+                {/* W–L–D */}
+                <div style={{ textAlign: "center", fontSize: 13, fontVariantNumeric: "tabular-nums" }}>
+                  <span style={{ color: "var(--win)", fontWeight: 600 }}>{p.match_wins}</span>
+                  <span style={{ color: "var(--parchment-faint)", margin: "0 3px" }}>–</span>
+                  <span style={{ color: "var(--loss)", fontWeight: 600 }}>{p.match_losses}</span>
+                  <span style={{ color: "var(--parchment-faint)", margin: "0 3px" }}>–</span>
+                  <span style={{ color: "var(--draw)", fontWeight: 600 }}>{p.match_draws}</span>
+                </div>
+
+                {/* Win % */}
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 13, color: "var(--parchment)", fontVariantNumeric: "tabular-nums" }}>{fmtPct(p.win_pct)}</div>
+                  <div style={{ marginTop: 3, height: 3, background: "var(--ink-800)", borderRadius: 2, overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", width: `${p.win_pct * 100}%`,
+                      background: rank === 1 ? "var(--accent-400)" : rank <= 3 ? "var(--primary-300)" : "var(--primary-500)",
+                    }} />
+                  </div>
+                </div>
+
+                {/* Avg */}
+                {showAvg && (
+                  <div style={{ textAlign: "right", fontSize: 13, color: "var(--parchment-muted)", fontVariantNumeric: "tabular-nums" }}>
+                    {fmtAvg(p.avg_pts)}
+                  </div>
+                )}
+
+                {/* Form / Events */}
+                <div style={{ textAlign: "right", display: "flex", justifyContent: "flex-end" }}>
+                  {showSparklines && showAvg && p.per_event_points.filter(v => v != null).length > 1
+                    ? <Sparkline data={p.per_event_points} width={70} height={22} color={rank === 1 ? "var(--accent-400)" : "var(--primary-300)"} />
+                    : <span style={{ fontSize: 13, color: "var(--parchment-muted)", fontVariantNumeric: "tabular-nums" }}>{p.tournaments_played}</span>}
+                </div>
+
+                {/* Expand arrow */}
+                <span style={{ color: "var(--parchment-faint)", fontSize: 12, transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 200ms" }}>▸</span>
+              </button>
+
+              {isExpanded && (
+                <ExpandedDetail player={p} scope={scope} scopedEvents={scopedEvents} />
+              )}
+            </li>
+          );
+        })}
+      </ul>
+
       {rows.length === 0 && (
-        <div className="themed-surface bg-ink-850 border border-ink-700 rounded-card p-10 text-center">
-          <div className="text-parchment-muted">
-            No players match {search ? `"${search}"` : "the current filter"}.
-          </div>
-          {search && (
-            <button
-              onClick={() => setSearch("")}
-              className="mt-3 text-sm text-primary-300 hover:text-accent-400 transition-colors"
-            >
-              Clear search
-            </button>
-          )}
+        <div style={{ padding: 40, textAlign: "center", border: "1px solid var(--ink-700)", borderRadius: "var(--radius-card)", color: "var(--parchment-muted)" }}>
+          No players match the current filter.
         </div>
       )}
+    </section>
+  );
+}
 
-      {/* Footer count */}
-      <div className="mt-6 text-xs text-parchment-faint text-center">
-        Showing {rows.length} of {players.length} players{search && " (filtered)"}
+// ---------- SortHead ----------
+interface SortHeadProps {
+  label: string;
+  k: SortKey;
+  align?: "left" | "center" | "right";
+  sortKey: SortKey;
+  sortDir: SortDir;
+  onSort: (k: SortKey) => void;
+}
+
+function SortHead({ label, k, align = "left", sortKey, sortDir, onSort }: SortHeadProps) {
+  const active = sortKey === k;
+  const justifyMap = { left: "flex-start", center: "center", right: "flex-end" } as const;
+  return (
+    <button onClick={() => onSort(k)} style={{
+      background: "none", border: "none", cursor: "pointer", padding: 0,
+      width: "100%", textAlign: align,
+      fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 600,
+      color: active ? "var(--accent-400)" : "var(--parchment-faint)",
+      fontFamily: "inherit",
+      display: "inline-flex", alignItems: "center", gap: 4,
+      justifyContent: justifyMap[align],
+    }}>
+      <span>{label}</span>
+      <span style={{ fontSize: 9, opacity: active ? 1 : 0.5 }}>{active ? (sortDir === "desc" ? "▼" : "▲") : "⇅"}</span>
+    </button>
+  );
+}
+
+// ---------- ExpandedDetail ----------
+interface ExpandedDetailProps {
+  player: StandingEntry;
+  scope: Scope;
+  scopedEvents: MMLEvent[];
+}
+
+function ExpandedDetail({ player, scope, scopedEvents }: ExpandedDetailProps) {
+  const showPerEvent = scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime";
+  return (
+    <div style={{
+      marginTop: 4, padding: "16px 20px",
+      background: "color-mix(in srgb, var(--ink-850) 80%, transparent)",
+      border: "1px solid var(--ink-700)", borderRadius: "var(--radius-card)",
+      display: "grid", gridTemplateColumns: showPerEvent ? "1fr 1.2fr" : "1fr", gap: 24,
+    }}>
+      {showPerEvent && (
+        <div>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>● Points by event</div>
+          <PointsByEventChart player={player} />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginTop: 14 }}>
+            <StatBlock label="Best" value={Math.max(...player.per_event_points.filter((v): v is number => v != null), 0)} />
+            <StatBlock label="Avg"  value={player.avg_pts.toFixed(1)} />
+            <StatBlock label="Events" value={player.tournaments_played} />
+          </div>
+        </div>
+      )}
+      <div>
+        <div className="eyebrow" style={{ marginBottom: 10 }}>
+          ● {scope.kind === "pod" || scope.kind === "event" ? "Match record" : "Event attendance"}
+        </div>
+        {scope.kind === "pod" || scope.kind === "event"
+          ? <RoundBreakdown player={player} />
+          : <AttendanceGrid player={player} events={scopedEvents} />}
       </div>
-    </main>
+    </div>
+  );
+}
+
+function StatBlock({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div style={{ background: "var(--ink-900)", border: "1px solid var(--ink-700)", borderRadius: 8, padding: "8px 10px" }}>
+      <div className="eyebrow">{label}</div>
+      <div className="font-display" style={{ fontSize: 18, color: "var(--parchment)", marginTop: 2, lineHeight: 1.1, fontVariantNumeric: "tabular-nums" }}>{value}</div>
+    </div>
+  );
+}
+
+function AttendanceGrid({ player, events }: { player: StandingEntry; events: MMLEvent[] }) {
+  const attended = player.attended || [];
+  const total = attended.reduce((a: number, b: number) => a + b, 0);
+  const missed = attended.length - total;
+  const cells = events.slice(-Math.min(events.length, 18)).map((e, i) => {
+    const startIdx = events.length - Math.min(events.length, 18);
+    return { event: e, attended: attended[startIdx + i] === 1 };
+  });
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 16, marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: "color-mix(in srgb, var(--win) 60%, transparent)", border: "1px solid color-mix(in srgb, var(--win) 50%, transparent)" }} />
+          <span style={{ fontSize: 12, color: "var(--parchment)", fontVariantNumeric: "tabular-nums" }}>{total} <span style={{ color: "var(--parchment-faint)" }}>attended</span></span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--ink-800)", border: "1px solid var(--ink-700)" }} />
+          <span style={{ fontSize: 12, color: "var(--parchment)", fontVariantNumeric: "tabular-nums" }}>{missed} <span style={{ color: "var(--parchment-faint)" }}>missed</span></span>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(60px, 1fr))", gap: 4 }}>
+        {cells.map(({ event, attended: att }, i) => (
+          <div key={i} title={`MMM #${event.number} · ${event.held_on}${att ? " · attended" : " · missed"}`}
+            style={{
+              padding: "8px 6px", borderRadius: 4,
+              background: att ? "color-mix(in srgb, var(--win) 18%, transparent)" : "var(--ink-800)",
+              border: `1px solid ${att ? "color-mix(in srgb, var(--win) 35%, transparent)" : "var(--ink-700)"}`,
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+              opacity: att ? 1 : 0.55,
+            }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: att ? "var(--win)" : "var(--parchment-faint)", fontVariantNumeric: "tabular-nums" }}>#{event.number}</span>
+            <span style={{ fontSize: 9, color: "var(--parchment-faint)", fontVariantNumeric: "tabular-nums" }}>
+              {new Date(event.held_on + "T00:00:00").toLocaleDateString("en-AU", { month: "short", day: "numeric" })}
+            </span>
+          </div>
+        ))}
+      </div>
+      {events.length > 18 && (
+        <div style={{ marginTop: 8, fontSize: 11, color: "var(--parchment-faint)", textAlign: "right" }}>Showing last 18 of {events.length} events</div>
+      )}
+    </div>
+  );
+}
+
+function RoundBreakdown({ player }: { player: StandingEntry }) {
+  const total = player.match_wins + player.match_losses + player.match_draws;
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+        <KvBlock label="Rounds played" value={total} />
+        <KvBlock label="Match points"  value={player.points} accent />
+        <KvBlock label="Win rate"      value={`${(player.win_pct * 100).toFixed(0)}%`} />
+      </div>
+      <div style={{ height: 28, display: "flex", borderRadius: 6, overflow: "hidden", border: "1px solid var(--ink-700)" }}>
+        {player.match_wins > 0 && (
+          <div style={{ flex: player.match_wins, background: "color-mix(in srgb, var(--win) 80%, var(--ink-900))", color: "var(--ink-950)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
+            {player.match_wins}W
+          </div>
+        )}
+        {player.match_draws > 0 && (
+          <div style={{ flex: player.match_draws, background: "color-mix(in srgb, var(--draw) 75%, var(--ink-900))", color: "var(--ink-950)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
+            {player.match_draws}D
+          </div>
+        )}
+        {player.match_losses > 0 && (
+          <div style={{ flex: player.match_losses, background: "color-mix(in srgb, var(--loss) 75%, var(--ink-900))", color: "var(--parchment)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums" }}>
+            {player.match_losses}L
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function KvBlock({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
+  return (
+    <div style={{ flex: 1, background: "var(--ink-900)", border: "1px solid var(--ink-700)", borderRadius: 8, padding: "10px 12px" }}>
+      <div className="eyebrow">{label}</div>
+      <div className="font-display" style={{ fontSize: 22, color: accent ? "var(--accent-300)" : "var(--parchment)", marginTop: 2, lineHeight: 1.1, fontVariantNumeric: "tabular-nums" }}>{value}</div>
+    </div>
   );
 }

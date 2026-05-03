@@ -89,3 +89,32 @@
   scrollbar-width: thin;
   scrollbar-color: var(--ink-700) transparent;
 }
+
+@utility eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--parchment-faint);
+  font-weight: 500;
+}
+
+@utility pulse-soft {
+  animation: pulse-soft 2.4s ease-in-out infinite;
+}
+
+@utility set-placard {
+  background:
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.025) 0 6px, transparent 6px 14px),
+    linear-gradient(135deg, var(--primary-700), var(--ink-850));
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+body {
+  font-family: var(--font-inter), "Inter", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "ss01", "cv11";
+}
