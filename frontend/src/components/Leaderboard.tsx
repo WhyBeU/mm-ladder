@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from "react";
 import type { StandingEntry, MMLEvent, Scope, Season } from "@/lib/types";
-import { fmtPct, fmtAvg, PlayerAvatar, RankDelta, StreakChips, Sparkline, PointsByEventChart } from "@/components/bits";
+import { fmtPct, fmtAvg, PlayerAvatar, StreakChips, PointsByEventChart } from "@/components/bits";
 
-type SortKey = "points" | "display_name" | "match_wins" | "win_pct" | "avg_pts" | "tournaments_played";
+type SortKey = "points" | "display_name" | "match_wins" | "win_pct" | "avg_pts" | "tournaments_played" | "trophies";
 type SortDir = "asc" | "desc";
 type Density = "comfy" | "compact";
 
@@ -13,7 +13,6 @@ interface LeaderboardProps {
   scope: Scope;
   season?: Season | null;
   scopedEvents: MMLEvent[];
-  showSparklines?: boolean;
   showStreak?: boolean;
   showCupLine?: boolean;
   density?: Density;
@@ -24,7 +23,6 @@ export default function Leaderboard({
   scope,
   season,
   scopedEvents,
-  showSparklines = true,
   showStreak = true,
   showCupLine = true,
   density = "comfy",
@@ -57,7 +55,6 @@ export default function Leaderboard({
   const showMedals = sortKey === "points" && sortDir === "desc";
   const qualifierCount = season?.qualifier_count ?? 2;
   const padY = density === "compact" ? 8 : 12;
-  const showDelta = scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime";
   const showAvg   = scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime";
   const eventLabel = scope.kind === "pod" || scope.kind === "event" ? "Rounds" : "Events";
   const cupLineEnabled = showCupLine && scope.kind === "season" && !!season?.yearly_cup_id;
@@ -65,13 +62,12 @@ export default function Leaderboard({
   // Build grid template
   const cols: string[] = [];
   cols.push("44px");
-  if (showDelta) cols.push("52px");
   cols.push("minmax(0, 1.6fr)");
+  if (showAvg) cols.push("74px");
   cols.push("70px");
   cols.push("96px");
   cols.push("70px");
   if (showAvg) cols.push("78px");
-  cols.push("90px");
   cols.push("24px");
   const colTemplate = cols.join(" ");
 
@@ -104,16 +100,13 @@ export default function Leaderboard({
 
       {/* Column headers */}
       <div style={{ display: "grid", gridTemplateColumns: colTemplate, gap: 8, padding: "8px 16px", alignItems: "center" }}>
-        <SortHead label="#"     k="points"           align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-        {showDelta && <span className="eyebrow">Move</span>}
-        <SortHead label="Player" k="display_name"    align="left"   sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-        <SortHead label="Pts"   k="points"           align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-        <SortHead label="W–L–D" k="match_wins"       align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-        <SortHead label="Win %" k="win_pct"          align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        <SortHead label="#"        k="points"      align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        <SortHead label="Player"   k="display_name" align="left"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        {showAvg && <SortHead label="Trophies" k="trophies" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+        <SortHead label="Pts"      k="points"      align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        <SortHead label="W–L–D"    k="match_wins"  align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        <SortHead label="Win %"    k="win_pct"     align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
         {showAvg && <SortHead label="Avg" k="avg_pts" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
-        <span className="eyebrow" style={{ textAlign: "right" }}>
-          {showSparklines && showAvg ? "Form" : eventLabel}
-        </span>
         <span />
       </div>
 
@@ -182,9 +175,6 @@ export default function Leaderboard({
                   }}>{rank}</span>
                 </div>
 
-                {/* Delta */}
-                {showDelta && <div><RankDelta delta={p.delta} /></div>}
-
                 {/* Player */}
                 <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
                   <PlayerAvatar name={p.display_name} rank={rank} size={density === "compact" ? 32 : 36} />
@@ -201,6 +191,16 @@ export default function Leaderboard({
                     </div>
                   </div>
                 </div>
+
+                {/* Trophies */}
+                {showAvg && (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--accent-300)" style={{ flexShrink: 0 }}>
+                      <path d="M5 4h14l-1 8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4L5 4Zm5 13h4l1 3H9l1-3Z" />
+                    </svg>
+                    <span style={{ fontSize: 13, color: "var(--accent-300)", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{p.trophies}</span>
+                  </div>
+                )}
 
                 {/* Points */}
                 <div style={{ textAlign: "right" }}>
@@ -233,13 +233,6 @@ export default function Leaderboard({
                     {fmtAvg(p.avg_pts)}
                   </div>
                 )}
-
-                {/* Form / Events */}
-                <div style={{ textAlign: "right", display: "flex", justifyContent: "flex-end" }}>
-                  {showSparklines && showAvg && p.per_event_points.filter(v => v != null).length > 1
-                    ? <Sparkline data={p.per_event_points} width={70} height={22} color={rank === 1 ? "var(--accent-400)" : "var(--primary-300)"} />
-                    : <span style={{ fontSize: 13, color: "var(--parchment-muted)", fontVariantNumeric: "tabular-nums" }}>{p.tournaments_played}</span>}
-                </div>
 
                 {/* Expand arrow */}
                 <span style={{ color: "var(--parchment-faint)", fontSize: 12, transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 200ms" }}>▸</span>

@@ -101,12 +101,13 @@ function computeStandings(rows: RawRow[]): StandingEntry[] {
       const r = ((s.player_id + i) % 5);
       return r < 3 ? "W" : r === 3 ? "L" : "D";
     }).join("");
+    const trophies = per_event_points.filter((v): v is number => v !== null && v >= 9).length;
     return {
       player_id: s.player_id,
       display_name: player.display_name,
       match_wins: s.w, match_losses: s.l, match_draws: s.d,
       tournaments_played: s.t,
-      points, win_pct, avg_pts,
+      points, win_pct, avg_pts, trophies,
       prev_rank: s.prev_rank, streak,
       per_event_points, attended: s.attended,
       rank: 0, delta: 0,

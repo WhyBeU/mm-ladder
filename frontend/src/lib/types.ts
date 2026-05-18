@@ -61,6 +61,7 @@ export interface StandingEntry {
   points: number;
   win_pct: number;
   avg_pts: number;
+  trophies: number;
   rank: number;
   delta: number;
   streak: string;
