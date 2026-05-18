@@ -50,8 +50,9 @@ venv = ".venv"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
+pythonpath = ["src", "."]
 asyncio_mode = "auto"
+addopts = "--import-mode=importlib"
 
 [build-system]
 requires = ["poetry-core"]
