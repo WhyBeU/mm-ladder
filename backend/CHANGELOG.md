@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0] - 2026-05-19
+
+### Added
+
+- `migration/` package — one-shot data pipeline to backfill historical tournament results from limitedspoiler.com
+  - `seasons.py` — metadata for 39 seasons (Shadows over Innistrad 2016 → Secrets of Strixhaven 2026) with W/L/D lookup table
+  - `scraper.py` — per-Monday HTTP scraping with ±2-day windows; saves raw JSON under `migration/data/season_{id}/`
+  - `importer.py` — idempotent importer: resets migrated data then re-imports; resolves W/L/D from match points; handles UTF-8/cp1252 encoding and skips corrupted files
+  - `verifier.py` — cross-checks DB totals against limitedspoiler.com per-season (re-fetching each Monday with the same windows as the scraper) and all-time; logs per-player point mismatches and player-count mismatches
+  - `cli.py` — `migrate` entry point with three commands: `scrape`, `migrate`, `verify`; all support `--set-code` to target a single season
+- `is_migrated` column on `Tournament` (Alembic migration `0003`, default `False`)
+
 ## [0.3.1] - 2026-05-03
 
 ### Added
