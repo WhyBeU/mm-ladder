@@ -5,12 +5,14 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from migration.seasons import POINTS_TO_WLD, SEASONS
+from mm_ladder.logger import get_logger
 from mm_ladder.models.player import Player
 from mm_ladder.models.season import Season
 from mm_ladder.models.tournament import Tournament
 from mm_ladder.models.tournament_participant import TournamentParticipant
 
 DATA_DIR = Path(__file__).parent / "data"
+log = get_logger("migration.importer")
 
 
 def wld_for_points(points: int) -> tuple[int, int, int]:
@@ -22,6 +24,7 @@ def ensure_season(session: Session, season_meta: dict) -> Season:
     """Find existing Season by set_code or create it."""
     season = session.query(Season).filter_by(set_code=season_meta["set_code"]).first()
     if season is None:
+        log.debug("creating season", set_code=season_meta["set_code"], name=season_meta["name"])
         season = Season(
             name=season_meta["name"],
             set_code=season_meta["set_code"],
@@ -30,6 +33,8 @@ def ensure_season(session: Session, season_meta: dict) -> Season:
         )
         session.add(season)
         session.flush()
+    else:
+        log.debug("season exists", set_code=season_meta["set_code"])
     return season
 
 
@@ -38,6 +43,7 @@ def ensure_player(session: Session, firstname: str, lastname: str) -> Player:
     display_name = f"{firstname} {lastname}"
     player = session.query(Player).filter_by(display_name=display_name).first()
     if player is None:
+        log.debug("creating player", display_name=display_name)
         player = Player(display_name=display_name)
         session.add(player)
         session.flush()
@@ -70,6 +76,12 @@ def import_tournament(session: Session, season: Season, data: dict) -> Tournamen
         session.add(participant)
 
     session.flush()
+    log.debug(
+        "tournament imported",
+        date=held_on.isoformat(),
+        set_code=season.set_code,
+        players=len(data["players"]),
+    )
     return tournament
 
 
@@ -83,6 +95,8 @@ def reset_migrated(session: Session, db_season_id: int | None = None) -> None:
         query = query.filter(Tournament.season_id == db_season_id)
 
     migrated_ids = [row[0] for row in query.all()]
+    log.info("resetting migrated data", tournaments=len(migrated_ids), scoped_to_season=db_season_id is not None)
+
     if migrated_ids:
         session.query(TournamentParticipant).filter(
             TournamentParticipant.tournament_id.in_(migrated_ids)
@@ -91,9 +105,14 @@ def reset_migrated(session: Session, db_season_id: int | None = None) -> None:
             synchronize_session=False
         )
 
+    orphans_deleted = 0
     for player in session.query(Player).all():
         if not session.query(TournamentParticipant).filter_by(player_id=player.id).first():
             session.delete(player)
+            orphans_deleted += 1
+
+    if orphans_deleted:
+        log.info("removed orphaned players", count=orphans_deleted)
 
     session.flush()
 
@@ -119,20 +138,24 @@ def run_import(session: Session, set_code: str | None = None) -> tuple[int, int,
     for season_meta in seasons_to_process:
         season_dir = DATA_DIR / f"season_{season_meta['id']}"
         if not season_dir.exists():
+            log.debug("no data dir, skipping season", set_code=season_meta["set_code"])
             continue
 
         json_files = sorted(season_dir.glob("*.json"))
         if not json_files:
+            log.debug("no json files, skipping season", set_code=season_meta["set_code"])
             continue
 
+        log.info("importing season", set_code=season_meta["set_code"], name=season_meta["name"], files=len(json_files))
         season = ensure_season(session, season_meta)
         seasons_processed += 1
 
         for json_file in json_files:
-            data = json.loads(json_file.read_text())
+            data = json.loads(json_file.read_text(encoding="utf-8"))
             import_tournament(session, season, data)
             tournaments_imported += 1
 
+    log.info("committing", seasons=seasons_processed, tournaments=tournaments_imported)
     session.commit()
     players_after = session.query(Player).count()
     return seasons_processed, tournaments_imported, players_after - players_before

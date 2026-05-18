@@ -63,6 +63,7 @@ def migrate(db: str, set_code: str | None) -> None:
         log.error("season not found", set_code=set_code)
         raise SystemExit(1)
 
+    log.info("starting migration", db=db, set_code=set_code or "all")
     session = _make_session(db)
     try:
         seasons, tournaments, players = run_import(session, set_code=set_code)
@@ -109,7 +110,9 @@ def verify(db: str) -> None:
 
     site_players: list[dict] = json.loads(match.group(1))
     site_totals = {f"{p['Firstname']} {p['Lastname']}": p["TotalMatchPoints"] for p in site_players}
+    log.info("site data fetched", players=len(site_totals))
 
+    log.info("querying db totals", db=db)
     session = _make_session(db)
     try:
         rows = session.execute(
@@ -124,6 +127,7 @@ def verify(db: str) -> None:
     finally:
         session.close()
 
+    log.info("comparing totals", site_players=len(site_totals), db_players=len(db_totals))
     mismatches = []
     for name, site_pts in site_totals.items():
         db_pts = db_totals.get(name, 0)
