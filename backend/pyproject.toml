@@ -4,7 +4,10 @@ version = "0.3.1"
 description = "Draft league ladder tracker for Magic Mates Monday"
 authors = ["Yoann <yoann.buratti@gmail.com>"]
 readme = "README.md"
-packages = [{include = "mm_ladder", from = "src"}]
+packages = [{include = "mm_ladder", from = "src"}, {include = "migration"}]
+
+[tool.poetry.scripts]
+migrate = "migration.cli:cli"
 
 [tool.poetry.dependencies]
 python = "^3.13"
