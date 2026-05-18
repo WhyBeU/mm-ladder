@@ -26,6 +26,10 @@ tox = "^4.0"
 httpx = "^0.28"
 pytest-asyncio = "^0.24"
 
+[tool.poetry.group.migration.dependencies]
+requests = "^2.31"
+click = "^8.0"
+
 [tool.black]
 line-length = 120
 target-version = ["py313"]
