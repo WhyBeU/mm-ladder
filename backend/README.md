@@ -56,6 +56,52 @@ poetry run alembic revision --autogenerate -m "describe the change"
 
 The database file (`mm_ladder.db`) is gitignored. Each developer runs `alembic upgrade head` locally. Tests use an in-memory SQLite instance via `Base.metadata.create_all` — Alembic is not involved in test setup.
 
+## Data migration (limitedspoiler.com)
+
+Backfills historical tournament results from limitedspoiler.com into the local database.
+All commands must be run from the `backend/` directory and require `poetry install` with the migration group:
+
+```bash
+poetry install  # installs migration extras (click, requests) automatically
+```
+
+The pipeline has three steps — run them in order:
+
+### 1. Scrape
+
+Fetches tournament data from limitedspoiler.com and saves raw JSON files under `migration/data/`.
+
+```bash
+poetry run migrate scrape               # all seasons
+poetry run migrate scrape --set-code tdm  # one season only
+poetry run migrate scrape --force       # re-scrape even if files already exist
+```
+
+Files are saved to `migration/data/season_{id}/YYYY-MM-DD.json` and are gitignored. This step is safe to re-run — existing files are skipped unless `--force` is passed.
+
+### 2. Migrate
+
+Imports scraped JSON files into the database (idempotent — resets and re-imports on each run).
+
+```bash
+# Apply DB schema first if not already done
+poetry run alembic upgrade head
+
+poetry run migrate migrate               # all seasons
+poetry run migrate migrate --set-code tdm --db mm_ladder.db
+```
+
+### 3. Verify
+
+Cross-checks per-season player counts and points totals against limitedspoiler.com, then performs an all-time cross-check. Exits with code 1 if any mismatch is found.
+
+```bash
+poetry run migrate verify               # all seasons
+poetry run migrate verify --set-code tdm
+```
+
+> **Note:** `verify` re-fetches each Monday from the site using the same windows as the scraper, so it makes roughly one HTTP request per tournament. For a full history (~200+ tournaments) this takes a few minutes.
+
 ## Running the API server
 
 All commands must be run from the `backend/` directory.
