@@ -49,3 +49,21 @@ class TestTournament:
         session.add(t)
         with pytest.raises(IntegrityError):
             session.flush()
+
+
+def test_tournament_is_migrated_defaults_false(session) -> None:
+    from mm_ladder.models.season import Season
+    from mm_ladder.models.tournament import Tournament
+    from datetime import date
+
+    season = Season(
+        name="Test", set_code="tst", starts_on=date(2025, 1, 1), ends_on=date(2025, 3, 1)
+    )
+    session.add(season)
+    session.flush()
+
+    t = Tournament(held_on=date(2025, 1, 6), season_id=season.id)
+    session.add(t)
+    session.flush()
+
+    assert t.is_migrated is False

@@ -21,6 +21,7 @@ class Tournament(Base, TimestampMixin):
     name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     has_match_detail: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_migrated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     season: Mapped["Season"] = relationship("Season", back_populates="tournaments")
     participants: Mapped[list["TournamentParticipant"]] = relationship(
