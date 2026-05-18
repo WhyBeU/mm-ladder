@@ -73,11 +73,16 @@ def import_tournament(session: Session, season: Season, data: dict) -> Tournamen
     return tournament
 
 
-def reset_migrated(session: Session) -> None:
-    """Delete all migrated tournaments (and their participants), then orphaned players."""
-    migrated_ids = [
-        row[0] for row in session.query(Tournament.id).filter_by(is_migrated=True).all()
-    ]
+def reset_migrated(session: Session, db_season_id: int | None = None) -> None:
+    """Delete migrated tournaments (and participants), then orphaned players.
+
+    If db_season_id is given, only resets that season's migrated tournaments.
+    """
+    query = session.query(Tournament.id).filter_by(is_migrated=True)
+    if db_season_id is not None:
+        query = query.filter(Tournament.season_id == db_season_id)
+
+    migrated_ids = [row[0] for row in query.all()]
     if migrated_ids:
         session.query(TournamentParticipant).filter(
             TournamentParticipant.tournament_id.in_(migrated_ids)
@@ -93,18 +98,25 @@ def reset_migrated(session: Session) -> None:
     session.flush()
 
 
-def run_import(session: Session) -> tuple[int, int, int]:
+def run_import(session: Session, set_code: str | None = None) -> tuple[int, int, int]:
     """
     Full idempotent import: reset migrated data, then re-import all saved JSON files.
+    If set_code is given (e.g. "tdm"), only processes that season.
     Returns (seasons_processed, tournaments_imported, players_created).
     """
-    reset_migrated(session)
+    seasons_to_process = [s for s in SEASONS if s["set_code"] == set_code] if set_code else SEASONS
+
+    if set_code is not None:
+        db_season = session.query(Season).filter_by(set_code=set_code).first()
+        reset_migrated(session, db_season_id=db_season.id if db_season else None)
+    else:
+        reset_migrated(session)
 
     seasons_processed = 0
     tournaments_imported = 0
     players_before = session.query(Player).count()
 
-    for season_meta in SEASONS:
+    for season_meta in seasons_to_process:
         season_dir = DATA_DIR / f"season_{season_meta['id']}"
         if not season_dir.exists():
             continue
