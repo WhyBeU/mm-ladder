@@ -52,13 +52,12 @@ class TestTournament:
 
 
 def test_tournament_is_migrated_defaults_false(session) -> None:
-    from mm_ladder.models.season import Season
-    from mm_ladder.models.tournament import Tournament
     from datetime import date
 
-    season = Season(
-        name="Test", set_code="tst", starts_on=date(2025, 1, 1), ends_on=date(2025, 3, 1)
-    )
+    from mm_ladder.models.season import Season
+    from mm_ladder.models.tournament import Tournament
+
+    season = Season(name="Test", set_code="tst", starts_on=date(2025, 1, 1), ends_on=date(2025, 3, 1))
     session.add(season)
     session.flush()
 
