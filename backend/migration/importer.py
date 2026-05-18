@@ -151,7 +151,12 @@ def run_import(session: Session, set_code: str | None = None) -> tuple[int, int,
         seasons_processed += 1
 
         for json_file in json_files:
-            data = json.loads(json_file.read_text(encoding="utf-8"))
+            try:
+                text = json_file.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                log.warning("falling back to cp1252 encoding", file=json_file.name)
+                text = json_file.read_text(encoding="cp1252")
+            data = json.loads(text)
             import_tournament(session, season, data)
             tournaments_imported += 1
 
