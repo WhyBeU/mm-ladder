@@ -3,9 +3,12 @@ import re
 import time
 from datetime import date, timedelta
 from pathlib import Path
-from migration.seasons import get_mondays
 
 import requests
+from migration.seasons import get_mondays
+from mm_ladder.logger import get_logger
+
+log = get_logger("migration.scraper")
 
 BASE_URL = "https://limitedspoiler.com/Team"
 LEAGUE_ID = 8
@@ -72,12 +75,17 @@ def scrape_season(season: dict, force: bool = False) -> int:
     season_dir = DATA_DIR / f"season_{season_id}"
     season_dir.mkdir(parents=True, exist_ok=True)
 
+    mondays = get_mondays(starts_on, ends_on)
+    log.info("scraping season mondays", season_id=season_id, total=len(mondays))
+
     saved = 0
-    for monday in get_mondays(starts_on, ends_on):
+    for monday in mondays:
         file_path = season_dir / f"{monday.isoformat()}.json"
         if file_path.exists() and not force:
+            log.debug("skipping (already scraped)", date=monday.isoformat())
             continue
 
+        log.debug("fetching", date=monday.isoformat())
         players = scrape_monday(monday)
         if players:
             payload = {
@@ -85,8 +93,11 @@ def scrape_season(season: dict, force: bool = False) -> int:
                 "tournament_date": monday.isoformat(),
                 "players": players,
             }
-            file_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False))
+            file_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
             saved += 1
+            log.info("tournament saved", date=monday.isoformat(), players=len(players))
+        else:
+            log.debug("no tournament found", date=monday.isoformat())
 
         time.sleep(REQUEST_DELAY)
 
