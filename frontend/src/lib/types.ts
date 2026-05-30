@@ -25,7 +25,7 @@ export interface Season {
   keyrune: string;
   starts_on: string;
   ends_on: string;
-  yearly_cup_id: number;
+  yearly_cup_id: number | null;
   qualifier_count: number;
   is_current: boolean;
 }

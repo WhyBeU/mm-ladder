@@ -29,7 +29,17 @@ function readSavedTheme(): ManaColor {
 }
 
 export function ManaThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<ManaColor>(readSavedTheme);
+  // Always start with DEFAULT so server and client initial renders match.
+  // Read localStorage after hydration to avoid the SSR mismatch.
+  const [theme, setThemeState] = useState<ManaColor>(DEFAULT);
+
+  // Read localStorage after hydration to avoid SSR mismatch. Intentional
+  // setState-in-effect: standard pattern for post-hydration localStorage sync.
+  useEffect(() => {
+    const saved = readSavedTheme();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (saved !== DEFAULT) setThemeState(saved);
+  }, []);
 
   // Apply to <html> + persist
   useEffect(() => {

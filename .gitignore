@@ -6,6 +6,10 @@ __pycache__
 .coverage
 .venv
 
+# Brainstorm session files
+.superpowers/
+docs/superpowers/
+
 # Node / Next.js
 node_modules/
 .next/
