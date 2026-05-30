@@ -1,20 +1,118 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import type { Scope, StandingEntry, SeasonStats, MMLEvent } from "@/lib/types";
+import { useQuery } from "@tanstack/react-query";
+import type { Scope, StandingEntry, SeasonStats, MMLEvent, YearlyCup, Season } from "@/lib/types";
+import type { ApiParticipant, ApiPlayer, ApiTournament } from "@/lib/api";
 import {
-  yearlyCups, seasons, events, players,
-  standings as seasonStandings, allTimeStandings, cupStandings,
-  eventStandings, podStandings,
-} from "@/lib/mockData";
+  fetchYearlyCups,
+  fetchSeasons,
+  fetchTournaments,
+  fetchPlayers,
+  fetchTournamentParticipants,
+} from "@/lib/api";
 import NavSidebar from "@/components/NavSidebar";
 import ManaSwitcher from "@/components/ManaSwitcher";
 import Leaderboard from "@/components/Leaderboard";
 import { SeasonHero, StatsStrip } from "@/components/SeasonHero";
 import { Podium } from "@/components/Podium";
 
+// ---------- Data adapters ----------
+
+function toYearlyCup(c: { id: number; year: number; name: string; starts_on: string; ends_on: string }, today: string): YearlyCup {
+  return { ...c, is_current: c.starts_on <= today && today <= c.ends_on };
+}
+
+function toSeason(s: { id: number; name: string; set_code: string; starts_on: string; ends_on: string; yearly_cup_id: number | null; qualifier_count: number }, today: string): Season {
+  return {
+    ...s,
+    keyrune: s.set_code.toLowerCase(),
+    is_current: s.starts_on <= today && today <= s.ends_on,
+  };
+}
+
+function tournamentsToEvents(tournaments: ApiTournament[]): MMLEvent[] {
+  const sorted = [...tournaments].sort((a, b) => a.held_on.localeCompare(b.held_on) || a.id - b.id);
+  const groups = new Map<string, ApiTournament[]>();
+  for (const t of sorted) {
+    const key = `${t.season_id}|${t.held_on}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(t);
+  }
+  let num = 0;
+  const result: MMLEvent[] = [];
+  for (const [key, group] of groups) {
+    const [seasonIdStr, heldOn] = key.split("|");
+    num++;
+    result.push({
+      id: `e${num}`,
+      season_id: parseInt(seasonIdStr),
+      held_on: heldOn,
+      number: num,
+      pods: group.map(t => ({
+        id: t.id,
+        name: t.name ?? `MMM #${num}`,
+        participant_count: 0,
+        has_match_detail: t.has_match_detail,
+      })),
+    });
+  }
+  return result;
+}
+
+function buildStandings(
+  participants: ApiParticipant[],
+  players: ApiPlayer[],
+  scopeTournamentIds: number[],
+): StandingEntry[] {
+  const playerMap = new Map(
+    players.filter(p => !p.is_hidden).map(p => [p.id, p]),
+  );
+  const byPlayer = new Map<number, ApiParticipant[]>();
+  for (const p of participants) {
+    if (!playerMap.has(p.player_id)) continue;
+    if (!byPlayer.has(p.player_id)) byPlayer.set(p.player_id, []);
+    byPlayer.get(p.player_id)!.push(p);
+  }
+  const entries: StandingEntry[] = Array.from(byPlayer.entries()).map(([playerId, parts]) => {
+    const player = playerMap.get(playerId)!;
+    const wins = parts.reduce((s, p) => s + p.match_wins, 0);
+    const losses = parts.reduce((s, p) => s + p.match_losses, 0);
+    const draws = parts.reduce((s, p) => s + p.match_draws, 0);
+    const total = wins + losses + draws;
+    const points = parts.reduce((s, p) => s + p.points, 0);
+    const byTId = new Map(parts.map(p => [p.tournament_id, p]));
+    return {
+      player_id: playerId,
+      display_name: player.display_name,
+      match_wins: wins,
+      match_losses: losses,
+      match_draws: draws,
+      tournaments_played: parts.length,
+      points,
+      win_pct: total > 0 ? wins / total : 0,
+      avg_pts: parts.length > 0 ? points / parts.length : 0,
+      trophies: 0,
+      rank: 0,
+      delta: 0,
+      streak: "",
+      per_event_points: scopeTournamentIds.map(tid => byTId.get(tid)?.points ?? null),
+      attended: scopeTournamentIds.map(tid => (byTId.has(tid) ? 1 : 0)) as (0 | 1)[],
+    };
+  });
+  return entries
+    .sort((a, b) => b.points - a.points || b.win_pct - a.win_pct)
+    .map((e, i) => ({ ...e, rank: i + 1 }));
+}
+
 // ---------- Scope breadcrumb ----------
-function ScopeBreadcrumb({ scope, onPart }: { scope: Scope; onPart: (s: Scope) => void }) {
+function ScopeBreadcrumb({ scope, onPart, yearlyCups, seasons, events }: {
+  scope: Scope;
+  onPart: (s: Scope) => void;
+  yearlyCups: YearlyCup[];
+  seasons: Season[];
+  events: MMLEvent[];
+}) {
   const parts: { label: string; onClick: () => void }[] = [];
   parts.push({ label: "All-time", onClick: () => onPart({ kind: "alltime" }) });
   if (scope.cupId != null) {
@@ -23,7 +121,7 @@ function ScopeBreadcrumb({ scope, onPart }: { scope: Scope; onPart: (s: Scope) =
   }
   if (scope.seasonId != null) {
     const s = seasons.find(x => x.id === scope.seasonId);
-    if (s) parts.push({ label: s.name, onClick: () => onPart({ kind: "season", cupId: s.yearly_cup_id, seasonId: s.id }) });
+    if (s) parts.push({ label: s.name, onClick: () => onPart({ kind: "season", cupId: s.yearly_cup_id ?? undefined, seasonId: s.id }) });
   }
   if (scope.eventId != null) {
     const e = events.find(x => x.id === scope.eventId);
@@ -51,16 +149,16 @@ function ScopeBreadcrumb({ scope, onPart }: { scope: Scope; onPart: (s: Scope) =
 
 // ---------- Helpers ----------
 function computeStats(scopedEvents: MMLEvent[], scopeStandings: StandingEntry[]): SeasonStats {
-  const totalParticipants = scopedEvents.reduce((s, e) => s + e.pods.reduce((a, p) => a + p.participant_count, 0), 0);
-  const totalMatches = scopeStandings.reduce((s, p) => s + p.match_wins + p.match_losses + p.match_draws, 0) / 2;
   const podCount = scopedEvents.reduce((s, e) => s + e.pods.length, 0);
+  const totalMatches = scopeStandings.reduce((s, p) => s + p.match_wins + p.match_losses + p.match_draws, 0) / 2;
+  const totalAttendances = scopeStandings.reduce((s, p) => s + p.tournaments_played, 0);
   return {
     events: scopedEvents.length,
     pods: podCount,
     players: scopeStandings.length,
     matches: Math.round(totalMatches),
     matchesPerEvent: podCount ? totalMatches / podCount : 0,
-    avgAttendance: podCount ? totalParticipants / podCount : 0,
+    avgAttendance: podCount ? totalAttendances / podCount : 0,
   };
 }
 
@@ -74,7 +172,9 @@ function relativeTime(date: Date): string {
 
 // ---------- Page ----------
 export default function LeaderboardPage() {
-  const [scope, setScope] = useState<Scope>({ kind: "season", cupId: 1, seasonId: 3 });
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  // null = user hasn't navigated yet; derive default from loaded seasons reactively
+  const [scopeOverride, setScopeOverride] = useState<Scope | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [lastUpdated] = useState(new Date());
   const [, setTick] = useState(0);
@@ -84,30 +184,87 @@ export default function LeaderboardPage() {
     return () => clearInterval(id);
   }, []);
 
-  // Resolve context
-  const cup    = scope.cupId    ? yearlyCups.find(y => y.id === scope.cupId)   ?? null : null;
-  const season = scope.seasonId ? seasons.find(s => s.id === scope.seasonId)   ?? null : null;
-  const event  = scope.eventId  ? events.find(e => e.id === scope.eventId)     ?? null : null;
+  // Fetch navigation data
+  const { data: apiYearlyCups = [] } = useQuery({ queryKey: ["yearly-cups"], queryFn: fetchYearlyCups });
+  const { data: apiSeasons = [] } = useQuery({ queryKey: ["seasons"], queryFn: fetchSeasons });
+  const { data: apiTournaments = [] } = useQuery({ queryKey: ["tournaments"], queryFn: fetchTournaments });
+  const { data: apiPlayers = [] } = useQuery({ queryKey: ["players"], queryFn: fetchPlayers });
 
-  // Standings for scope
-  const scopeStandings = useMemo((): StandingEntry[] => {
-    if (scope.kind === "alltime") return allTimeStandings;
-    if (scope.kind === "cup")     return cupStandings;
-    if (scope.kind === "season")  return seasonStandings;
-    if (scope.kind === "event" && scope.eventId)  return eventStandings(scope.eventId);
-    if (scope.kind === "pod"   && scope.podId != null) return podStandings(scope.podId);
-    return [];
-  }, [scope]);
+  // Adapt to frontend types
+  const yearlyCups = useMemo(() => apiYearlyCups.map(c => toYearlyCup(c, today)), [apiYearlyCups, today]);
+  const seasons = useMemo(() => apiSeasons.map(s => toSeason(s, today)), [apiSeasons, today]);
+  const events = useMemo(() => tournamentsToEvents(apiTournaments), [apiTournaments]);
 
-  // Scoped events
+  // Derive default scope from loaded seasons (current season, or most recent)
+  const defaultScope = useMemo((): Scope => {
+    if (seasons.length === 0) return { kind: "season" };
+    const current =
+      seasons.find(s => s.starts_on <= today && today <= s.ends_on) ??
+      [...seasons].sort((a, b) => b.ends_on.localeCompare(a.ends_on))[0];
+    return current
+      ? { kind: "season", cupId: current.yearly_cup_id ?? undefined, seasonId: current.id }
+      : { kind: "season" };
+  }, [seasons, today]);
+
+  const scope = scopeOverride ?? defaultScope;
+  const setScope = (s: Scope) => setScopeOverride(s);
+
+  // Determine which tournament IDs fall in the current scope
+  const scopeTournamentIds = useMemo((): number[] => {
+    switch (scope.kind) {
+      case "alltime":
+        return apiTournaments.map(t => t.id);
+      case "cup": {
+        if (scope.cupId == null) return [];
+        const cupSeasonIds = apiSeasons.filter(s => s.yearly_cup_id === scope.cupId).map(s => s.id);
+        return apiTournaments.filter(t => cupSeasonIds.includes(t.season_id)).map(t => t.id);
+      }
+      case "season":
+        return scope.seasonId != null
+          ? apiTournaments.filter(t => t.season_id === scope.seasonId).map(t => t.id)
+          : [];
+      case "event": {
+        const event = events.find(e => e.id === scope.eventId);
+        return event?.pods.map(p => p.id) ?? [];
+      }
+      case "pod":
+        return scope.podId != null ? [scope.podId] : [];
+      default:
+        return [];
+    }
+  }, [scope, apiTournaments, apiSeasons, events]);
+
+  // Fetch participants for all in-scope tournaments in one query
+  const scopeKey = scopeTournamentIds.slice().sort((a, b) => a - b).join(",");
+  const { data: rawParticipants = [] } = useQuery({
+    queryKey: ["participants", scopeKey],
+    queryFn: () =>
+      Promise.all(scopeTournamentIds.map(fetchTournamentParticipants)).then(r => r.flat()),
+    enabled: scopeTournamentIds.length > 0,
+  });
+
+  // Compute standings from real data
+  const scopeStandings = useMemo(
+    () => buildStandings(rawParticipants, apiPlayers, scopeTournamentIds),
+    [rawParticipants, apiPlayers, scopeTournamentIds],
+  );
+
+  // Resolve context objects
+  const cup    = scope.cupId    != null ? yearlyCups.find(y => y.id === scope.cupId)  ?? null : null;
+  const season = scope.seasonId != null ? seasons.find(s => s.id === scope.seasonId)  ?? null : null;
+  const event  = scope.eventId  != null ? events.find(e => e.id === scope.eventId)    ?? null : null;
+
+  // Scoped events for stats
   const scopedEvents = useMemo((): MMLEvent[] => {
-    if (scope.kind === "alltime") return events;
-    if (scope.kind === "cup")     return events.filter(e => seasons.find(s => s.id === e.season_id)?.yearly_cup_id === scope.cupId);
-    if (scope.kind === "season")  return events.filter(e => e.season_id === scope.seasonId);
-    if (scope.kind === "event" && event) return [event];
-    if (scope.kind === "pod"   && event) return [event];
-    return [];
-  }, [scope, event]);
+    switch (scope.kind) {
+      case "alltime":  return events;
+      case "cup":      return events.filter(e => seasons.find(s => s.id === e.season_id)?.yearly_cup_id === scope.cupId);
+      case "season":   return events.filter(e => e.season_id === scope.seasonId);
+      case "event":    return event ? [event] : [];
+      case "pod":      return event ? [event] : [];
+      default:         return [];
+    }
+  }, [scope, events, seasons, event]);
 
   const stats = useMemo(() => computeStats(scopedEvents, scopeStandings), [scopedEvents, scopeStandings]);
   const leader = scopeStandings[0];
@@ -174,7 +331,7 @@ export default function LeaderboardPage() {
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
         }} className="hidden md:flex">
           <div style={{ minWidth: 0, flex: 1 }}>
-            <ScopeBreadcrumb scope={scope} onPart={setScope} />
+            <ScopeBreadcrumb scope={scope} onPart={setScope} yearlyCups={yearlyCups} seasons={seasons} events={events} />
             <h2 className="font-display" style={{ margin: "2px 0 0", fontSize: 22, color: "var(--parchment)", letterSpacing: "0.02em" }}>Magic Mates Draft Ladder</h2>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
@@ -201,7 +358,7 @@ export default function LeaderboardPage() {
             stats={stats}
             eventsCount={scopedEvents.length}
           />
-          <StatsStrip stats={stats} totalPlayers={players.length} />
+          <StatsStrip stats={stats} totalPlayers={apiPlayers.filter(p => !p.is_hidden).length} />
           {showPodium && <Podium standings={scopeStandings} />}
           <Leaderboard
             standings={scopeStandings}

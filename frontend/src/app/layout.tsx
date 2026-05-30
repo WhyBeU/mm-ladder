@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Cinzel, Inter } from "next/font/google";
 import { ManaThemeProvider } from "@/context/ManaThemeContext";
+import QueryProvider from "@/providers/QueryProvider";
 import "./globals.css";
 
 const cinzel = Cinzel({
@@ -37,7 +38,9 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <ManaThemeProvider>{children}</ManaThemeProvider>
+        <QueryProvider>
+          <ManaThemeProvider>{children}</ManaThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );
