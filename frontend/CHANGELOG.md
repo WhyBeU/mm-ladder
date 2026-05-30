@@ -1,5 +1,23 @@
 # Changelog
 
+## [Unreleased]
+
+## [0.3.0] — 2026-05-30 — Frontend: Live API Data
+
+### Added
+
+- **TanStack Query** (`@tanstack/react-query` + devtools) — data fetching, caching, and cache-inspection devtools (floating button, bottom-right).
+- **`api.ts`** — typed fetch functions for all backend endpoints: `fetchYearlyCups`, `fetchSeasons`, `fetchTournaments`, `fetchPlayers`, `fetchTournamentParticipants`.
+- **`QueryProvider`** (`src/providers/QueryProvider.tsx`) — wraps the app with `QueryClientProvider`; 1-minute stale time, no window-focus refetch.
+
+### Changed
+
+- **`LeaderboardPage`** — all mock data replaced with live API calls. Navigation data (cups, seasons, tournaments) fetched on mount. Participants fetched in parallel for every tournament in the current scope; standings aggregated client-side from real data. Current season auto-detected from `starts_on`/`ends_on` date ranges (reactive derivation, no `useEffect` setState).
+- **`ManaThemeContext`** — fixed SSR hydration mismatch: initialise with default theme, read `localStorage` after mount.
+- **`Season.yearly_cup_id`** type widened to `number | null` to match the backend schema.
+- **`layout.tsx`** — wrapped with `QueryProvider`.
+- **README** — added curl smoke-test commands, DevTools verification steps, correct uvicorn command (`mm_ladder.app:app`).
+
 ## [0.2.0] — 2026-05-03 — Frontend: Design System Implementation
 
 ### Added (frontend)
