@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 import requests
+
 from migration.seasons import get_mondays
 from mm_ladder.logger import get_logger
 
@@ -66,7 +67,6 @@ def scrape_season(season: dict, force: bool = False) -> int:
     Scrape all Mondays for a season. Saves non-empty results to data/season_{id}/YYYY-MM-DD.json.
     Returns count of saved tournament files.
     """
-
 
     season_id = season["id"]
     starts_on = date.fromisoformat(season["starts_on"])

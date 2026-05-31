@@ -77,7 +77,8 @@ def verify_season(session: Session, set_code: str, name: str) -> int:
     site_totals = collect_season_site_totals(season_meta)
 
     rows = session.execute(
-        text("""
+        text(
+            """
             SELECT p.display_name, SUM(tp.points) as season_points
             FROM player p
             JOIN tournament_participant tp ON tp.player_id = p.id
@@ -85,7 +86,8 @@ def verify_season(session: Session, set_code: str, name: str) -> int:
             JOIN season s ON t.season_id = s.id
             WHERE s.set_code = :set_code AND t.is_migrated = 1
             GROUP BY p.id
-        """),
+        """
+        ),
         {"set_code": set_code},
     ).fetchall()
     db_totals = {r[0]: r[1] for r in rows}
@@ -155,20 +157,20 @@ def run_verify(session: Session, set_code: str | None = None) -> tuple[int, int]
         return len(migrated_seasons), -1
 
     rows = session.execute(
-        text("""
+        text(
+            """
             SELECT p.display_name, SUM(tp.points) as total_points
             FROM player p
             JOIN tournament_participant tp ON tp.player_id = p.id
             GROUP BY p.id
-        """)
+        """
+        )
     ).fetchall()
     db_all = {r[0]: r[1] for r in rows}
 
     log.info("comparing all-time totals", site_players=len(site_all), db_players=len(db_all))
     alltime_mismatches = [
-        (name, db_all.get(name, 0), pts)
-        for name, pts in site_all.items()
-        if db_all.get(name, 0) != pts
+        (name, db_all.get(name, 0), pts) for name, pts in site_all.items() if db_all.get(name, 0) != pts
     ]
     if alltime_mismatches:
         for name, db_pts, site_pts in alltime_mismatches:

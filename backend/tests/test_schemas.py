@@ -89,11 +89,15 @@ class TestSeasonSchemas:
                 "ends_on": date(2024, 2, 8),
                 "yearly_cup_id": None,
                 "qualifier_count": 2,
+                "event_count": 12,
+                "comp_avg_n": 8,
                 "created_at": _NOW,
                 "updated_at": _NOW,
             }
         )
         assert s.yearly_cup_id is None
+        assert s.event_count == 12
+        assert s.comp_avg_n == 8
 
 
 class TestTournamentSchemas:

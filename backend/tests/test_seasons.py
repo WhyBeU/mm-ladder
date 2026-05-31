@@ -26,7 +26,7 @@ async def test_update_season(client: AsyncClient) -> None:
     resp = await client.post("/seasons/", json=_SEASON)
     season_id = resp.json()["id"]
 
-    updated = {**_SEASON, "name": "Updated Season", "qualifier_count": 2}
+    updated = {**_SEASON, "name": "Updated Season", "qualifier_count": 2, "event_count": 12}
     resp = await client.put(f"/seasons/{season_id}", json=updated)
     assert resp.status_code == 200
     assert resp.json()["name"] == "Updated Season"
@@ -55,3 +55,33 @@ async def test_delete_season(client: AsyncClient) -> None:
 async def test_get_missing_season(client: AsyncClient) -> None:
     resp = await client.get("/seasons/99999")
     assert resp.status_code == 404
+
+
+async def test_season_includes_event_count(client: AsyncClient) -> None:
+    resp = await client.post("/seasons/", json=_SEASON)
+    assert resp.status_code == 201
+    data = resp.json()
+    assert "event_count" in data
+    assert data["event_count"] == 12  # default
+
+
+async def test_create_season_with_custom_event_count(client: AsyncClient) -> None:
+    resp = await client.post("/seasons/", json={**_SEASON, "event_count": 8})
+    assert resp.status_code == 201
+    assert resp.json()["event_count"] == 8
+
+
+async def test_patch_season_event_count(client: AsyncClient) -> None:
+    resp = await client.post("/seasons/", json=_SEASON)
+    season_id = resp.json()["id"]
+    resp = await client.patch(f"/seasons/{season_id}", json={"event_count": 10})
+    assert resp.status_code == 200
+    assert resp.json()["event_count"] == 10
+
+
+async def test_season_includes_comp_avg_n(client: AsyncClient) -> None:
+    resp = await client.post("/seasons/", json={**_SEASON, "event_count": 12})
+    assert resp.status_code == 201
+    data = resp.json()
+    assert "comp_avg_n" in data
+    assert data["comp_avg_n"] == 8  # ceil(12 * 0.66) = 8

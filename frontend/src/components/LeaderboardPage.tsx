@@ -3,19 +3,21 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Scope, StandingEntry, SeasonStats, MMLEvent, YearlyCup, Season } from "@/lib/types";
-import type { ApiParticipant, ApiPlayer, ApiTournament } from "@/lib/api";
+import type { ApiParticipant, ApiPlayer, ApiTournament, ApiSeasonStanding } from "@/lib/api";
 import {
   fetchYearlyCups,
   fetchSeasons,
   fetchTournaments,
   fetchPlayers,
   fetchTournamentParticipants,
+  fetchSeasonStandings,
 } from "@/lib/api";
-import NavSidebar from "@/components/NavSidebar";
+import Image from "next/image";
 import ManaSwitcher from "@/components/ManaSwitcher";
 import Leaderboard from "@/components/Leaderboard";
 import { SeasonHero, StatsStrip } from "@/components/SeasonHero";
 import { Podium } from "@/components/Podium";
+import ScopeBar from "@/components/ScopeBar";
 
 // ---------- Data adapters ----------
 
@@ -23,7 +25,7 @@ function toYearlyCup(c: { id: number; year: number; name: string; starts_on: str
   return { ...c, is_current: c.starts_on <= today && today <= c.ends_on };
 }
 
-function toSeason(s: { id: number; name: string; set_code: string; starts_on: string; ends_on: string; yearly_cup_id: number | null; qualifier_count: number }, today: string): Season {
+function toSeason(s: { id: number; name: string; set_code: string; starts_on: string; ends_on: string; yearly_cup_id: number | null; qualifier_count: number; event_count: number; comp_avg_n: number }, today: string): Season {
   return {
     ...s,
     keyrune: s.set_code.toLowerCase(),
@@ -64,6 +66,7 @@ function buildStandings(
   participants: ApiParticipant[],
   players: ApiPlayer[],
   scopeTournamentIds: number[],
+  scopeKind: string = "alltime",
 ): StandingEntry[] {
   const playerMap = new Map(
     players.filter(p => !p.is_hidden).map(p => [p.id, p]),
@@ -92,7 +95,7 @@ function buildStandings(
       points,
       win_pct: total > 0 ? wins / total : 0,
       avg_pts: parts.length > 0 ? points / parts.length : 0,
-      trophies: 0,
+      trophies: parts.filter(p => p.points === 9).length,
       rank: 0,
       delta: 0,
       streak: "",
@@ -100,9 +103,32 @@ function buildStandings(
       attended: scopeTournamentIds.map(tid => (byTId.has(tid) ? 1 : 0)) as (0 | 1)[],
     };
   });
-  return entries
-    .sort((a, b) => b.points - a.points || b.win_pct - a.win_pct)
-    .map((e, i) => ({ ...e, rank: i + 1 }));
+  const sorted = scopeKind === "cup"
+    ? entries.sort((a, b) => b.trophies - a.trophies || b.points - a.points)
+    : entries.sort((a, b) => b.points - a.points || b.win_pct - a.win_pct);
+  return sorted.map((e, i) => ({ ...e, rank: i + 1 }));
+}
+
+function apiSeasonStandingToEntry(s: ApiSeasonStanding): StandingEntry {
+  return {
+    player_id: s.player_id,
+    display_name: s.display_name,
+    match_wins: s.match_wins,
+    match_losses: s.match_losses,
+    match_draws: s.match_draws,
+    tournaments_played: s.tournaments_played,
+    points: s.points,
+    win_pct: s.win_pct,
+    avg_pts: s.avg_pts,
+    trophies: s.trophies,
+    rank: s.rank,
+    delta: 0,
+    streak: "",
+    per_event_points: s.per_event_scores,
+    attended: s.per_event_scores.map(v => (v != null ? 1 : 0)) as (0 | 1)[],
+    comp_avg: s.comp_avg,
+    comp_avg_n: s.comp_avg_n,
+  };
 }
 
 // ---------- Scope breadcrumb ----------
@@ -175,7 +201,6 @@ export default function LeaderboardPage() {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   // null = user hasn't navigated yet; derive default from loaded seasons reactively
   const [scopeOverride, setScopeOverride] = useState<Scope | null>(null);
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [lastUpdated] = useState(new Date());
   const [, setTick] = useState(0);
 
@@ -234,20 +259,29 @@ export default function LeaderboardPage() {
     }
   }, [scope, apiTournaments, apiSeasons, events]);
 
-  // Fetch participants for all in-scope tournaments in one query
+  // Season standings — server-computed (includes comp_avg, trophies)
+  const { data: apiSeasonStandings } = useQuery({
+    queryKey: ["season-standings", scope.seasonId],
+    queryFn: () => fetchSeasonStandings(scope.seasonId!),
+    enabled: scope.kind === "season" && scope.seasonId != null,
+  });
+
+  // Fetch participants for non-season scopes only
   const scopeKey = scopeTournamentIds.slice().sort((a, b) => a - b).join(",");
   const { data: rawParticipants = [] } = useQuery({
     queryKey: ["participants", scopeKey],
     queryFn: () =>
       Promise.all(scopeTournamentIds.map(fetchTournamentParticipants)).then(r => r.flat()),
-    enabled: scopeTournamentIds.length > 0,
+    enabled: scopeTournamentIds.length > 0 && scope.kind !== "season",
   });
 
-  // Compute standings from real data
-  const scopeStandings = useMemo(
-    () => buildStandings(rawParticipants, apiPlayers, scopeTournamentIds),
-    [rawParticipants, apiPlayers, scopeTournamentIds],
-  );
+  // Compute standings: API-backed for season scope, client-side otherwise
+  const scopeStandings = useMemo(() => {
+    if (scope.kind === "season" && apiSeasonStandings) {
+      return apiSeasonStandings.map(apiSeasonStandingToEntry);
+    }
+    return buildStandings(rawParticipants, apiPlayers, scopeTournamentIds, scope.kind);
+  }, [scope, apiSeasonStandings, rawParticipants, apiPlayers, scopeTournamentIds]);
 
   // Resolve context objects
   const cup    = scope.cupId    != null ? yearlyCups.find(y => y.id === scope.cupId)  ?? null : null;
@@ -277,75 +311,48 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", overflowX: "hidden" }}>
-
-      {/* Desktop sidebar */}
-      <div className="hidden md:block" style={{ flexShrink: 0, position: "sticky", top: 0, height: "100vh" }}>
-        <NavSidebar scope={scope} setScope={setScope} yearlyCups={yearlyCups} seasons={seasons} events={events} />
-      </div>
-
-      {/* Mobile drawer */}
-      {drawerOpen && (
-        <>
-          <div
-            className="md:hidden"
-            onClick={() => setDrawerOpen(false)}
-            style={{ position: "fixed", inset: 0, background: "rgba(11,18,32,0.7)", backdropFilter: "blur(4px)", zIndex: 40 }}
-          />
-          <div className="md:hidden" style={{ position: "fixed", inset: "0 auto 0 0", width: 296, zIndex: 50, boxShadow: "0 24px 64px -8px rgba(0,0,0,0.7)" }}>
-            <NavSidebar scope={scope} setScope={(s) => { setScope(s); setDrawerOpen(false); }} yearlyCups={yearlyCups} seasons={seasons} events={events} onClose={() => setDrawerOpen(false)} />
-          </div>
-        </>
-      )}
+    <div style={{ minHeight: "100vh", overflowX: "hidden" }}>
 
       {/* Main column */}
-      <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", flexDirection: "column" }}>
 
-        {/* Mobile top bar */}
-        <div className="md:hidden" style={{
-          position: "sticky", top: 0, zIndex: 30,
-          background: "color-mix(in srgb, var(--ink-950) 85%, transparent)",
-          backdropFilter: "blur(8px)",
-          borderBottom: "1px solid var(--ink-700)",
-          padding: "12px 16px",
-          display: "flex", alignItems: "center", gap: 12,
-        }}>
-          <button onClick={() => setDrawerOpen(true)} style={{ background: "none", border: "none", color: "var(--parchment-muted)", cursor: "pointer", padding: 4, display: "flex" }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
-          </button>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="font-display" style={{ fontSize: 16, color: "var(--parchment)", lineHeight: 1.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-              {season?.name ?? cup?.name ?? "MM Ladder"}
-            </div>
-          </div>
-          <ManaSwitcher size="sm" />
-        </div>
-
-        {/* Desktop sticky header */}
+        {/* Sticky header */}
         <header style={{
           position: "sticky", top: 0, zIndex: 20,
           background: "color-mix(in srgb, var(--ink-950) 88%, transparent)",
           backdropFilter: "blur(8px)",
           borderBottom: "1px solid var(--ink-700)",
-          padding: "14px 32px",
+          padding: "12px 32px",
           display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
-        }} className="hidden md:flex">
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <ScopeBreadcrumb scope={scope} onPart={setScope} yearlyCups={yearlyCups} seasons={seasons} events={events} />
-            <h2 className="font-display" style={{ margin: "2px 0 0", fontSize: 22, color: "var(--parchment)", letterSpacing: "0.02em" }}>Magic Mates Draft Ladder</h2>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
-            <ManaSwitcher />
-            <button style={{
-              display: "inline-flex", alignItems: "center", gap: 6,
-              background: "transparent", border: "none", color: "var(--parchment-muted)",
-              fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+            {/* Logo */}
+            <div style={{
+              width: 40, height: 40, borderRadius: 9, flexShrink: 0,
+              background: "var(--parchment)", padding: 3,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 0 0 1px color-mix(in srgb, var(--accent-400) 40%, transparent), var(--shadow-gold-glow)",
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 4v5h-5" /></svg>
-              Refresh
-            </button>
+              <Image
+                src="/magic-mates-logo.png"
+                alt="Magic Mates"
+                width={34}
+                height={34}
+                style={{ objectFit: "contain" }}
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            </div>
+            {/* Title + breadcrumb */}
+            <div style={{ minWidth: 0 }}>
+              <ScopeBreadcrumb scope={scope} onPart={setScope} yearlyCups={yearlyCups} seasons={seasons} events={events} />
+              <h2 className="font-display" style={{ margin: "1px 0 0", fontSize: 20, color: "var(--parchment)", letterSpacing: "0.02em" }}>Draft Ladder</h2>
+            </div>
           </div>
+          <ManaSwitcher />
         </header>
+
+        {/* Scope bar */}
+        <ScopeBar scope={scope} setScope={setScope} yearlyCups={yearlyCups} seasons={seasons} events={events} />
 
         {/* Main content */}
         <main style={{ flex: 1, padding: "28px 32px 32px", maxWidth: 1320, width: "100%", margin: "0 auto" }}>
@@ -357,6 +364,7 @@ export default function LeaderboardPage() {
             leader={leader}
             stats={stats}
             eventsCount={scopedEvents.length}
+            compAvgN={scope.kind === "season" ? apiSeasonStandings?.[0]?.comp_avg_n : undefined}
           />
           <StatsStrip stats={stats} totalPlayers={apiPlayers.filter(p => !p.is_hidden).length} />
           {showPodium && <Podium standings={scopeStandings} />}
@@ -365,6 +373,7 @@ export default function LeaderboardPage() {
             scope={scope}
             season={season}
             scopedEvents={scopedEvents}
+            defaultSortKey={scope.kind === "cup" ? "trophies" : "points"}
           />
         </main>
 

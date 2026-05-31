@@ -1,4 +1,5 @@
 from datetime import date
+from math import ceil
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Date, ForeignKey, Integer, String, UniqueConstraint
@@ -24,6 +25,11 @@ class Season(Base, TimestampMixin):
         ForeignKey("yearly_cup.id", name="fk_season_yearly_cup"), nullable=True
     )
     qualifier_count: Mapped[int] = mapped_column(Integer, default=2, nullable=False)
+    event_count: Mapped[int] = mapped_column(Integer, default=12, nullable=False)
 
     yearly_cup: Mapped["YearlyCup | None"] = relationship("YearlyCup", back_populates="seasons")
     tournaments: Mapped[list["Tournament"]] = relationship("Tournament", back_populates="season")
+
+    @property
+    def comp_avg_n(self) -> int:
+        return ceil(self.event_count * 0.66)

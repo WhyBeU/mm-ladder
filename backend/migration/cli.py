@@ -73,7 +73,7 @@ def migrate(db: str, set_code: str | None) -> None:
     except Exception as e:
         session.rollback()
         log.error("migration failed", error=str(e))
-        raise SystemExit(1)
+        raise SystemExit(1) from None
     finally:
         session.close()
 

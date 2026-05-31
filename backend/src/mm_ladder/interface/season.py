@@ -10,6 +10,7 @@ class SeasonCreateRequest(BaseModel):
     ends_on: date
     yearly_cup_id: int | None = None
     qualifier_count: int = 2
+    event_count: int = 12
 
 
 class SeasonUpdateRequest(BaseModel):
@@ -19,6 +20,7 @@ class SeasonUpdateRequest(BaseModel):
     ends_on: date
     yearly_cup_id: int | None = None
     qualifier_count: int
+    event_count: int
 
 
 class SeasonPatchRequest(BaseModel):
@@ -27,3 +29,4 @@ class SeasonPatchRequest(BaseModel):
     starts_on: date | None = None
     ends_on: date | None = None
     qualifier_count: int | None = None
+    event_count: int | None = None

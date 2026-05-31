@@ -108,19 +108,47 @@ Request → Route → Service → AsyncSession → SQLite / Postgres
 | PUT | `/seasons/{id}` | `SeasonUpdateRequest` | `SeasonRead` |
 | PATCH | `/seasons/{id}` | `SeasonPatchRequest` | `SeasonRead` |
 | DELETE | `/seasons/{id}` | — | 204 |
+| GET | `/seasons/{id}/standings` | — | `SeasonStandingRead[]` |
 
 **`SeasonCreateRequest`**
 ```json
 {
   "name": "Lorwyn Eclipsed", "set_code": "LCI",
   "starts_on": "2024-01-01", "ends_on": "2024-06-30",
-  "yearly_cup_id": 1, "qualifier_count": 2
+  "yearly_cup_id": 1, "qualifier_count": 2, "event_count": 12
 }
 ```
 
-> `yearly_cup_id` is optional (null = standalone season). `qualifier_count` defaults to 2.
-> PUT requires `qualifier_count` explicitly (no default).
+> `yearly_cup_id` is optional (null = standalone season). `qualifier_count` defaults to 2. `event_count` defaults to 12 (number of scheduled events in the season).
+> PUT requires `qualifier_count` and `event_count` explicitly (no defaults).
 > PATCH cannot change `yearly_cup_id`; use PUT to update cup association.
+
+**`SeasonRead`** includes `event_count: int` and `comp_avg_n: int` (= `ceil(event_count × 0.66)`).
+
+**`SeasonStandingRead`** — response of `GET /seasons/{id}/standings`, sorted by `comp_avg` desc then `points` desc:
+
+```json
+{
+  "rank": 1,
+  "player_id": 7,
+  "display_name": "Alice",
+  "tournaments_played": 10,
+  "points": 87,
+  "match_wins": 29,
+  "match_losses": 1,
+  "match_draws": 0,
+  "win_pct": 0.967,
+  "avg_pts": 8.7,
+  "comp_avg": 8.875,
+  "comp_avg_n": 8,
+  "trophies": 3,
+  "per_event_scores": [9, 6, null, 9, 8, null, 9, 7, 6, null, null, 9]
+}
+```
+
+> `comp_avg` is the mean of the player's top `comp_avg_n` scores (= `ceil(event_count × 0.66)`). `null` if the player has played zero events.
+> `per_event_scores` has length `event_count`; entries are `null` for events the player missed.
+> `trophies` is the count of events where the player scored 9 points.
 
 ---
 

@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.5.0] - 2026-05-31
+
+### Added
+
+- `event_count: int` column on `Season` (default `12`) — number of scheduled events in a season.
+- `comp_avg_n: int` Python property on `Season` model — `ceil(event_count * 0.66)`, exposed in `SeasonRead`.
+- Alembic migration `0004` — adds `event_count` column and backfills from actual tournament count per season.
+- `GET /seasons/{id}/standings` endpoint — returns `SeasonStandingRead[]` sorted by `comp_avg` desc, `points` desc.
+  - Fields: `rank`, `player_id`, `display_name`, `tournaments_played`, `points`, `match_wins`, `match_losses`, `match_draws`, `win_pct`, `avg_pts`, `comp_avg` (avg of top `comp_avg_n` scores; `None` if none played), `comp_avg_n`, `trophies` (count of 9-point events), `per_event_scores` (list of length `event_count`, `None` for missed events).
+- `StandingsService` (`services/standings.py`) — encapsulates standings computation logic.
+- `StandingsServiceDep` in `deps.py`.
+- `SeasonStandingRead` schema (`schemas/standings.py`).
+
+### Changed
+
+- `SeasonCreateRequest` / `SeasonUpdateRequest` / `SeasonPatchRequest` — all include `event_count` field.
+- `SeasonRead` — includes `event_count` and `comp_avg_n`.
+- `SeasonService` — `create`, `update`, `patch` propagate `event_count`.
+
 ## [0.4.0] - 2026-05-19
 
 ### Added

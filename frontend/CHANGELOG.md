@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-05-31 — Frontend: Leaderboard UX Improvements
+
+### Added
+
+- **`ScopeBar`** (`ScopeBar.tsx`) — horizontal cascading chip dropdown scope selector replacing the left sidebar. Layout: `All-time › [Cup ▾ ×] › [Season ▾ ×] › [MMM #N ▾ ×]`. Chips open a dropdown (outside-click or Escape to close), `×` dismisses back to parent scope. Full-width, horizontal scroll on overflow.
+- **Trophies column** — visible at all-time, cup, and season scope. Shows count of tournaments where a player scored 9 points; zero displayed as `—`. For season scope, backend-computed; for other scopes, client-side from fetched participants.
+- **Comp Avg column** — visible at season scope only. Shows average of a player's top `comp_avg_n` scores to 1 decimal place (`—` if none). Column header tooltip shows the formula. Sortable.
+- **`fetchSeasonStandings(seasonId)`** — new API function calling `GET /seasons/{id}/standings`.
+- **`ApiSeasonStanding`** interface in `api.ts` mirroring the backend response.
+- **`comp_avg_n` subtitle** in `SeasonHero` — shows *"Comp Avg = avg of your best N events"* at season scope.
+
+### Changed
+
+- **`LeaderboardPage`** — `NavSidebar` and mobile drawer/top bar removed. `ScopeBar` added below the sticky header. Season scope now fetches standings from `GET /seasons/{id}/standings` instead of aggregating client-side. Participant fetching skipped at season scope.
+- **`SeasonHero`** — cup-qualifying progress bar now uses `season.event_count` instead of the hardcoded `~12`.
+- **`Season` type** — added `event_count: number` and `comp_avg_n: number` fields.
+- **`StandingEntry` type** — added optional `comp_avg?: number | null` and `comp_avg_n?: number` for season scope data.
+- **`ApiSeason`** — added `event_count` and `comp_avg_n` fields.
+
+### Removed
+
+- **`NavSidebar.tsx`** — replaced by `ScopeBar`.
+- Duplicate `<ManaSwitcher size="sm" />` from the (now-removed) mobile top bar.
+
 ## [0.3.0] — 2026-05-30 — Frontend: Live API Data
 
 ### Added
