@@ -27,6 +27,8 @@ export interface Season {
   ends_on: string;
   yearly_cup_id: number | null;
   qualifier_count: number;
+  event_count: number;
+  comp_avg_n: number;
   is_current: boolean;
 }
 
@@ -67,6 +69,8 @@ export interface StandingEntry {
   streak: string;
   per_event_points: (number | null)[];
   attended: (0 | 1)[];
+  comp_avg?: number | null;
+  comp_avg_n?: number;
 }
 
 export interface SeasonStats {

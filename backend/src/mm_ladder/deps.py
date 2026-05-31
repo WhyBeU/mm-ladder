@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from mm_ladder.services.match import MatchService
 from mm_ladder.services.player import PlayerService
 from mm_ladder.services.season import SeasonService
+from mm_ladder.services.standings import StandingsService
 from mm_ladder.services.tournament import TournamentService
 from mm_ladder.services.tournament_participant import TournamentParticipantService
 from mm_ladder.services.yearly_cup import YearlyCupService
@@ -45,9 +46,14 @@ def get_match_service(session: SessionDep) -> MatchService:
     return MatchService(session)
 
 
+def get_standings_service(session: SessionDep) -> StandingsService:
+    return StandingsService(session)
+
+
 PlayerServiceDep = Annotated[PlayerService, Depends(get_player_service)]
 YearlyCupServiceDep = Annotated[YearlyCupService, Depends(get_yearly_cup_service)]
 SeasonServiceDep = Annotated[SeasonService, Depends(get_season_service)]
 TournamentServiceDep = Annotated[TournamentService, Depends(get_tournament_service)]
 ParticipantServiceDep = Annotated[TournamentParticipantService, Depends(get_participant_service)]
 MatchServiceDep = Annotated[MatchService, Depends(get_match_service)]
+StandingsServiceDep = Annotated[StandingsService, Depends(get_standings_service)]

@@ -10,6 +10,7 @@ from mm_ladder.models.player import Player
 from mm_ladder.models.season import Season
 from mm_ladder.models.tournament import Tournament
 from mm_ladder.models.tournament_participant import TournamentParticipant
+from mm_ladder.models.yearly_cup import YearlyCup
 
 DATA_DIR = Path(__file__).parent / "data"
 log = get_logger("migration.importer")
@@ -20,21 +21,32 @@ def wld_for_points(points: int) -> tuple[int, int, int]:
     return POINTS_TO_WLD[points]
 
 
+def _find_cup(session: Session, starts_on: date) -> YearlyCup | None:
+    return session.query(YearlyCup).filter_by(year=starts_on.year).first()
+
+
 def ensure_season(session: Session, season_meta: dict) -> Season:
-    """Find existing Season by set_code or create it."""
+    """Find existing Season by set_code or create it, linking to its yearly cup."""
+    starts_on = date.fromisoformat(season_meta["starts_on"])
+    cup = _find_cup(session, starts_on)
+
     season = session.query(Season).filter_by(set_code=season_meta["set_code"]).first()
     if season is None:
         log.debug("creating season", set_code=season_meta["set_code"], name=season_meta["name"])
         season = Season(
             name=season_meta["name"],
             set_code=season_meta["set_code"],
-            starts_on=date.fromisoformat(season_meta["starts_on"]),
+            starts_on=starts_on,
             ends_on=date.fromisoformat(season_meta["ends_on"]),
+            yearly_cup_id=cup.id if cup else None,
         )
         session.add(season)
         session.flush()
     else:
         log.debug("season exists", set_code=season_meta["set_code"])
+        if season.yearly_cup_id is None and cup is not None:
+            season.yearly_cup_id = cup.id
+            session.flush()
     return season
 
 
@@ -98,12 +110,10 @@ def reset_migrated(session: Session, db_season_id: int | None = None) -> None:
     log.info("resetting migrated data", tournaments=len(migrated_ids), scoped_to_season=db_season_id is not None)
 
     if migrated_ids:
-        session.query(TournamentParticipant).filter(
-            TournamentParticipant.tournament_id.in_(migrated_ids)
-        ).delete(synchronize_session=False)
-        session.query(Tournament).filter(Tournament.id.in_(migrated_ids)).delete(
+        session.query(TournamentParticipant).filter(TournamentParticipant.tournament_id.in_(migrated_ids)).delete(
             synchronize_session=False
         )
+        session.query(Tournament).filter(Tournament.id.in_(migrated_ids)).delete(synchronize_session=False)
 
     orphans_deleted = 0
     for player in session.query(Player).all():

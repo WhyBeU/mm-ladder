@@ -11,9 +11,10 @@ interface SeasonHeroProps {
   leader: StandingEntry | undefined;
   stats: SeasonStats;
   eventsCount: number;
+  compAvgN?: number;
 }
 
-export function SeasonHero({ scope, season, cup, event, leader, stats, eventsCount }: SeasonHeroProps) {
+export function SeasonHero({ scope, season, cup, event, leader, stats, eventsCount, compAvgN }: SeasonHeroProps) {
   let eyebrowLeft = "Standings", eyebrowRight = "";
   let title = "", subtitle = "", badge: string | null = null, keyrune: string | null = null;
 
@@ -81,8 +82,8 @@ export function SeasonHero({ scope, season, cup, event, leader, stats, eventsCou
 
           {scope.kind === "season" && season?.yearly_cup_id && (
             <div style={{ marginTop: 18, padding: "12px 14px", borderRadius: 10, background: "color-mix(in srgb, var(--accent-400) 8%, transparent)", border: "1px solid color-mix(in srgb, var(--accent-400) 22%, transparent)", display: "flex", alignItems: "center", gap: 14 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--accent-400)" style={{ flexShrink: 0 }}>
-                <path d="M5 4h14l-1 8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4L5 4Zm5 13h4l1 3H9l1-3Z" />
+              <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+                <path style={{ fill: "var(--accent-300)" }} d="M5 4h14l-1 8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4L5 4Zm5 13h4l1 3H9l1-3Z" />
               </svg>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
@@ -90,13 +91,20 @@ export function SeasonHero({ scope, season, cup, event, leader, stats, eventsCou
                   <span style={{ fontSize: 11, color: "var(--parchment-muted)", fontVariantNumeric: "tabular-nums" }}>Top {season.qualifier_count} qualify</span>
                 </div>
                 <div style={{ marginTop: 8, height: 6, background: "var(--ink-800)", borderRadius: 3, overflow: "hidden" }}>
-                  <div className="bg-gold-sheen" style={{ height: "100%", width: `${Math.min(100, (eventsCount / 12) * 100)}%`, borderRadius: 3 }} />
+                  <div className="bg-gold-sheen" style={{ height: "100%", width: `${Math.min(100, (eventsCount / (season?.event_count ?? 12)) * 100)}%`, borderRadius: 3 }} />
                 </div>
                 <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--parchment-faint)", fontVariantNumeric: "tabular-nums" }}>
-                  <span>{eventsCount} of ~12 events</span>
+                  <span>{eventsCount} of {season?.event_count ?? 12} events</span>
                   <span>{stats.players} contending</span>
                 </div>
               </div>
+            </div>
+          )}
+
+          {scope.kind === "season" && compAvgN != null && (
+            <div style={{ marginTop: 12, fontSize: 12, color: "var(--parchment-muted)", display: "flex", alignItems: "center", gap: 6 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent-300)" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+              <span>Comp Avg = avg of your best <strong style={{ color: "var(--accent-300)" }}>{compAvgN}</strong> events</span>
             </div>
           )}
         </div>

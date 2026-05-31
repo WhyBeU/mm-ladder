@@ -30,6 +30,7 @@ class SeasonService:
             ends_on=data.ends_on,
             yearly_cup_id=data.yearly_cup_id,
             qualifier_count=data.qualifier_count,
+            event_count=data.event_count,
         )
         self._session.add(season)
         await self._session.commit()
@@ -44,6 +45,7 @@ class SeasonService:
         season.ends_on = data.ends_on
         season.yearly_cup_id = data.yearly_cup_id
         season.qualifier_count = data.qualifier_count
+        season.event_count = data.event_count
         await self._session.commit()
         await self._session.refresh(season)
         return season
@@ -60,6 +62,8 @@ class SeasonService:
             season.ends_on = data.ends_on
         if data.qualifier_count is not None:
             season.qualifier_count = data.qualifier_count
+        if data.event_count is not None:
+            season.event_count = data.event_count
         await self._session.commit()
         await self._session.refresh(season)
         return season

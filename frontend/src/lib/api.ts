@@ -14,6 +14,8 @@ export interface ApiSeason {
   ends_on: string
   yearly_cup_id: number | null
   qualifier_count: number
+  event_count: number
+  comp_avg_n: number
 }
 
 export interface ApiTournament {
@@ -41,6 +43,23 @@ export interface ApiPlayer {
   is_hidden: boolean
 }
 
+export interface ApiSeasonStanding {
+  rank: number
+  player_id: number
+  display_name: string
+  tournaments_played: number
+  points: number
+  match_wins: number
+  match_losses: number
+  match_draws: number
+  win_pct: number
+  avg_pts: number
+  comp_avg: number | null
+  comp_avg_n: number
+  trophies: number
+  per_event_scores: (number | null)[]
+}
+
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
 async function get<T>(path: string): Promise<T> {
@@ -55,3 +74,5 @@ export const fetchTournaments = (): Promise<ApiTournament[]> => get('/tournament
 export const fetchPlayers = (): Promise<ApiPlayer[]> => get('/players/')
 export const fetchTournamentParticipants = (id: number): Promise<ApiParticipant[]> =>
   get(`/tournaments/${id}/participants`)
+export const fetchSeasonStandings = (seasonId: number): Promise<ApiSeasonStanding[]> =>
+  get(`/seasons/${seasonId}/standings`)

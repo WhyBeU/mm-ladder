@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import type { StandingEntry, MMLEvent, Scope, Season } from "@/lib/types";
 import { fmtPct, fmtAvg, PlayerAvatar, StreakChips, PointsByEventChart } from "@/components/bits";
 
-type SortKey = "points" | "display_name" | "match_wins" | "win_pct" | "avg_pts" | "tournaments_played" | "trophies";
+type SortKey = "points" | "display_name" | "match_wins" | "win_pct" | "avg_pts" | "tournaments_played" | "trophies" | "comp_avg";
 type SortDir = "asc" | "desc";
 type Density = "comfy" | "compact";
 
@@ -16,6 +16,7 @@ interface LeaderboardProps {
   showStreak?: boolean;
   showCupLine?: boolean;
   density?: Density;
+  defaultSortKey?: SortKey;
 }
 
 export default function Leaderboard({
@@ -26,9 +27,10 @@ export default function Leaderboard({
   showStreak = true,
   showCupLine = true,
   density = "comfy",
+  defaultSortKey = "points",
 }: LeaderboardProps) {
   const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("points");
+  const [sortKey, setSortKey] = useState<SortKey>(defaultSortKey);
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [expanded, setExpanded] = useState<number | null>(null);
 
@@ -45,6 +47,11 @@ export default function Leaderboard({
         const av = a.display_name.toLowerCase(), bv = b.display_name.toLowerCase();
         return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
       }
+      if (sortKey === "comp_avg") {
+        const av = a.comp_avg ?? -Infinity;
+        const bv = b.comp_avg ?? -Infinity;
+        return sortDir === "asc" ? av - bv : bv - av;
+      }
       const av = a[sortKey as keyof StandingEntry] as number;
       const bv = b[sortKey as keyof StandingEntry] as number;
       return sortDir === "asc" ? av - bv : bv - av;
@@ -55,8 +62,10 @@ export default function Leaderboard({
   const showMedals = sortKey === "points" && sortDir === "desc";
   const qualifierCount = season?.qualifier_count ?? 2;
   const padY = density === "compact" ? 8 : 12;
-  const showAvg   = scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime";
-  const eventLabel = scope.kind === "pod" || scope.kind === "event" ? "Rounds" : "Events";
+  const showAvg     = scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime";
+  const showCompAvg = scope.kind === "season";
+  const showEvents  = showAvg;
+  const eventLabel  = scope.kind === "pod" || scope.kind === "event" ? "Rounds" : "Events";
   const cupLineEnabled = showCupLine && scope.kind === "season" && !!season?.yearly_cup_id;
 
   // Build grid template
@@ -65,9 +74,11 @@ export default function Leaderboard({
   cols.push("minmax(0, 1.6fr)");
   if (showAvg) cols.push("74px");
   cols.push("70px");
+  if (showEvents) cols.push("56px");
   cols.push("96px");
   cols.push("70px");
   if (showAvg) cols.push("78px");
+  if (showCompAvg) cols.push("80px");
   cols.push("24px");
   const colTemplate = cols.join(" ");
 
@@ -102,11 +113,23 @@ export default function Leaderboard({
       <div style={{ display: "grid", gridTemplateColumns: colTemplate, gap: 8, padding: "8px 16px", alignItems: "center" }}>
         <SortHead label="#"        k="points"      align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
         <SortHead label="Player"   k="display_name" align="left"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-        {showAvg && <SortHead label="Trophies" k="trophies" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
-        <SortHead label="Pts"      k="points"      align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-        <SortHead label="W–L–D"    k="match_wins"  align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-        <SortHead label="Win %"    k="win_pct"     align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        {showAvg && <SortHead label="Trophies" k="trophies" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} title="Events where you scored 9 points" />}
+        <SortHead label="Pts"      k="points"             align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        {showEvents && <SortHead label="Events" k="tournaments_played" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+        <SortHead label="W–L–D"    k="match_wins"         align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
+        <SortHead label="Win %"    k="win_pct"            align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
         {showAvg && <SortHead label="Avg" k="avg_pts" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+        {showCompAvg && (
+          <SortHead
+            label="Best"
+            k="comp_avg"
+            align="right"
+            sortKey={sortKey}
+            sortDir={sortDir}
+            onSort={handleSort}
+            title={`Average of your top ${standings[0]?.comp_avg_n ?? "N"} scores (= season length × 66%)`}
+          />
+        )}
         <span />
       </div>
 
@@ -193,19 +216,19 @@ export default function Leaderboard({
                 </div>
 
                 {/* Trophies */}
-                {showAvg && (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="var(--accent-300)" style={{ flexShrink: 0 }}>
-                      <path d="M5 4h14l-1 8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4L5 4Zm5 13h4l1 3H9l1-3Z" />
-                    </svg>
-                    <span style={{ fontSize: 13, color: "var(--accent-300)", fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{p.trophies}</span>
-                  </div>
-                )}
+                {showAvg && <TrophyCell count={p.trophies} />}
 
                 {/* Points */}
                 <div style={{ textAlign: "right" }}>
                   <span className="font-display" style={{ fontSize: 20, color: rank === 1 ? "var(--accent-300)" : "var(--parchment)", fontVariantNumeric: "tabular-nums" }}>{p.points}</span>
                 </div>
+
+                {/* Events played */}
+                {showEvents && (
+                  <div style={{ textAlign: "right", fontSize: 13, color: "var(--parchment-muted)", fontVariantNumeric: "tabular-nums" }}>
+                    {p.tournaments_played}
+                  </div>
+                )}
 
                 {/* W–L–D */}
                 <div style={{ textAlign: "center", fontSize: 13, fontVariantNumeric: "tabular-nums" }}>
@@ -234,6 +257,13 @@ export default function Leaderboard({
                   </div>
                 )}
 
+                {/* Best (comp avg) */}
+                {showCompAvg && (
+                  <div style={{ textAlign: "right", fontSize: 13, fontVariantNumeric: "tabular-nums", fontWeight: 600, color: p.comp_avg != null ? "var(--accent-300)" : "var(--parchment-faint)" }}>
+                    {p.comp_avg != null ? p.comp_avg.toFixed(1) : "—"}
+                  </div>
+                )}
+
                 {/* Expand arrow */}
                 <span style={{ color: "var(--parchment-faint)", fontSize: 12, transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 200ms" }}>▸</span>
               </button>
@@ -255,6 +285,35 @@ export default function Leaderboard({
   );
 }
 
+// ---------- TrophyCell ----------
+
+function TrophyIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+      <path style={{ fill: "var(--accent-300)" }} d="M5 4h14l-1 8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4L5 4Zm5 13h4l1 3H9l1-3Z" />
+    </svg>
+  );
+}
+
+function TrophyCell({ count }: { count: number }) {
+  if (count === 0) {
+    return <div style={{ textAlign: "right", fontSize: 13, color: "var(--parchment-faint)" }}>—</div>;
+  }
+  if (count <= 3) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 2 }}>
+        {Array.from({ length: count }, (_, i) => <TrophyIcon key={i} />)}
+      </div>
+    );
+  }
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 4 }}>
+      <TrophyIcon />
+      <span style={{ fontSize: 12, color: "var(--accent-300)", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>×{count}</span>
+    </div>
+  );
+}
+
 // ---------- SortHead ----------
 interface SortHeadProps {
   label: string;
@@ -263,13 +322,14 @@ interface SortHeadProps {
   sortKey: SortKey;
   sortDir: SortDir;
   onSort: (k: SortKey) => void;
+  title?: string;
 }
 
-function SortHead({ label, k, align = "left", sortKey, sortDir, onSort }: SortHeadProps) {
+function SortHead({ label, k, align = "left", sortKey, sortDir, onSort, title }: SortHeadProps) {
   const active = sortKey === k;
   const justifyMap = { left: "flex-start", center: "center", right: "flex-end" } as const;
   return (
-    <button onClick={() => onSort(k)} style={{
+    <button onClick={() => onSort(k)} title={title} style={{
       background: "none", border: "none", cursor: "pointer", padding: 0,
       width: "100%", textAlign: align,
       fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 600,
