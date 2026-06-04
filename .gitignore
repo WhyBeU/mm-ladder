@@ -15,3 +15,6 @@ node_modules/
 .next/
 frontend/.env.local
 frontend/out/
+
+# Backend
+backend/logs
