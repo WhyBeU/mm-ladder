@@ -1,0 +1,416 @@
+{
+  "season_id": 6,
+  "tournament_date": "2016-09-05",
+  "players": [
+    {
+      "Firstname": "Fletcher",
+      "Lastname": "Harris",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 9,
+      "AveragePointsByTournament": 9.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "Draft Winner",
+          "Css": "fa fa-trophy ss-uncommon"
+        }
+      ]
+    },
+    {
+      "Firstname": "Dennis",
+      "Lastname": "Wong",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 7,
+      "AveragePointsByTournament": 7.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Harshana",
+      "Lastname": "Randeni",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 7,
+      "AveragePointsByTournament": 7.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Jim",
+      "Lastname": "Bandas",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 7,
+      "AveragePointsByTournament": 7.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "AKH Champion",
+          "Css": "ss ss-akh ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "XLN Champion",
+          "Css": "ss ss-xln ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "2017 Player of the Year",
+          "Css": "fa fa-star ss-foil"
+        },
+        {
+          "Count": 1,
+          "Name": "RIX Champion",
+          "Css": "ss ss-rix ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "M19 Champion",
+          "Css": "ss ss-m19 ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "2018 Player of the Year",
+          "Css": "fa fa-star ss-foil"
+        },
+        {
+          "Count": 1,
+          "Name": "WAR Champion",
+          "Css": "ss ss-war ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "THB Champion",
+          "Css": "ss ss-thb ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "M21 Champion",
+          "Css": "ss ss-m21 ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "Draft Trophy TDM",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "FF Draft Winner",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 2,
+          "Name": "EOE Draft Trophy",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "Draft Trophy TLA",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 3,
+          "Name": "Draft Trophy ECL",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "Qualified for Magic Mates Monday Cup 2026",
+          "Css": "fa fa-check ss-rare"
+        }
+      ]
+    },
+    {
+      "Firstname": "Morgan",
+      "Lastname": "Carson",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 6,
+      "AveragePointsByTournament": 6.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Damon",
+      "Lastname": "Meredith",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 6,
+      "AveragePointsByTournament": 6.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "EMN Champion",
+          "Css": "ss ss-emn ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "RNA Champion",
+          "Css": "ss ss-rna ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "2019 Store Champion",
+          "Css": "ss ss-pmei ss-foil"
+        },
+        {
+          "Count": 1,
+          "Name": "AFR Champion",
+          "Css": "ss ss-afr ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "MOM Champion",
+          "Css": "ss ss-mom ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "LCI Champion",
+          "Css": "ss ss-lci ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "2024 New Year Draft Winner",
+          "Css": "fa fa-trophy ss-rare"
+        },
+        {
+          "Count": 1,
+          "Name": "MH3 Draft Winner",
+          "Css": "fa fa-trophy ss-rare"
+        },
+        {
+          "Count": 1,
+          "Name": "MMM Cup 2024 Champion",
+          "Css": "fa fa-trophy ss-foil"
+        },
+        {
+          "Count": 1,
+          "Name": "Holiday Season Champion",
+          "Css": "ss ss-pmei ss-mythic"
+        },
+        {
+          "Count": 2,
+          "Name": "Draft Trophy TDM",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "FF Draft Winner",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "EOE Draft Trophy",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 5,
+          "Name": "Cube",
+          "Css": "fa fa-star ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "Draft Trophy TLA",
+          "Css": "fa fa-trophy ss-uncommon"
+        }
+      ]
+    },
+    {
+      "Firstname": "James",
+      "Lastname": "Bungard",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 6,
+      "AveragePointsByTournament": 6.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Alexandre",
+      "Lastname": "Periphanos",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 6,
+      "AveragePointsByTournament": 6.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Andrew",
+      "Lastname": "Winata",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 5,
+      "AveragePointsByTournament": 5.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Jacob",
+      "Lastname": "Wynberg",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 5,
+      "AveragePointsByTournament": 5.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Alex",
+      "Lastname": "Norton - Smith",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 4,
+      "AveragePointsByTournament": 4.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Mark",
+      "Lastname": "Dickinson",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 4,
+      "AveragePointsByTournament": 4.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "WOE Champion",
+          "Css": "ss ss-woe ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "Draft Trophy TDM",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "FF Draft Winner",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "EOE Draft Trophy",
+          "Css": "fa fa-trophy ss-uncommon"
+        }
+      ]
+    },
+    {
+      "Firstname": "Alexander",
+      "Lastname": "Ellis",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 4,
+      "AveragePointsByTournament": 4.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "HOU Champion",
+          "Css": "ss ss-hou ss-mythic"
+        }
+      ]
+    },
+    {
+      "Firstname": "Sonia",
+      "Lastname": "L'Hopital",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 3,
+      "AveragePointsByTournament": 3.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Cel",
+      "Lastname": "Ellis-Clark",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 3,
+      "AveragePointsByTournament": 3.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Aarron",
+      "Lastname": "Wilson",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 3,
+      "AveragePointsByTournament": 3.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Jacob",
+      "Lastname": "Evans",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 3,
+      "AveragePointsByTournament": 3.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Callum",
+      "Lastname": "Rose",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 3,
+      "AveragePointsByTournament": 3.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Dominic",
+      "Lastname": "Ellis",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 3,
+      "AveragePointsByTournament": 3.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "KLD Champion",
+          "Css": "ss ss-kld ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "AER Champion",
+          "Css": "ss ss-aer ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "DOM Champion",
+          "Css": "ss ss-dom ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "ELD Champion",
+          "Css": "ss ss-eld ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "MMM Cup 2021 Champion",
+          "Css": "fa fa-trophy ss-foil"
+        },
+        {
+          "Count": 1,
+          "Name": "NEO Champion",
+          "Css": "ss ss-neo ss-mythic"
+        },
+        {
+          "Count": 2,
+          "Name": "EOE Draft Trophy",
+          "Css": "fa fa-trophy ss-uncommon"
+        }
+      ]
+    },
+    {
+      "Firstname": "Liam",
+      "Lastname": "Killing",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 0,
+      "AveragePointsByTournament": 0.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Matt",
+      "Lastname": "Crowley",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 0,
+      "AveragePointsByTournament": 0.0,
+      "Trophies": []
+    }
+  ]
+}

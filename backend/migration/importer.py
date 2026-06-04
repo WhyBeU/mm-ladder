@@ -4,7 +4,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from migration.seasons import POINTS_TO_WLD, SEASONS
+from migration.seasons import POINTS_TO_WLD, SEASONS, season_dir_name
 from mm_ladder.logger import get_logger
 from mm_ladder.models.player import Player
 from mm_ladder.models.season import Season
@@ -21,14 +21,17 @@ def wld_for_points(points: int) -> tuple[int, int, int]:
     return POINTS_TO_WLD[points]
 
 
-def _find_cup(session: Session, starts_on: date) -> YearlyCup | None:
-    return session.query(YearlyCup).filter_by(year=starts_on.year).first()
+def _find_cup(session: Session, season_meta: dict) -> YearlyCup | None:
+    cup_year = season_meta.get("cup_year") or date.fromisoformat(season_meta["starts_on"]).year
+    return session.query(YearlyCup).filter_by(year=cup_year).first()
 
 
 def ensure_season(session: Session, season_meta: dict) -> Season:
     """Find existing Season by set_code or create it, linking to its yearly cup."""
     starts_on = date.fromisoformat(season_meta["starts_on"])
-    cup = _find_cup(session, starts_on)
+    cup = _find_cup(session, season_meta)
+    qualifying = season_meta.get("qualifying", True)
+    qualifier_count = 0 if not qualifying else season_meta.get("qualifier_count", 2)
 
     season = session.query(Season).filter_by(set_code=season_meta["set_code"]).first()
     if season is None:
@@ -39,20 +42,29 @@ def ensure_season(session: Session, season_meta: dict) -> Season:
             starts_on=starts_on,
             ends_on=date.fromisoformat(season_meta["ends_on"]),
             yearly_cup_id=cup.id if cup else None,
+            qualifier_count=qualifier_count,
         )
         session.add(season)
         session.flush()
     else:
-        log.debug("season exists", set_code=season_meta["set_code"])
+        log.debug("season exists, updating config fields", set_code=season_meta["set_code"])
+        season.qualifier_count = qualifier_count
         if season.yearly_cup_id is None and cup is not None:
             season.yearly_cup_id = cup.id
-            session.flush()
+        session.flush()
     return season
 
 
+def _normalize_name(firstname: str, lastname: str) -> str:
+    """Normalize to title-case with collapsed whitespace for consistent player lookup."""
+    first = " ".join(firstname.strip().split()).title()
+    last = " ".join(lastname.strip().split()).title()
+    return f"{first} {last}"
+
+
 def ensure_player(session: Session, firstname: str, lastname: str) -> Player:
-    """Find existing Player by display_name or create it."""
-    display_name = f"{firstname} {lastname}"
+    """Find existing Player by normalized display_name or create it."""
+    display_name = _normalize_name(firstname, lastname)
     player = session.query(Player).filter_by(display_name=display_name).first()
     if player is None:
         log.debug("creating player", display_name=display_name)
@@ -75,8 +87,18 @@ def import_tournament(session: Session, season: Season, data: dict) -> Tournamen
     session.add(tournament)
     session.flush()
 
+    seen_player_ids: set[int] = set()
     for p in data["players"]:
         player = ensure_player(session, p["Firstname"], p["Lastname"])
+        if player.id in seen_player_ids:
+            log.warning(
+                "duplicate player in tournament, skipping",
+                display_name=player.display_name,
+                date=held_on.isoformat(),
+                set_code=season.set_code,
+            )
+            continue
+        seen_player_ids.add(player.id)
         w, losses, d = wld_for_points(p["TotalMatchPoints"])
         participant = TournamentParticipant(
             tournament_id=tournament.id,
@@ -146,7 +168,7 @@ def run_import(session: Session, set_code: str | None = None) -> tuple[int, int,
     players_before = session.query(Player).count()
 
     for season_meta in seasons_to_process:
-        season_dir = DATA_DIR / f"season_{season_meta['id']}"
+        season_dir = DATA_DIR / season_dir_name(season_meta)
         if not season_dir.exists():
             log.debug("no data dir, skipping season", set_code=season_meta["set_code"])
             continue
@@ -158,6 +180,8 @@ def run_import(session: Session, set_code: str | None = None) -> tuple[int, int,
 
         log.info("importing season", set_code=season_meta["set_code"], name=season_meta["name"], files=len(json_files))
         season = ensure_season(session, season_meta)
+        season.event_count = len(json_files)
+        session.flush()
         seasons_processed += 1
 
         for json_file in json_files:

@@ -22,6 +22,37 @@ SEASON_META = {
 }
 
 
+def test_normalize_name_title_cases() -> None:
+    from migration.importer import _normalize_name
+
+    assert _normalize_name("alexander", "colbert") == "Alexander Colbert"
+    assert _normalize_name("Alexander", "Colbert") == "Alexander Colbert"
+    assert _normalize_name("JAMES", "GOVER") == "James Gover"
+
+
+def test_normalize_name_collapses_whitespace() -> None:
+    from migration.importer import _normalize_name
+
+    assert _normalize_name("Kyye", "  .") == "Kyye ."
+    assert _normalize_name(" Alice ", " Smith ") == "Alice Smith"
+
+
+def test_normalize_name_deduplicates_case_variants(session: Session) -> None:
+    from migration.importer import ensure_player
+
+    p1 = ensure_player(session, "alexander", "colbert")
+    p2 = ensure_player(session, "Alexander", "Colbert")
+    assert p1.id == p2.id
+
+
+def test_normalize_name_deduplicates_whitespace_variants(session: Session) -> None:
+    from migration.importer import ensure_player
+
+    p1 = ensure_player(session, "Kyye", ".")
+    p2 = ensure_player(session, "Kyye", "  .")
+    assert p1.id == p2.id
+
+
 def test_wld_for_9_points(session: Session) -> None:
     from migration.importer import wld_for_points
 
@@ -116,6 +147,35 @@ def test_reset_migrated_removes_only_migrated(session: Session) -> None:
     remaining = session.query(Tournament).all()
     assert len(remaining) == 1
     assert remaining[0].is_migrated is False
+
+
+def test_ensure_season_sets_qualifier_count(session: Session) -> None:
+    from migration.importer import ensure_season
+
+    season = ensure_season(session, {**SEASON_META, "qualifier_count": 3})
+    assert season.qualifier_count == 3
+
+
+def test_ensure_season_defaults_qualifier_count(session: Session) -> None:
+    from migration.importer import ensure_season
+
+    season = ensure_season(session, SEASON_META)
+    assert season.qualifier_count == 2
+
+
+def test_ensure_season_updates_qualifier_count_on_existing_season(session: Session) -> None:
+    from migration.importer import ensure_season
+
+    ensure_season(session, SEASON_META)
+    updated = ensure_season(session, {**SEASON_META, "qualifier_count": 1})
+    assert updated.qualifier_count == 1
+
+
+def test_ensure_season_qualifying_false_sets_qualifier_count_zero(session: Session) -> None:
+    from migration.importer import ensure_season
+
+    season = ensure_season(session, {**SEASON_META, "qualifying": False})
+    assert season.qualifier_count == 0
 
 
 def test_import_is_idempotent(session: Session) -> None:
