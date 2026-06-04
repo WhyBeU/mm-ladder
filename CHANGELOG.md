@@ -1,66 +1,40 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
 ## [0.6.0] - 2026-06-04
 
-### Added — Migration pipeline overhaul
+### Added
 
 **Data**
-- Full historical dataset: 506 tournament files across all 45 seasons (soi 2016 → sos 2026)
-- Season data directories renamed to `season_{id}_{set_code}_{start}_{end}` convention
-- `migration/data/tournament_hashes.json` — central SHA-256 registry preventing duplicate tournaments across probe dates
+- 506 tournament JSON files across all 45 seasons (soi 2016 → sos 2026) committed to the repository
+- Season data directories renamed: `season_{id}_{set_code}_{YY-MM-DD}_{YY-MM-DD}`
+- `migration/data/tournament_hashes.json` — SHA-256 registry preventing duplicate tournaments saved under different probe dates
 - Cup year mapping for all seasons; `qualifying` flag and `qualifier_count` overrides in `SEASONS` config
 
-**Scraper**
-- Fixed critical date format bug: was sending `MM/DD/YYYY` (US), server expects `DD/MM/YYYY` — all historical queries were silently returning "last 30 days" defaults
-- Day-by-day scraping with strict `[day, day]` window, automatic `[day, day+1]` fallback when no data found
-- `NbTournaments == 2` players now included with `TotalMatchPoints // 2` (double-entry split); `NbT > 2` still excluded and flagged
+**Scraper (`migrate scrape`)**
+- Fixed critical date format bug: server expects `DD/MM/YYYY`, scraper was sending `MM/DD/YYYY` — all historical queries were silently returning "last 30 days" defaults
+- Day-by-day querying with strict `[day, day]` window, automatic `[day, day+1]` fallback when empty
+- `NbTournaments == 2` players included at `TotalMatchPoints // 2` (double-entry split); `NbT > 2` excluded and flagged
 - Future dates skipped automatically
-- `-s / --set-code` option is now repeatable on all three CLI commands (`scrape`, `migrate`, `verify`)
-- `--recreate-db` flag on `migrate` drops and recreates all tables; `migrate` also auto-creates tables on a fresh DB
-
-**Logging & reporting**
+- `-s / --set-code` option now repeatable on all three CLI commands (`scrape`, `migrate`, `verify`)
+- `--recreate-db` flag on `migrate` — drops and recreates all tables before importing
+- `migrate` now auto-creates tables on a fresh database (no Alembic required for clean runs)
 - All CLI output tee'd to `logs/scraper_<timestamp>.log`
-- Scrape summary table: per-season event count, missing Mondays, consecutive gaps, multi-event weeks, low-attendance events
-- Verification summary tables: per-season and all-time player totals (points + event counts), site vs DB comparison
-- Duplicate detection logged at info level with the existing file path
+- Scrape summary table: per-season event count, missing Mondays, consecutive gaps, multi-event weeks, low-attendance warnings
 
-**Importer**
-- Player name normalisation: title-case + whitespace collapse (collapses `alexander colbert` / `Alexander Colbert` etc.)
-- `event_count` set automatically from scraped file count; `qualifier_count` read from SEASONS config
-- `ensure_season` updates `qualifier_count` on re-import; `qualifying: False` → `qualifier_count = 0`
+**Importer (`migrate migrate`)**
+- Player name normalisation: title-case + whitespace collapse (collapses e.g. `alexander colbert` / `Alexander Colbert`)
+- `event_count` set automatically from scraped file count
+- `qualifier_count` read from SEASONS config; `qualifying: False` → `qualifier_count = 0`
 - `_find_cup` uses explicit `cup_year` from SEASONS config instead of guessing from `starts_on.year`
 
-**Verifier**
-- Per-season verification uses a single full-season range query (was: re-running per-Monday queries against itself)
-- All-time verification uses `DD/MM/YYYY` date format (was: broken)
+**Verifier (`migrate verify`)**
+- Per-season check now uses a single full-season range query (was: re-running the same broken per-Monday queries against itself)
 - Duplicate player names (same person, two accounts) merged before comparison: points summed, events take `max`
+- Verification summary tables: per-season and all-time player totals (points + event counts, DB vs site)
 - `-s` restricts the all-time player table to players from the specified seasons only
 
 ### Fixed
-- Season folders `season_33` and `season_39` renamed to include set code and dates
 - `backend/.gitignore` no longer excludes `migration/data/`
-
-## [0.5.0] - 2025-05-01
-
-### Added
-- Leaderboard UX improvements: scope bar, trophies, comp avg, mana fix
-
-## [0.4.0] - 2024-11-01
-
-### Added
-- Frontend: wire real API data with TanStack Query
-
-## [0.3.0] - 2024-10-01
-
-### Added
-- Migration pipeline: limitedspoiler.com data scraper and importer
-
-## [0.2.0] - 2024-09-01
-
-### Added
-- Frontend design system implementation
-
-## [0.1.0] - 2024-08-01
-
-### Added
-- Initial frontend setup
+- `logs/` added to root `.gitignore`
