@@ -1,0 +1,120 @@
+{
+  "season_id": 42,
+  "tournament_date": "2025-09-30",
+  "players": [
+    {
+      "Firstname": "Kyye",
+      "Lastname": ".",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 6,
+      "AveragePointsByTournament": 6.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "EOE Draft Trophy",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 2,
+          "Name": "Draft Trophy TLA",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 2,
+          "Name": "Draft Trophy ECL",
+          "Css": "fa fa-trophy ss-uncommon"
+        }
+      ]
+    },
+    {
+      "Firstname": "Nicholas",
+      "Lastname": "Talbot",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 6,
+      "AveragePointsByTournament": 6.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "Draft Trophy TDM",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 2,
+          "Name": "FF Draft Winner",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "EOE Draft Trophy",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "Qualified for Magic Mates Monday Cup 2026",
+          "Css": "fa fa-check ss-rare"
+        },
+        {
+          "Count": 3,
+          "Name": "Draft Trophy TLA",
+          "Css": "fa fa-trophy ss-uncommon"
+        }
+      ]
+    },
+    {
+      "Firstname": "J",
+      "Lastname": "J",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 6,
+      "AveragePointsByTournament": 6.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "DSK Champion",
+          "Css": "ss ss-dft ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "FF Draft Winner",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "FIN Champion",
+          "Css": "ss ss-fin ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "Qualified for Magic Mates Monday Cup 2026",
+          "Css": "fa fa-check ss-rare"
+        },
+        {
+          "Count": 2,
+          "Name": "Cube",
+          "Css": "fa fa-star ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "Draft Trophy TLA",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "Draft Trophy ECL",
+          "Css": "fa fa-trophy ss-uncommon"
+        }
+      ]
+    },
+    {
+      "Firstname": "Matt",
+      "Lastname": "Sellas",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 0,
+      "AveragePointsByTournament": 0.0,
+      "Trophies": []
+    }
+  ]
+}

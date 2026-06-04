@@ -1,0 +1,104 @@
+{
+  "season_id": 26,
+  "tournament_date": "2022-08-08",
+  "players": [
+    {
+      "Firstname": "Sean",
+      "Lastname": "Goh",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 9,
+      "AveragePointsByTournament": 9.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "Draft Winner",
+          "Css": "fa fa-trophy ss-uncommon"
+        }
+      ]
+    },
+    {
+      "Firstname": "Ernest",
+      "Lastname": "Su",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 4,
+      "AveragePointsByTournament": 4.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Chris",
+      "Lastname": "Lin",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 4,
+      "AveragePointsByTournament": 4.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "ZNR Champion",
+          "Css": "ss ss-znr ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "STX Champion",
+          "Css": "ss ss-stx ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "VOW Champion",
+          "Css": "ss ss-vow ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "SNC Champion",
+          "Css": "ss ss-snc ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "DMU Champion",
+          "Css": "ss ss-dmu ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "MMM Cup 2022 Champion",
+          "Css": "fa fa-trophy ss-foil"
+        },
+        {
+          "Count": 1,
+          "Name": "ONE Champion",
+          "Css": "ss ss-one ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "MKM Trophy",
+          "Css": "ss ss-mkm ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "OTJ Champion",
+          "Css": "ss ss-otj ss-mythic"
+        },
+        {
+          "Count": 5,
+          "Name": "Draft Trophy TDM",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "TDM Champion",
+          "Css": "ss ss-tdm ss-mythic"
+        }
+      ]
+    },
+    {
+      "Firstname": "Callum",
+      "Lastname": "Wainwright ",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 3,
+      "AveragePointsByTournament": 3.0,
+      "Trophies": []
+    }
+  ]
+}

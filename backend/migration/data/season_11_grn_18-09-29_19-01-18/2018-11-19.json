@@ -1,0 +1,147 @@
+{
+  "season_id": 11,
+  "tournament_date": "2018-11-19",
+  "players": [
+    {
+      "Firstname": "Yoann",
+      "Lastname": "Buratti",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 9,
+      "AveragePointsByTournament": 9.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "Draft Winner",
+          "Css": "fa fa-trophy ss-uncommon"
+        },
+        {
+          "Count": 1,
+          "Name": "MMM Cup 2023 Champion",
+          "Css": "fa fa-trophy ss-foil"
+        },
+        {
+          "Count": 2,
+          "Name": "Draft Trophy TDM",
+          "Css": "fa fa-trophy ss-uncommon"
+        }
+      ]
+    },
+    {
+      "Firstname": "Jim",
+      "Lastname": "Diment",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 9,
+      "AveragePointsByTournament": 9.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "Draft Winner",
+          "Css": "fa fa-trophy ss-uncommon"
+        }
+      ]
+    },
+    {
+      "Firstname": "Matthew",
+      "Lastname": "Mudge",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 6,
+      "AveragePointsByTournament": 6.0,
+      "Trophies": [
+        {
+          "Count": 1,
+          "Name": "GRN Champion",
+          "Css": "ss ss-grn ss-mythic"
+        },
+        {
+          "Count": 1,
+          "Name": "MMM Cup 2019 Champion",
+          "Css": "fa fa-trophy ss-foil"
+        }
+      ]
+    },
+    {
+      "Firstname": "Hamoun",
+      "Lastname": "Iranmanesh",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 6,
+      "AveragePointsByTournament": 6.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Hayden",
+      "Lastname": "Wheeler",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 5,
+      "AveragePointsByTournament": 5.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Wesley",
+      "Lastname": "Qiu",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 4,
+      "AveragePointsByTournament": 4.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Gerald",
+      "Lastname": "Lillywhite",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 4,
+      "AveragePointsByTournament": 4.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "James",
+      "Lastname": "Mcpherson",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 3,
+      "AveragePointsByTournament": 3.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Barnabas",
+      "Lastname": "Hodgson",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 3,
+      "AveragePointsByTournament": 3.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Adam",
+      "Lastname": "Kareen",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 3,
+      "AveragePointsByTournament": 3.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Christopher",
+      "Lastname": "Powell",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 0,
+      "AveragePointsByTournament": 0.0,
+      "Trophies": []
+    },
+    {
+      "Firstname": "Ambrose",
+      "Lastname": "Hill",
+      "NbTournaments": 1,
+      "NthBest": 0,
+      "TotalMatchPoints": 0,
+      "AveragePointsByTournament": 0.0,
+      "Trophies": []
+    }
+  ]
+}
