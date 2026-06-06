@@ -3,6 +3,9 @@ from datetime import date
 import pytest
 from sqlalchemy.orm import Session
 
+from migration.seasons import SEASONS
+from mm_ladder.models.yearly_cup import YearlyCup
+
 TOURNAMENT_FILE = {
     "season_id": 39,
     "tournament_date": "2025-04-07",
@@ -176,6 +179,65 @@ def test_ensure_season_qualifying_false_sets_qualifier_count_zero(session: Sessi
 
     season = ensure_season(session, {**SEASON_META, "qualifying": False})
     assert season.qualifier_count == 0
+
+
+def _cup_year_count() -> int:
+    return len({s["cup_year"] for s in SEASONS})
+
+
+def test_seed_cups_creates_one_cup_per_cup_year(session: Session) -> None:
+    from migration.importer import seed_cups
+
+    seed_cups(session)
+
+    cups = session.query(YearlyCup).all()
+    assert len(cups) == _cup_year_count()
+
+
+def test_seed_cups_cup_name_and_dates(session: Session) -> None:
+    from migration.importer import seed_cups
+
+    seed_cups(session)
+
+    cup_2016 = session.query(YearlyCup).filter_by(year=2016).one()
+    assert cup_2016.name == "MM Cup 2016"
+    assert cup_2016.starts_on == date(2016, 4, 2)
+    assert cup_2016.ends_on == date(2016, 9, 22)
+
+
+def test_seed_cups_links_existing_season(session: Session) -> None:
+    from migration.importer import ensure_season, seed_cups
+    from mm_ladder.models.season import Season
+
+    season_meta = {
+        "id": 7,
+        "name": "Shadows over Innistrad",
+        "set_code": "soi",
+        "starts_on": "2016-04-02",
+        "ends_on": "2016-07-15",
+    }
+    ensure_season(session, season_meta)
+    seed_cups(session)
+
+    season = session.query(Season).filter_by(set_code="soi").one()
+    cup = session.query(YearlyCup).filter_by(year=2016).one()
+    assert season.yearly_cup_id == cup.id
+
+
+def test_seed_cups_skips_seasons_not_in_db(session: Session) -> None:
+    from migration.importer import seed_cups
+
+    seed_cups(session)
+    assert session.query(YearlyCup).count() == _cup_year_count()
+
+
+def test_seed_cups_is_idempotent(session: Session) -> None:
+    from migration.importer import seed_cups
+
+    seed_cups(session)
+    seed_cups(session)
+
+    assert session.query(YearlyCup).count() == _cup_year_count()
 
 
 def test_import_is_idempotent(session: Session) -> None:

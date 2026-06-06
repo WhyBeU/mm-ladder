@@ -1,5 +1,6 @@
 import json
 from datetime import date
+from itertools import groupby
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -147,6 +148,39 @@ def reset_migrated(session: Session, db_season_id: int | None = None) -> None:
         log.info("removed orphaned players", count=orphans_deleted)
 
     session.flush()
+
+
+def seed_cups(session: Session) -> int:
+    """Upsert YearlyCup rows from SEASONS and link Season.yearly_cup_id. Returns cups upserted."""
+    sorted_seasons = sorted(SEASONS, key=lambda s: s["cup_year"])
+    cups_upserted = 0
+
+    for cup_year, group_iter in groupby(sorted_seasons, key=lambda s: s["cup_year"]):
+        group = list(group_iter)
+        starts_on = min(date.fromisoformat(s["starts_on"]) for s in group)
+        ends_on = max(date.fromisoformat(s["ends_on"]) for s in group)
+        name = f"MM Cup {cup_year}"
+
+        cup = session.query(YearlyCup).filter_by(year=cup_year).first()
+        if cup is None:
+            cup = YearlyCup(year=cup_year, name=name, starts_on=starts_on, ends_on=ends_on)
+            session.add(cup)
+        else:
+            cup.name = name
+            cup.starts_on = starts_on
+            cup.ends_on = ends_on
+        session.flush()
+        cups_upserted += 1
+
+        for season_meta in group:
+            db_season = session.query(Season).filter_by(set_code=season_meta["set_code"]).first()
+            if db_season is not None:
+                db_season.yearly_cup_id = cup.id
+        session.flush()
+
+    session.commit()
+    log.info("cups seeded", cups=cups_upserted)
+    return cups_upserted
 
 
 def run_import(session: Session, set_code: str | None = None) -> tuple[int, int, int]:
