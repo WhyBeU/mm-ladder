@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.0] - 2026-06-06
+
+### Added
+
+- `migrate seed-cups` command — creates one `YearlyCup` row per cup year (derived from `SEASONS` config) and links all existing `Season` rows to their cup via `yearly_cup_id`. Idempotent: safe to run multiple times.
+
 ## [0.6.0] - 2026-06-04
 
 ### Added

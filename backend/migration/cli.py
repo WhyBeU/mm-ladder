@@ -5,7 +5,7 @@ import click
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from migration.importer import run_import
+from migration.importer import run_import, seed_cups
 from migration.scraper import ScrapeSummary, scrape_season
 from migration.seasons import SEASONS
 from migration.verifier import run_verify
@@ -182,6 +182,22 @@ def verify(db: str, set_code: tuple[str, ...]) -> None:
         log.error("verification failed", total_mismatches=total_mismatches)
         raise SystemExit(1)
     log.info("all verification passed", seasons=seasons_checked)
+
+
+@cli.command("seed-cups")
+@click.option("--db", default="mm_ladder.db", show_default=True, help="Path to SQLite database file.")
+def seed_cups_cmd(db: str) -> None:
+    """Create all yearly cups and link existing seasons to their cup (idempotent)."""
+    session = _make_session(db)
+    try:
+        count = seed_cups(session)
+        log.info("seed-cups complete", cups_upserted=count)
+    except Exception as e:
+        session.rollback()
+        log.error("seed-cups failed", error=str(e))
+        raise SystemExit(1) from None
+    finally:
+        session.close()
 
 
 if __name__ == "__main__":
