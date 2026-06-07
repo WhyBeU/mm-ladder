@@ -29,6 +29,7 @@ export interface Season {
   qualifier_count: number;
   event_count: number;
   comp_avg_n: number;
+  qualifying_type: "POINTS" | "BEST";
   is_current: boolean;
 }
 
@@ -71,6 +72,7 @@ export interface StandingEntry {
   attended: (0 | 1)[];
   comp_avg?: number | null;
   comp_avg_n?: number;
+  is_veteran?: boolean;
 }
 
 export interface SeasonStats {

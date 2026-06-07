@@ -10,7 +10,7 @@ router = APIRouter(prefix="/players", tags=["players"])
 
 @router.get("/", response_model=list[PlayerRead])
 async def list_players(service: PlayerServiceDep) -> list[PlayerRead]:
-    return [PlayerRead.model_validate(p) for p in await service.list()]
+    return await service.list()
 
 
 @router.post("/", response_model=PlayerRead, status_code=http_status.HTTP_201_CREATED)

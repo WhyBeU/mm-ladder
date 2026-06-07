@@ -5,7 +5,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from migration.seasons import POINTS_TO_WLD, SEASONS, season_dir_name
+from migration.seasons import BEST_QUALIFYING_FROM, POINTS_TO_WLD, SEASONS, season_dir_name
 from mm_ladder.logger import get_logger
 from mm_ladder.models.player import Player
 from mm_ladder.models.season import Season
@@ -33,6 +33,7 @@ def ensure_season(session: Session, season_meta: dict) -> Season:
     cup = _find_cup(session, season_meta)
     qualifying = season_meta.get("qualifying", True)
     qualifier_count = 0 if not qualifying else season_meta.get("qualifier_count", 2)
+    qualifying_type = "BEST" if qualifying and starts_on >= BEST_QUALIFYING_FROM else "POINTS"
 
     season = session.query(Season).filter_by(set_code=season_meta["set_code"]).first()
     if season is None:
@@ -44,12 +45,14 @@ def ensure_season(session: Session, season_meta: dict) -> Season:
             ends_on=date.fromisoformat(season_meta["ends_on"]),
             yearly_cup_id=cup.id if cup else None,
             qualifier_count=qualifier_count,
+            qualifying_type=qualifying_type,
         )
         session.add(season)
         session.flush()
     else:
         log.debug("season exists, updating config fields", set_code=season_meta["set_code"])
         season.qualifier_count = qualifier_count
+        season.qualifying_type = qualifying_type
         if season.yearly_cup_id is None and cup is not None:
             season.yearly_cup_id = cup.id
         session.flush()

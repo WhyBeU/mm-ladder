@@ -21,36 +21,36 @@
   --color-primary-800: var(--primary-800);
   --color-primary-900: var(--primary-900);
 
-  /* Static colors */
-  --color-accent-50:  #fdf6e3;
-  --color-accent-100: #fbe9b6;
-  --color-accent-200: #f6d77a;
-  --color-accent-300: #f0c14b;
-  --color-accent-400: #e8ac28;
-  --color-accent-500: #c8901a;
-  --color-accent-600: #9e6f12;
-  --color-accent-700: #76520d;
-  --color-accent-800: #503809;
-  --color-accent-900: #2c1f05;
+  /* Static colors — defined as bare vars in themes.css :root, aliased here for utilities */
+  --color-accent-50:  var(--accent-50);
+  --color-accent-100: var(--accent-100);
+  --color-accent-200: var(--accent-200);
+  --color-accent-300: var(--accent-300);
+  --color-accent-400: var(--accent-400);
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+  --color-accent-700: var(--accent-700);
+  --color-accent-800: var(--accent-800);
+  --color-accent-900: var(--accent-900);
 
-  --color-silver-300: #d8dde5;
-  --color-silver-400: #9aa9c2;
-  --color-silver-500: #6b7a93;
+  --color-silver-300: var(--silver-300);
+  --color-silver-400: var(--silver-400);
+  --color-silver-500: var(--silver-500);
 
-  --color-bronze-300: #d4a373;
-  --color-bronze-400: #b87333;
-  --color-bronze-500: #8b5a2b;
+  --color-bronze-300: var(--bronze-300);
+  --color-bronze-400: var(--bronze-400);
+  --color-bronze-500: var(--bronze-500);
 
-  --color-win:        #22c55e;
-  --color-win-soft:   #16a34a;
-  --color-loss:       #ef4444;
-  --color-loss-soft:  #dc2626;
-  --color-draw:       #94a3b8;
-  --color-draw-soft:  #64748b;
+  --color-win:        var(--win);
+  --color-win-soft:   var(--win-soft);
+  --color-loss:       var(--loss);
+  --color-loss-soft:  var(--loss-soft);
+  --color-draw:       var(--draw);
+  --color-draw-soft:  var(--draw-soft);
 
-  --color-parchment:       #e8eef7;
-  --color-parchment-muted: #9aa9c2;
-  --color-parchment-faint: #6b7a93;
+  --color-parchment:       var(--parchment);
+  --color-parchment-muted: var(--parchment-muted);
+  --color-parchment-faint: var(--parchment-faint);
 
   /* Fonts */
   --font-sans:    "Open Sans", system-ui, sans-serif;

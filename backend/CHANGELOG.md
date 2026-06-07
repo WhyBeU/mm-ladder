@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.0] - 2026-06-07
+
+### Added
+
+- `Season.qualifying_type` (`"POINTS" | "BEST"`, default `"POINTS"`) — drives how cup-qualification standings are ranked: `POINTS` sorts by total points, `BEST` sorts by the total of a player's top `comp_avg_n` event scores. Both tiebreak on trophies, then win rate.
+- `Player.is_veteran` / `SeasonStandingRead.is_veteran` — `true` once a player has played more than 52 events all-time, computed via a correlated subquery in `PlayerService.list` / `StandingsService`.
+- Migration `0005_add_qualifying_type_to_season` — adds the `qualifying_type` column (`server_default='POINTS'`).
+- Migration `0006_backfill_qualifying_type_war` — backfills existing qualifying seasons starting on/after War of the Spark (2019-04-27, `migration.seasons.BEST_QUALIFYING_FROM`) to `qualifying_type = 'BEST'`.
+
+### Changed
+
+- `migration.importer.ensure_season` now derives and persists `qualifying_type` from each season's start date (`BEST` from War of the Spark onward, `POINTS` before, `POINTS` for non-qualifying seasons).
+- `StandingsService` standings sort branches on `qualifying_type`: `BEST` ranks by `comp_avg` (then trophies, then win rate); `POINTS` ranks by `points` (then trophies, then win rate).
+
 ## [0.7.0] - 2026-06-06
 
 ### Added

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { StandingEntry, MMLEvent, Scope, Season } from "@/lib/types";
-import { fmtPct, fmtAvg, PlayerAvatar, StreakChips, PointsByEventChart } from "@/components/bits";
+import { fmtPct, fmtAvg, PlayerAvatar, StreakChips, Sparkline } from "@/components/bits";
 
 type SortKey = "points" | "display_name" | "match_wins" | "win_pct" | "avg_pts" | "tournaments_played" | "trophies" | "comp_avg";
 type SortDir = "asc" | "desc";
@@ -17,6 +17,7 @@ interface LeaderboardProps {
   showCupLine?: boolean;
   density?: Density;
   defaultSortKey?: SortKey;
+  onEventSelect?: (event: MMLEvent) => void;
 }
 
 export default function Leaderboard({
@@ -28,6 +29,7 @@ export default function Leaderboard({
   showCupLine = true,
   density = "comfy",
   defaultSortKey = "points",
+  onEventSelect,
 }: LeaderboardProps) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>(defaultSortKey);
@@ -59,7 +61,7 @@ export default function Leaderboard({
     return out;
   }, [search, sortKey, sortDir, standings]);
 
-  const showMedals = sortKey === "points" && sortDir === "desc";
+  const showMedals = sortDir === "desc" && (sortKey === "points" || (scope.kind === "season" && sortKey === "comp_avg"));
   const qualifierCount = season?.qualifier_count ?? 2;
   const padY = density === "compact" ? 8 : 12;
   const showAvg     = scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime";
@@ -110,12 +112,12 @@ export default function Leaderboard({
       </div>
 
       {/* Column headers */}
-      <div style={{ display: "grid", gridTemplateColumns: colTemplate, gap: 8, padding: "8px 16px", alignItems: "center" }}>
+      <div style={{ display: "grid", gridTemplateColumns: colTemplate, gap: 8, padding: "10px 20px", alignItems: "center" }}>
         <SortHead label="#"        k="points"      align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
         <SortHead label="Player"   k="display_name" align="left"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
         {showAvg && <SortHead label="Trophies" k="trophies" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} title="Events where you scored 9 points" />}
         <SortHead label="Pts"      k="points"             align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-        {showEvents && <SortHead label="Events" k="tournaments_played" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+        {showEvents && <SortHead label="Evts" k="tournaments_played" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
         <SortHead label="W–L–D"    k="match_wins"         align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
         <SortHead label="Win %"    k="win_pct"            align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
         {showAvg && <SortHead label="Avg" k="avg_pts" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
@@ -127,7 +129,7 @@ export default function Leaderboard({
             sortKey={sortKey}
             sortDir={sortDir}
             onSort={handleSort}
-            title={`Average of your top ${standings[0]?.comp_avg_n ?? "N"} scores (= season length × 66%)`}
+            title={`Total of your top ${standings[0]?.comp_avg_n ?? "N"} event scores`}
           />
         )}
         <span />
@@ -154,22 +156,6 @@ export default function Leaderboard({
 
           return (
             <li key={p.player_id}>
-              {cupLine && (
-                <div style={{ position: "relative", padding: "4px 0", borderBottom: "1px dashed color-mix(in srgb, var(--accent-400) 50%, transparent)", marginBottom: 2 }}>
-                  <span style={{
-                    position: "absolute", right: 0, top: -10,
-                    fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase",
-                    background: "color-mix(in srgb, var(--accent-400) 16%, var(--ink-950))",
-                    border: "1px solid color-mix(in srgb, var(--accent-400) 35%, transparent)",
-                    color: "var(--accent-300)", fontWeight: 700,
-                    padding: "2px 8px", borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 5,
-                  }}>
-                    <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14l-1 8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4L5 4Zm5 13h4l1 3H9l1-3Z" /></svg>
-                    Cup qualifier line · top {qualifierCount}
-                  </span>
-                </div>
-              )}
-
               <button
                 onClick={() => setExpanded(isExpanded ? null : p.player_id)}
                 className="themed-surface"
@@ -200,7 +186,7 @@ export default function Leaderboard({
 
                 {/* Player */}
                 <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-                  <PlayerAvatar name={p.display_name} rank={rank} size={density === "compact" ? 32 : 36} />
+                  <PlayerAvatar name={p.display_name} rank={rank} size={density === "compact" ? 32 : 36} isVeteran={p.is_veteran} />
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontWeight: 600, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.display_name}</div>
                     <div style={{ fontSize: 11, color: "var(--parchment-faint)", display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
@@ -257,10 +243,10 @@ export default function Leaderboard({
                   </div>
                 )}
 
-                {/* Best (comp avg) */}
+                {/* Best (total of top N events) */}
                 {showCompAvg && (
                   <div style={{ textAlign: "right", fontSize: 13, fontVariantNumeric: "tabular-nums", fontWeight: 600, color: p.comp_avg != null ? "var(--accent-300)" : "var(--parchment-faint)" }}>
-                    {p.comp_avg != null ? p.comp_avg.toFixed(1) : "—"}
+                    {p.comp_avg != null && p.comp_avg_n != null ? Math.round(p.comp_avg * p.comp_avg_n) : "—"}
                   </div>
                 )}
 
@@ -269,7 +255,22 @@ export default function Leaderboard({
               </button>
 
               {isExpanded && (
-                <ExpandedDetail player={p} scope={scope} scopedEvents={scopedEvents} />
+                <ExpandedDetail player={p} scope={scope} scopedEvents={scopedEvents} onEventSelect={onEventSelect} />
+              )}
+              {cupLine && (
+                <div style={{ position: "relative", margin: "6px 0 2px", borderBottom: "1px dashed color-mix(in srgb, var(--accent-400) 50%, transparent)" }}>
+                  <span style={{
+                    position: "absolute", right: 0, bottom: -9,
+                    fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase",
+                    background: "color-mix(in srgb, var(--accent-400) 16%, var(--ink-950))",
+                    border: "1px solid color-mix(in srgb, var(--accent-400) 35%, transparent)",
+                    color: "var(--accent-300)", fontWeight: 700,
+                    padding: "2px 8px", borderRadius: 4, display: "inline-flex", alignItems: "center", gap: 5,
+                  }}>
+                    <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14l-1 8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4L5 4Zm5 13h4l1 3H9l1-3Z" /></svg>
+                    Cup qualifier line · top {qualifierCount}
+                  </span>
+                </div>
               )}
             </li>
           );
@@ -331,7 +332,7 @@ function SortHead({ label, k, align = "left", sortKey, sortDir, onSort, title }:
   return (
     <button onClick={() => onSort(k)} title={title} style={{
       background: "none", border: "none", cursor: "pointer", padding: 0,
-      width: "100%", textAlign: align,
+      width: "100%", textAlign: align, whiteSpace: "nowrap",
       fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 600,
       color: active ? "var(--accent-400)" : "var(--parchment-faint)",
       fontFamily: "inherit",
@@ -349,9 +350,10 @@ interface ExpandedDetailProps {
   player: StandingEntry;
   scope: Scope;
   scopedEvents: MMLEvent[];
+  onEventSelect?: (event: MMLEvent) => void;
 }
 
-function ExpandedDetail({ player, scope, scopedEvents }: ExpandedDetailProps) {
+function ExpandedDetail({ player, scope, scopedEvents, onEventSelect }: ExpandedDetailProps) {
   const showPerEvent = scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime";
   return (
     <div style={{
@@ -363,7 +365,17 @@ function ExpandedDetail({ player, scope, scopedEvents }: ExpandedDetailProps) {
       {showPerEvent && (
         <div>
           <div className="eyebrow" style={{ marginBottom: 10 }}>● Points by event</div>
-          <PointsByEventChart player={player} />
+          <div style={{ paddingTop: 8 }}>
+            {(() => {
+              const validCount = player.per_event_points.filter(v => v != null).length;
+              const useLabels = validCount > 0 && validCount < 15;
+              return <Sparkline data={player.per_event_points} width={240} height={useLabels ? 60 : 44} color="var(--primary-300)" showLabels={useLabels} />;
+            })()}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--parchment-faint)", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>
+            <span>Event 1</span>
+            <span>Event {player.per_event_points.length}</span>
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginTop: 14 }}>
             <StatBlock label="Best" value={Math.max(...player.per_event_points.filter((v): v is number => v != null), 0)} />
             <StatBlock label="Avg"  value={player.avg_pts.toFixed(1)} />
@@ -377,7 +389,7 @@ function ExpandedDetail({ player, scope, scopedEvents }: ExpandedDetailProps) {
         </div>
         {scope.kind === "pod" || scope.kind === "event"
           ? <RoundBreakdown player={player} />
-          : <AttendanceGrid player={player} events={scopedEvents} />}
+          : <AttendanceGrid player={player} events={scopedEvents} onEventSelect={onEventSelect} />}
       </div>
     </div>
   );
@@ -392,7 +404,7 @@ function StatBlock({ label, value }: { label: string; value: string | number }) 
   );
 }
 
-function AttendanceGrid({ player, events }: { player: StandingEntry; events: MMLEvent[] }) {
+function AttendanceGrid({ player, events, onEventSelect }: { player: StandingEntry; events: MMLEvent[]; onEventSelect?: (event: MMLEvent) => void }) {
   const attended = player.attended || [];
   const total = attended.reduce((a: number, b: number) => a + b, 0);
   const missed = attended.length - total;
@@ -414,21 +426,30 @@ function AttendanceGrid({ player, events }: { player: StandingEntry; events: MML
         </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(60px, 1fr))", gap: 4 }}>
-        {cells.map(({ event, attended: att }, i) => (
-          <div key={i} title={`MMM #${event.number} · ${event.held_on}${att ? " · attended" : " · missed"}`}
-            style={{
-              padding: "8px 6px", borderRadius: 4,
-              background: att ? "color-mix(in srgb, var(--win) 18%, transparent)" : "var(--ink-800)",
-              border: `1px solid ${att ? "color-mix(in srgb, var(--win) 35%, transparent)" : "var(--ink-700)"}`,
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
-              opacity: att ? 1 : 0.55,
-            }}>
-            <span style={{ fontSize: 11, fontWeight: 600, color: att ? "var(--win)" : "var(--parchment-faint)", fontVariantNumeric: "tabular-nums" }}>#{event.number}</span>
-            <span style={{ fontSize: 9, color: "var(--parchment-faint)", fontVariantNumeric: "tabular-nums" }}>
-              {new Date(event.held_on + "T00:00:00").toLocaleDateString("en-AU", { month: "short", day: "numeric" })}
-            </span>
-          </div>
-        ))}
+        {cells.map(({ event, attended: att }, i) => {
+          const Cell = onEventSelect ? "button" : "div";
+          return (
+            <Cell key={i} title={`MMM #${event.number} · ${event.held_on}${att ? " · attended" : " · missed"}`}
+              onClick={onEventSelect ? () => onEventSelect(event) : undefined}
+              style={{
+                padding: "8px 6px", borderRadius: 4,
+                background: att ? "color-mix(in srgb, var(--win) 18%, transparent)" : "var(--ink-800)",
+                border: `1px solid ${att ? "color-mix(in srgb, var(--win) 35%, transparent)" : "var(--ink-700)"}`,
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+                opacity: att ? 1 : 0.55,
+                fontFamily: "inherit", cursor: onEventSelect ? "pointer" : "default",
+                transition: "border-color 150ms, opacity 150ms",
+              }}
+              onMouseEnter={onEventSelect ? e => { (e.currentTarget as HTMLElement).style.borderColor = "var(--primary-400)"; (e.currentTarget as HTMLElement).style.opacity = "1"; } : undefined}
+              onMouseLeave={onEventSelect ? e => { (e.currentTarget as HTMLElement).style.borderColor = att ? "color-mix(in srgb, var(--win) 35%, transparent)" : "var(--ink-700)"; (e.currentTarget as HTMLElement).style.opacity = att ? "1" : "0.55"; } : undefined}
+            >
+              <span style={{ fontSize: 11, fontWeight: 600, color: att ? "var(--win)" : "var(--parchment-faint)", fontVariantNumeric: "tabular-nums" }}>#{event.number}</span>
+              <span style={{ fontSize: 9, color: "var(--parchment-faint)", fontVariantNumeric: "tabular-nums" }}>
+                {new Date(event.held_on + "T00:00:00").toLocaleDateString("en-AU", { month: "short", day: "numeric" })}
+              </span>
+            </Cell>
+          );
+        })}
       </div>
       {events.length > 18 && (
         <div style={{ marginTop: 8, fontSize: 11, color: "var(--parchment-faint)", textAlign: "right" }}>Showing last 18 of {events.length} events</div>

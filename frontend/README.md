@@ -35,7 +35,7 @@ Copy `.env.local.example` to `.env.local` and adjust for your environment. `.env
 ```
 src/
 ├── app/
-│   ├── layout.tsx          # Root HTML shell — fonts (Inter, Cinzel), Keyrune CDN, ManaThemeProvider
+│   ├── layout.tsx          # Root HTML shell — fonts (Inter, Cinzel), Keyrune (local), ManaThemeProvider
 │   ├── page.tsx            # "/" route — renders <LeaderboardPage />
 │   └── globals.css         # Tailwind v4 @theme tokens + @utility classes (eyebrow, pulse-soft, set-placard)
 ├── components/
@@ -64,6 +64,28 @@ Themes are driven by a `data-mana` attribute on `<html>` (values: `W` `U` `B` `R
 ### Server vs client components
 
 `layout.tsx` and `page.tsx` are server components (no directive). Every interactive component (`"use client"`) opts in explicitly — `ManaThemeProvider`, `ManaSwitcher`, `NavSidebar`, `Leaderboard`, `LeaderboardPage`.
+
+## Updating Keyrune (MTG set icons)
+
+Set symbols are served from local font files rather than a CDN so the app works offline and version is pinned.
+
+**Files:**
+- `public/fonts/keyrune.woff2` — primary font (modern browsers)
+- `public/fonts/keyrune.woff` — fallback
+- `public/css/keyrune.min.css` — stylesheet with `@font-face` + `.ss-*` classes
+
+**To update to a new version:**
+
+1. Download the latest release from [github.com/andrewgioia/keyrune](https://github.com/andrewgioia/keyrune/releases)
+2. Replace the files:
+   ```
+   public/fonts/keyrune.woff2   ← fonts/keyrune.woff2
+   public/fonts/keyrune.woff    ← fonts/keyrune.woff
+   public/css/keyrune.min.css   ← css/keyrune.min.css
+   ```
+3. No code changes needed — `layout.tsx` loads `/css/keyrune.min.css` and the CSS references `../fonts/` relatively.
+
+**Usage in components:** `<i className="ss ss-{setcode}" />` where `setcode` is lowercase (e.g. `ss-blb`). Display set codes in the UI as uppercase (e.g. `BLB`). See the [Keyrune cheatsheet](https://keyrune.andrewgioia.com/cheatsheet.html) for all available codes.
 
 ## Connecting to the backend
 

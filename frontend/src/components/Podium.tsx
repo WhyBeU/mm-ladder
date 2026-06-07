@@ -27,6 +27,9 @@ export function Podium({ standings }: PodiumProps) {
         {order.map(idx => {
           const p = top3[idx];
           const c = cfg[idx as 0 | 1 | 2];
+          const bestTotal = p.comp_avg != null && p.comp_avg_n != null
+            ? Math.round(p.comp_avg * p.comp_avg_n)
+            : null;
           return (
             <div key={p.player_id} className="themed-surface" style={{
               position: "relative", borderRadius: "var(--radius-card)",
@@ -42,7 +45,7 @@ export function Podium({ standings }: PodiumProps) {
               }}>{c.label}</div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <PlayerAvatar name={p.display_name} rank={idx + 1} size={idx === 0 ? 52 : 44} />
+                <PlayerAvatar name={p.display_name} rank={idx + 1} size={idx === 0 ? 52 : 44} isVeteran={p.is_veteran} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div className="font-display" style={{ fontSize: idx === 0 ? 19 : 17, color: "var(--parchment)", lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.display_name}</div>
                   <div style={{ fontSize: 11, color: "var(--parchment-muted)", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
@@ -51,14 +54,18 @@ export function Podium({ standings }: PodiumProps) {
                 </div>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 14, paddingTop: 12, borderTop: `1px solid color-mix(in srgb, ${c.color} 18%, transparent)` }}>
-                <div>
-                  <div className="font-display" style={{ fontSize: idx === 0 ? 32 : 26, color: c.color, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{p.points}</div>
-                  <div className="eyebrow">Points</div>
+              <div style={{ display: "flex", gap: 10, marginTop: 14, paddingTop: 12, borderTop: `1px solid color-mix(in srgb, ${c.color} 18%, transparent)` }}>
+                <div style={{ flex: 1 }}>
+                  <div className="font-display" style={{ fontSize: idx === 0 ? 28 : 22, color: c.color, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{bestTotal ?? p.points}</div>
+                  <div className="eyebrow">{bestTotal != null ? "Best" : "Points"}</div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 14, color: "var(--parchment)", fontVariantNumeric: "tabular-nums" }}>{fmtPct(p.win_pct)}</div>
-                  <div className="eyebrow">Win rate</div>
+                <div style={{ flex: 1, textAlign: "center" }}>
+                  <div style={{ fontSize: 13, color: "var(--parchment)", fontVariantNumeric: "tabular-nums" }}>{fmtPct(p.win_pct)}</div>
+                  <div className="eyebrow">Win %</div>
+                </div>
+                <div style={{ flex: 1, textAlign: "right" }}>
+                  <div style={{ fontSize: 13, color: p.trophies > 0 ? "var(--accent-300)" : "var(--parchment-faint)", fontVariantNumeric: "tabular-nums", fontWeight: p.trophies > 0 ? 700 : 400 }}>{p.trophies || "—"}</div>
+                  <div className="eyebrow">Trophies</div>
                 </div>
               </div>
             </div>

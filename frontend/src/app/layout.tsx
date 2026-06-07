@@ -32,10 +32,7 @@ export default function RootLayout({
       className={`${cinzel.variable} ${inter.variable} h-full antialiased`}
     >
       <head>
-        <link
-          rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/keyrune@3.18.0/css/keyrune.css"
-        />
+        <link rel="stylesheet" href="/css/keyrune.min.css" />
       </head>
       <body className="min-h-full flex flex-col">
         <QueryProvider>

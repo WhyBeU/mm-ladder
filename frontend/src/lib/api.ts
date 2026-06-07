@@ -16,6 +16,7 @@ export interface ApiSeason {
   qualifier_count: number
   event_count: number
   comp_avg_n: number
+  qualifying_type: "POINTS" | "BEST"
 }
 
 export interface ApiTournament {
@@ -41,6 +42,7 @@ export interface ApiPlayer {
   id: number
   display_name: string
   is_hidden: boolean
+  is_veteran: boolean
 }
 
 export interface ApiSeasonStanding {
@@ -58,6 +60,7 @@ export interface ApiSeasonStanding {
   comp_avg_n: number
   trophies: number
   per_event_scores: (number | null)[]
+  is_veteran: boolean
 }
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'

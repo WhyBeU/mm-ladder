@@ -16,3 +16,4 @@ class SeasonStandingRead(BaseModel):
     comp_avg_n: int
     trophies: int
     per_event_scores: list[int | None]
+    is_veteran: bool = False

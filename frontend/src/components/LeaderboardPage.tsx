@@ -25,7 +25,7 @@ function toYearlyCup(c: { id: number; year: number; name: string; starts_on: str
   return { ...c, is_current: c.starts_on <= today && today <= c.ends_on };
 }
 
-function toSeason(s: { id: number; name: string; set_code: string; starts_on: string; ends_on: string; yearly_cup_id: number | null; qualifier_count: number; event_count: number; comp_avg_n: number }, today: string): Season {
+function toSeason(s: { id: number; name: string; set_code: string; starts_on: string; ends_on: string; yearly_cup_id: number | null; qualifier_count: number; event_count: number; comp_avg_n: number; qualifying_type: "POINTS" | "BEST" }, today: string): Season {
   return {
     ...s,
     keyrune: s.set_code.toLowerCase(),
@@ -101,10 +101,11 @@ function buildStandings(
       streak: "",
       per_event_points: scopeTournamentIds.map(tid => byTId.get(tid)?.points ?? null),
       attended: scopeTournamentIds.map(tid => (byTId.has(tid) ? 1 : 0)) as (0 | 1)[],
+      is_veteran: player.is_veteran,
     };
   });
   const sorted = scopeKind === "cup"
-    ? entries.sort((a, b) => b.trophies - a.trophies || b.points - a.points)
+    ? entries.sort((a, b) => b.trophies - a.trophies || b.points - a.points || b.win_pct - a.win_pct)
     : entries.sort((a, b) => b.points - a.points || b.win_pct - a.win_pct);
   return sorted.map((e, i) => ({ ...e, rank: i + 1 }));
 }
@@ -128,6 +129,7 @@ function apiSeasonStandingToEntry(s: ApiSeasonStanding): StandingEntry {
     attended: s.per_event_scores.map(v => (v != null ? 1 : 0)) as (0 | 1)[],
     comp_avg: s.comp_avg,
     comp_avg_n: s.comp_avg_n,
+    is_veteran: s.is_veteran,
   };
 }
 
@@ -365,6 +367,9 @@ export default function LeaderboardPage() {
             stats={stats}
             eventsCount={scopedEvents.length}
             compAvgN={scope.kind === "season" ? apiSeasonStandings?.[0]?.comp_avg_n : undefined}
+            qualifyingType={scope.kind === "season" ? (season?.qualifying_type ?? "POINTS") : undefined}
+            cupSeasons={scope.kind === "cup" ? seasons.filter(s => s.yearly_cup_id === scope.cupId) : undefined}
+            onSeasonSelect={scope.kind === "cup" ? (s) => setScope({ kind: "season", cupId: s.yearly_cup_id ?? undefined, seasonId: s.id }) : undefined}
           />
           <StatsStrip stats={stats} totalPlayers={apiPlayers.filter(p => !p.is_hidden).length} />
           {showPodium && <Podium standings={scopeStandings} />}
@@ -373,7 +378,8 @@ export default function LeaderboardPage() {
             scope={scope}
             season={season}
             scopedEvents={scopedEvents}
-            defaultSortKey={scope.kind === "cup" ? "trophies" : "points"}
+            defaultSortKey={scope.kind === "cup" ? "trophies" : scope.kind === "season" && season?.qualifying_type === "BEST" ? "comp_avg" : "points"}
+            onEventSelect={(e) => setScope({ kind: "event", cupId: scope.cupId, seasonId: e.season_id, eventId: e.id })}
           />
         </main>
 

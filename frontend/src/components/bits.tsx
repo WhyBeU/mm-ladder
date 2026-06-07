@@ -24,35 +24,63 @@ interface PlayerAvatarProps {
   name: string;
   rank: number;
   size?: number;
+  isVeteran?: boolean;
 }
 
-export function PlayerAvatar({ name, rank, size = 36 }: PlayerAvatarProps) {
+function VeteranLaurel({ size }: { size: number }) {
+  const pad = 5;
+  const total = size + pad * 2;
+  const cx = total / 2, cy = total / 2;
+  const r = total / 2 - 1.5;
+  // 14 small leaf-ellipses around the ring, alternating Byzantine purple and gold
+  const leaves = Array.from({ length: 14 }, (_, i) => {
+    const angle = (i / 14) * Math.PI * 2;
+    const lx = cx + r * Math.cos(angle);
+    const ly = cy + r * Math.sin(angle);
+    const deg = (angle * 180) / Math.PI + 90;
+    const fill = i % 2 === 0 ? "#5b2a6e" : "var(--accent-400)";
+    return <ellipse key={i} cx={lx} cy={ly} rx={1.8} ry={3.2} fill={fill} opacity="0.85" transform={`rotate(${deg},${lx},${ly})`} />;
+  });
+  return (
+    <svg
+      style={{ position: "absolute", top: -pad, left: -pad, pointerEvents: "none" }}
+      width={total} height={total}
+    >
+      <title>Veteran</title>
+      {leaves}
+    </svg>
+  );
+}
+
+export function PlayerAvatar({ name, rank, size = 36, isVeteran }: PlayerAvatarProps) {
   const label = initials(name);
   const fs = Math.round(size * 0.36);
   const base: React.CSSProperties = {
+    position: "relative",
     width: size, height: size, borderRadius: "50%",
     display: "inline-flex", alignItems: "center", justifyContent: "center",
     fontWeight: 700, fontSize: fs, fontFamily: "var(--font-sans)",
     flexShrink: 0, letterSpacing: "0.03em",
   };
+  const inner = isVeteran ? <VeteranLaurel size={size} /> : null;
   if (rank === 1) return (
     <div className="bg-gold-sheen" style={{ ...base, color: "var(--ink-950)", boxShadow: "var(--shadow-gold-glow)" }}>
-      {label}
+      {inner}{label}
     </div>
   );
   if (rank === 2) return (
     <div className="bg-silver-sheen" style={{ ...base, color: "var(--ink-950)" }}>
-      {label}
+      {inner}{label}
     </div>
   );
   if (rank === 3) return (
     <div className="bg-bronze-sheen" style={{ ...base, color: "var(--ink-950)" }}>
-      {label}
+      {inner}{label}
     </div>
   );
   return (
     <div style={{ ...base, background: "var(--primary-700)", boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)", color: "var(--parchment)" }}>
-      {label}
+      {inner}{label}
     </div>
   );
 }
@@ -106,25 +134,28 @@ interface SparklineProps {
   width?: number;
   height?: number;
   color?: string;
+  showLabels?: boolean;
 }
 
-export function Sparkline({ data, width = 80, height = 24, color = "var(--accent-400)" }: SparklineProps) {
+export function Sparkline({ data, width = 80, height = 24, color = "var(--accent-400)", showLabels }: SparklineProps) {
   const valid = data.filter((v): v is number => v != null);
   if (!valid.length) return null;
   const max = Math.max(...valid);
   const min = Math.min(...valid);
   const flat = max === min;
+  const labelPad = showLabels ? 16 : 0;
+  const chartHeight = height - labelPad;
   const stepX = valid.length > 1 ? width / (valid.length - 1) : 0;
   const pts = valid.map((v, i) => {
     const x = i * stepX;
-    const y = flat ? height / 2 : height - ((v - min) / (max - min)) * height * 0.85 - height * 0.075;
-    return [x, y] as [number, number];
+    const y = labelPad + (flat ? chartHeight / 2 : chartHeight - ((v - min) / (max - min)) * chartHeight * 0.85 - chartHeight * 0.075);
+    return [x, y, v] as [number, number, number];
   });
-  const path = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+  const path = pts.map(([x, y], i) => (i ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1)).join(" ");
   const area = path + ` L ${width},${height} L 0,${height} Z`;
   const gradId = `sl-${color.replace(/[^a-z0-9]/gi, "")}`;
   return (
-    <svg width={width} height={height} style={{ display: "block" }}>
+    <svg width={width} height={height} style={{ display: "block", overflow: "visible" }}>
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={color} stopOpacity="0.35" />
@@ -133,8 +164,15 @@ export function Sparkline({ data, width = 80, height = 24, color = "var(--accent
       </defs>
       <path d={area} fill={`url(#${gradId})`} />
       <path d={path} fill="none" stroke={color} strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round" />
-      {pts.map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r={i === pts.length - 1 ? 1.8 : 1.2} fill={color} />
+      {pts.map(([x, y, v], i) => (
+        <g key={i}>
+          <circle cx={x} cy={y} r={i === pts.length - 1 ? 1.8 : 1.2} fill={color} />
+          {showLabels && (
+            <text x={x} y={y - 4} textAnchor="middle" fontSize={9} fill={color} opacity="0.9" fontFamily="var(--font-mono)">
+              {v}
+            </text>
+          )}
+        </g>
       ))}
     </svg>
   );

@@ -26,6 +26,7 @@ class Season(Base, TimestampMixin):
     )
     qualifier_count: Mapped[int] = mapped_column(Integer, default=2, nullable=False)
     event_count: Mapped[int] = mapped_column(Integer, default=12, nullable=False)
+    qualifying_type: Mapped[str] = mapped_column(String(10), default="POINTS", nullable=False)
 
     yearly_cup: Mapped["YearlyCup | None"] = relationship("YearlyCup", back_populates="seasons")
     tournaments: Mapped[list["Tournament"]] = relationship("Tournament", back_populates="season")
