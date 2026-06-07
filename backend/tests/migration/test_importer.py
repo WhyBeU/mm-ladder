@@ -256,3 +256,19 @@ def test_import_is_idempotent(session: Session) -> None:
     session.flush()
 
     assert session.query(Tournament).filter_by(is_migrated=True).count() == 1
+
+
+def test_ensure_player_reuses_player_with_matching_alias(session: Session) -> None:
+    from migration.importer import ensure_player
+    from mm_ladder.models.player import Player
+
+    canonical = Player(display_name="Damian Cengarle Barilari", aliases=["Damián Cengarle"])
+    session.add(canonical)
+    session.flush()
+
+    # "damian"+"cengarle" normalizes to the same comparison string as the
+    # existing alias "Damián Cengarle" (accent-folded) — a strict exact match,
+    # not a fuzzy partial-name match.
+    found = ensure_player(session, "damian", "cengarle")
+    assert found.id == canonical.id
+    assert found.aliases == ["Damián Cengarle", "Damian Cengarle"]

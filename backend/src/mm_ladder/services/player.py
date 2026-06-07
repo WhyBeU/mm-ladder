@@ -6,6 +6,7 @@ from mm_ladder.interface.player import PlayerCreateRequest, PlayerPatchRequest, 
 from mm_ladder.models.player import Player
 from mm_ladder.models.tournament_participant import TournamentParticipant
 from mm_ladder.schemas.player import PlayerRead
+from mm_ladder.services.player_matching import find_matching_player, register_alias_if_new
 
 VETERAN_THRESHOLD = 52
 
@@ -48,6 +49,14 @@ class PlayerService:
         return player
 
     async def create(self, data: PlayerCreateRequest) -> Player:
+        result = await self._session.execute(select(Player))
+        existing = find_matching_player(result.scalars().all(), data.display_name)
+        if existing is not None:
+            register_alias_if_new(existing, data.display_name)
+            await self._session.commit()
+            await self._session.refresh(existing)
+            return existing
+
         player = Player(display_name=data.display_name, is_hidden=data.is_hidden)
         self._session.add(player)
         await self._session.commit()
