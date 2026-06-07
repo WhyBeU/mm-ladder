@@ -13,6 +13,7 @@ class SeasonCreate(BaseModel):
     yearly_cup_id: int | None = None
     qualifier_count: int = 2
     event_count: int = 12
+    qualifying_type: str = "POINTS"
 
 
 class SeasonRead(BaseReadSchema):
@@ -25,5 +26,6 @@ class SeasonRead(BaseReadSchema):
     qualifier_count: int
     event_count: int
     comp_avg_n: int
+    qualifying_type: str
     created_at: datetime
     updated_at: datetime

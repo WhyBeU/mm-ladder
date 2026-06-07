@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mm_ladder.errors import NotFoundError
@@ -9,6 +9,8 @@ from mm_ladder.models.season import Season
 from mm_ladder.models.tournament import Tournament
 from mm_ladder.models.tournament_participant import TournamentParticipant
 from mm_ladder.schemas.standings import SeasonStandingRead
+
+VETERAN_THRESHOLD = 52
 
 
 class StandingsService:
@@ -43,8 +45,17 @@ class StandingsService:
             by_player[p.id].append((tp, p))
             player_names[p.id] = p.display_name
 
+        # All-time event count per player for is_veteran
+        veteran_result = await self._session.execute(
+            select(TournamentParticipant.player_id, func.count().label("total")).group_by(
+                TournamentParticipant.player_id
+            )
+        )
+        total_events_by_player = {row.player_id: row.total for row in veteran_result}
+
         event_count = season.event_count
         comp_avg_n = season.comp_avg_n
+        qualifying_type = season.qualifying_type
 
         stats_list: list[dict[str, object]] = []
         for player_id, parts in by_player.items():
@@ -78,15 +89,23 @@ class StandingsService:
                     "comp_avg_n": comp_avg_n,
                     "trophies": trophies,
                     "per_event_scores": per_event_scores,
+                    "is_veteran": total_events_by_player.get(player_id, 0) > VETERAN_THRESHOLD,
                 }
             )
 
-        stats_list.sort(
-            key=lambda d: (
-                d["comp_avg"] if d["comp_avg"] is not None else float("-inf"),
-                d["points"],
-            ),
-            reverse=True,
-        )
+        if qualifying_type == "BEST":
+            stats_list.sort(
+                key=lambda d: (
+                    d["comp_avg"] if d["comp_avg"] is not None else float("-inf"),
+                    d["trophies"],
+                    d["win_pct"],
+                ),
+                reverse=True,
+            )
+        else:
+            stats_list.sort(
+                key=lambda d: (d["points"], d["trophies"], d["win_pct"]),
+                reverse=True,
+            )
 
         return [SeasonStandingRead(rank=rank, **d) for rank, d in enumerate(stats_list, 1)]  # type: ignore[arg-type]

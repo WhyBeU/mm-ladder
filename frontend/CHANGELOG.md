@@ -2,6 +2,25 @@
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-06-07 — Qualifying Types, Veteran Badges & Polish
+
+### Added
+
+- **Veteran laurel wreath** — `VeteranLaurel` in `bits.tsx` renders a Byzantine purple/gold leaf ring around `PlayerAvatar` when `is_veteran` is true (>52 all-time events played). Wired through `Leaderboard`, `Podium`, and `SeasonHero`.
+- **`qualifying_type`** (`"POINTS" | "BEST"`) on `Season` — drives the season's default sort and qualification ranking. Displayed in the cup-qualification line and as a "Best = total of your top N event scores" note in `SeasonHero` whenever the Best column is shown.
+- **Sparkline value labels** — `Sparkline` now accepts `showLabels`; `ExpandedDetail` shows per-event point labels above the line when a player has fewer than 15 events.
+- **Local Keyrune assets** — MTG set-symbol font/CSS copied to `public/fonts` / `public/css` (replacing the CDN link in `layout.tsx`); README documents how to update them.
+
+### Changed
+
+- **Cup standings** now always sort by trophies (tiebreak: points, then win rate); **season standings** sort by `qualifying_type` (`POINTS` → points, `BEST` → comp-avg total), both tiebreaking on trophies then win rate. All-time standings remain points-only.
+- **"Best" / Comp Avg column** now displays the *total* of a player's top-N event scores (`comp_avg * comp_avg_n`, rounded) instead of the average, across the table, podium, and leader card.
+- **Podium** bottom strip shows Best-or-Points / Win % / Trophies.
+- **Cup qualifier separator** repositioned to sit below the player row (and its expanded detail) instead of above it.
+- **`SeasonHero`** — replaced the cup-progress bar with a single qualification summary line; uppercased the set code in the subtitle; muted the keyrune watermark (8% → 5% opacity); added clickable cup-season set-icon chips for navigating between a cup's seasons.
+- Reverted the per-event sub-label back to the simple `"N events"` form.
+- Increased leaderboard table header padding for breathing room; header cells no longer wrap.
+
 ## [0.4.0] — 2026-05-31 — Frontend: Leaderboard UX Improvements
 
 ### Added

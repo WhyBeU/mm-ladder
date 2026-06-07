@@ -1,5 +1,9 @@
 from datetime import date, timedelta
 
+# Seasons starting on/after War of the Spark switched qualification from total
+# points to "best N event scores"; earlier seasons qualified on points.
+BEST_QUALIFYING_FROM = date(2019, 4, 27)
+
 POINTS_TO_WLD: dict[int, tuple[int, int, int]] = {
     9: (3, 0, 0),
     7: (2, 0, 1),

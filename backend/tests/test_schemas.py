@@ -91,6 +91,7 @@ class TestSeasonSchemas:
                 "qualifier_count": 2,
                 "event_count": 12,
                 "comp_avg_n": 8,
+                "qualifying_type": "POINTS",
                 "created_at": _NOW,
                 "updated_at": _NOW,
             }
@@ -98,6 +99,7 @@ class TestSeasonSchemas:
         assert s.yearly_cup_id is None
         assert s.event_count == 12
         assert s.comp_avg_n == 8
+        assert s.qualifying_type == "POINTS"
 
 
 class TestTournamentSchemas:

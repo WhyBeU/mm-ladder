@@ -16,6 +16,41 @@
    Default (no attribute set) = Blue (U).
    ========================================================= */
 
+/* Static palette — independent of [data-mana]. Exposed as bare custom
+   properties (e.g. var(--accent-300)) so components can reference them
+   directly; globals.css's @theme aliases --color-* to these for utilities. */
+:root {
+  --accent-50:  #fdf6e3;
+  --accent-100: #fbe9b6;
+  --accent-200: #f6d77a;
+  --accent-300: #f0c14b;
+  --accent-400: #e8ac28;
+  --accent-500: #c8901a;
+  --accent-600: #9e6f12;
+  --accent-700: #76520d;
+  --accent-800: #503809;
+  --accent-900: #2c1f05;
+
+  --silver-300: #d8dde5;
+  --silver-400: #9aa9c2;
+  --silver-500: #6b7a93;
+
+  --bronze-300: #d4a373;
+  --bronze-400: #b87333;
+  --bronze-500: #8b5a2b;
+
+  --win:        #22c55e;
+  --win-soft:   #16a34a;
+  --loss:       #ef4444;
+  --loss-soft:  #dc2626;
+  --draw:       #94a3b8;
+  --draw-soft:  #64748b;
+
+  --parchment:       #e8eef7;
+  --parchment-muted: #9aa9c2;
+  --parchment-faint: #6b7a93;
+}
+
 /* BLUE (U) — Island. Default. */
 :root,
 [data-mana="U"] {
