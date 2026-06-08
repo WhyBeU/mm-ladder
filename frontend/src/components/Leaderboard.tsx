@@ -389,7 +389,7 @@ function ExpandedDetail({ player, scope, scopedEvents, onEventSelect }: Expanded
         </div>
         {scope.kind === "pod" || scope.kind === "event"
           ? <RoundBreakdown player={player} />
-          : <AttendanceGrid player={player} events={scopedEvents} onEventSelect={onEventSelect} onlyAttended={scope.kind === "alltime"} />}
+          : <AttendanceGrid player={player} events={scopedEvents} onEventSelect={onEventSelect} onlyAttended={scope.kind === "alltime" || scope.kind === "cup"} />}
       </div>
     </div>
   );
