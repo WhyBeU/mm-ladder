@@ -26,7 +26,7 @@ export function SeasonHero({ scope, season, cup, event, leader, stats, eventsCou
   } else if (scope.kind === "cup" && cup) {
     eyebrowRight = `${cup.year} Cup`; title = cup.name;
     subtitle = `Top ${cup.year >= 2026 ? 2 : 2} qualify per qualifying season`;
-    badge = "● Live";
+    badge = cupSeasons?.some(s => s.is_current) ? "● Live" : null;
   } else if (scope.kind === "season" && season) {
     eyebrowRight = "Full season"; title = season.name;
     subtitle = `${fmtDate(season.starts_on)} — ${fmtDate(season.ends_on)} · ${season.set_code.toUpperCase()} Booster Draft`;
