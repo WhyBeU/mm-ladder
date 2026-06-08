@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-06-08
+
+### Fixed
+
+- **All-time attendance grid** — `AttendanceGrid` now filters to only the events a player attended when shown at all-time scope (`onlyAttended`), instead of showing the last 18 chronological events including ones the player missed.
+
 ## [0.5.0] — 2026-06-07 — Qualifying Types, Veteran Badges & Polish
 
 ### Added
