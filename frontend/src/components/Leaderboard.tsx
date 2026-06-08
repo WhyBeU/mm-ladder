@@ -68,7 +68,9 @@ export default function Leaderboard({
   const showCompAvg = scope.kind === "season";
   const showEvents  = showAvg;
   const eventLabel  = scope.kind === "pod" || scope.kind === "event" ? "Rounds" : "Events";
-  const cupLineEnabled = showCupLine && scope.kind === "season" && !!season?.yearly_cup_id;
+  const qualifyingSortKey: SortKey = scope.kind === "season" && season?.qualifying_type === "BEST" ? "comp_avg" : "points";
+  const cupLineEnabled =
+    showCupLine && scope.kind === "season" && !!season?.yearly_cup_id && sortKey === qualifyingSortKey && sortDir === "desc";
 
   // Build grid template
   const cols: string[] = [];
@@ -140,7 +142,7 @@ export default function Leaderboard({
         {rows.map(p => {
           const rank = p.rank;
           const isMedal = showMedals && rank <= 3;
-          const cupLine = cupLineEnabled && showMedals && rank === qualifierCount && rows.length > qualifierCount;
+          const cupLine = cupLineEnabled && rank === qualifierCount && rows.length > qualifierCount;
           const isExpanded = expanded === p.player_id;
 
           const medalEdge =
