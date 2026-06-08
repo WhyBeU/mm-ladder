@@ -73,10 +73,14 @@ Request → Route → Service → AsyncSession → SQLite / Postgres
 { "display_name": "Alice", "is_hidden": false }
 ```
 
+> If `display_name` normalises (accent/punctuation/case-insensitive token match) to an existing player's `display_name` or a known alias, the existing player is returned and the new spelling is recorded as an alias instead of creating a duplicate row.
+
 **`PlayerPatchRequest`** — all fields optional; omit to leave unchanged
 ```json
 { "is_hidden": true }
 ```
+
+> `PlayerRead.is_veteran` is computed (`true` once a player has played more than 52 events all-time) — read-only, not settable via create/update/patch.
 
 ---
 
@@ -115,17 +119,18 @@ Request → Route → Service → AsyncSession → SQLite / Postgres
 {
   "name": "Lorwyn Eclipsed", "set_code": "LCI",
   "starts_on": "2024-01-01", "ends_on": "2024-06-30",
-  "yearly_cup_id": 1, "qualifier_count": 2, "event_count": 12
+  "yearly_cup_id": 1, "qualifier_count": 2, "event_count": 12,
+  "qualifying_type": "POINTS"
 }
 ```
 
-> `yearly_cup_id` is optional (null = standalone season). `qualifier_count` defaults to 2. `event_count` defaults to 12 (number of scheduled events in the season).
+> `yearly_cup_id` is optional (null = standalone season). `qualifier_count` defaults to 2. `event_count` defaults to 12 (number of scheduled events in the season). `qualifying_type` is `"POINTS"` or `"BEST"` and defaults to `"POINTS"`.
 > PUT requires `qualifier_count` and `event_count` explicitly (no defaults).
 > PATCH cannot change `yearly_cup_id`; use PUT to update cup association.
 
-**`SeasonRead`** includes `event_count: int` and `comp_avg_n: int` (= `ceil(event_count × 0.66)`).
+**`SeasonRead`** includes `event_count: int`, `comp_avg_n: int` (= `ceil(event_count × 0.66)`), and `qualifying_type: str`.
 
-**`SeasonStandingRead`** — response of `GET /seasons/{id}/standings`, sorted by `comp_avg` desc then `points` desc:
+**`SeasonStandingRead`** — response of `GET /seasons/{id}/standings`, sorted by `qualifying_type`: `"BEST"` ranks by `comp_avg` desc, `"POINTS"` ranks by `points` desc; both tiebreak on `trophies` desc then `win_pct` desc:
 
 ```json
 {
@@ -142,13 +147,15 @@ Request → Route → Service → AsyncSession → SQLite / Postgres
   "comp_avg": 8.875,
   "comp_avg_n": 8,
   "trophies": 3,
-  "per_event_scores": [9, 6, null, 9, 8, null, 9, 7, 6, null, null, 9]
+  "per_event_scores": [9, 6, null, 9, 8, null, 9, 7, 6, null, null, 9],
+  "is_veteran": false
 }
 ```
 
 > `comp_avg` is the mean of the player's top `comp_avg_n` scores (= `ceil(event_count × 0.66)`). `null` if the player has played zero events.
 > `per_event_scores` has length `event_count`; entries are `null` for events the player missed.
 > `trophies` is the count of events where the player scored 9 points.
+> `is_veteran` mirrors `PlayerRead.is_veteran` (true once a player has played more than 52 events all-time).
 
 ---
 

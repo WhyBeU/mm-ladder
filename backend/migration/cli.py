@@ -5,6 +5,7 @@ import click
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from migration.consolidation import run_auto_consolidation, run_select_consolidation
 from migration.importer import run_import, seed_cups
 from migration.scraper import ScrapeSummary, scrape_season
 from migration.seasons import SEASONS
@@ -195,6 +196,37 @@ def seed_cups_cmd(db: str) -> None:
     except Exception as e:
         session.rollback()
         log.error("seed-cups failed", error=str(e))
+        raise SystemExit(1) from None
+    finally:
+        session.close()
+
+
+@cli.command("consolidate-players")
+@click.option("--db", default="mm_ladder.db", show_default=True, help="Path to SQLite database file.")
+@click.option("--dry-run", is_flag=True, default=False, help="Print planned merges without writing to the database.")
+@click.option(
+    "--select",
+    "select_mode",
+    is_flag=True,
+    default=False,
+    help="Manually pick players to merge from a browsable list instead of auto-detecting groups.",
+)
+@click.option(
+    "--select-filter",
+    default=None,
+    help='With --select, only list players whose name starts with this string (case/accent-insensitive, e.g. "dam").',
+)
+def consolidate_players_cmd(db: str, dry_run: bool, select_mode: bool, select_filter: str | None) -> None:
+    """Find and interactively merge duplicate player records, recording alternate spellings as aliases."""
+    session = _make_session(db)
+    try:
+        if select_mode:
+            run_select_consolidation(session, select_filter=select_filter, dry_run=dry_run)
+        else:
+            run_auto_consolidation(session, dry_run=dry_run)
+    except Exception as e:
+        session.rollback()
+        log.error("consolidate-players failed", error=str(e))
         raise SystemExit(1) from None
     finally:
         session.close()

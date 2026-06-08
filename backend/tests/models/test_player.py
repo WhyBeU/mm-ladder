@@ -31,3 +31,17 @@ class TestPlayer:
         session.add(Player(display_name="Dave"))
         session.add(Player(display_name="Dave"))
         session.commit()  # two players with same name is allowed
+
+    def test_aliases_defaults_to_empty_list(self, session):
+        player = Player(display_name="Grace")
+        session.add(player)
+        session.commit()
+        session.refresh(player)
+        assert player.aliases == []
+
+    def test_aliases_stores_list_of_strings(self, session):
+        player = Player(display_name="Henry", aliases=["Hank", "H. Smith"])
+        session.add(player)
+        session.commit()
+        session.refresh(player)
+        assert player.aliases == ["Hank", "H. Smith"]

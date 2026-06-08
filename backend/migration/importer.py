@@ -12,6 +12,7 @@ from mm_ladder.models.season import Season
 from mm_ladder.models.tournament import Tournament
 from mm_ladder.models.tournament_participant import TournamentParticipant
 from mm_ladder.models.yearly_cup import YearlyCup
+from mm_ladder.services.player_matching import find_matching_player, register_alias_if_new
 
 DATA_DIR = Path(__file__).parent / "data"
 log = get_logger("migration.importer")
@@ -67,14 +68,18 @@ def _normalize_name(firstname: str, lastname: str) -> str:
 
 
 def ensure_player(session: Session, firstname: str, lastname: str) -> Player:
-    """Find existing Player by normalized display_name or create it."""
+    """Find existing Player by display_name/alias match or create it."""
     display_name = _normalize_name(firstname, lastname)
     player = session.query(Player).filter_by(display_name=display_name).first()
     if player is None:
-        log.debug("creating player", display_name=display_name)
-        player = Player(display_name=display_name)
-        session.add(player)
-        session.flush()
+        player = find_matching_player(session.query(Player).all(), display_name)
+    if player is not None:
+        register_alias_if_new(player, display_name)
+        return player
+    log.debug("creating player", display_name=display_name)
+    player = Player(display_name=display_name)
+    session.add(player)
+    session.flush()
     return player
 
 

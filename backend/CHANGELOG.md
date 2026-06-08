@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.0] - 2026-06-08
+
+### Added
+
+- `Player.aliases` (`list[str]`, default `[]`) — records alternate spellings of a player's name (accents, initials, punctuation variants) discovered during import or consolidation.
+- Migration `0007_add_aliases_to_player` — adds the `aliases` JSON column (`server_default='[]'`).
+- `mm_ladder.services.player_matching` — shared `name_tokens` / `normalize_player_name` / `find_matching_player` / `register_alias_if_new` helpers for accent/punctuation-insensitive name comparison and alias bookkeeping, used by both the importer and the player-creation API.
+- `migrate consolidate-players` command — interactive one-off tool for merging duplicate player records: auto-detects likely duplicate groups (or lets the operator browse-and-pick via `--select`/`--select-filter`), screens out groups that would violate database constraints (shared tournament participation or head-to-head matches), previews the merge plan, and on confirmation repoints `tournament_participant`/`match` references to the survivor, records merged-away names as aliases, and deletes the duplicate rows. Supports `--dry-run`.
+
+### Changed
+
+- `migration.importer.ensure_player` and `PlayerService.create` now reuse an existing player when the requested name normalizes to an existing `display_name` or known `alias` (instead of creating a new duplicate record), and record the new spelling as an alias.
+
 ## [0.8.0] - 2026-06-07
 
 ### Added

@@ -68,7 +68,9 @@ export default function Leaderboard({
   const showCompAvg = scope.kind === "season";
   const showEvents  = showAvg;
   const eventLabel  = scope.kind === "pod" || scope.kind === "event" ? "Rounds" : "Events";
-  const cupLineEnabled = showCupLine && scope.kind === "season" && !!season?.yearly_cup_id;
+  const qualifyingSortKey: SortKey = scope.kind === "season" && season?.qualifying_type === "BEST" ? "comp_avg" : "points";
+  const cupLineEnabled =
+    showCupLine && scope.kind === "season" && !!season?.yearly_cup_id && sortKey === qualifyingSortKey && sortDir === "desc";
 
   // Build grid template
   const cols: string[] = [];
@@ -140,7 +142,7 @@ export default function Leaderboard({
         {rows.map(p => {
           const rank = p.rank;
           const isMedal = showMedals && rank <= 3;
-          const cupLine = cupLineEnabled && showMedals && rank === qualifierCount && rows.length > qualifierCount;
+          const cupLine = cupLineEnabled && rank === qualifierCount && rows.length > qualifierCount;
           const isExpanded = expanded === p.player_id;
 
           const medalEdge =
@@ -389,7 +391,7 @@ function ExpandedDetail({ player, scope, scopedEvents, onEventSelect }: Expanded
         </div>
         {scope.kind === "pod" || scope.kind === "event"
           ? <RoundBreakdown player={player} />
-          : <AttendanceGrid player={player} events={scopedEvents} onEventSelect={onEventSelect} />}
+          : <AttendanceGrid player={player} events={scopedEvents} onEventSelect={onEventSelect} onlyAttended={scope.kind === "alltime" || scope.kind === "cup"} />}
       </div>
     </div>
   );
@@ -404,14 +406,13 @@ function StatBlock({ label, value }: { label: string; value: string | number }) 
   );
 }
 
-function AttendanceGrid({ player, events, onEventSelect }: { player: StandingEntry; events: MMLEvent[]; onEventSelect?: (event: MMLEvent) => void }) {
+function AttendanceGrid({ player, events, onEventSelect, onlyAttended }: { player: StandingEntry; events: MMLEvent[]; onEventSelect?: (event: MMLEvent) => void; onlyAttended?: boolean }) {
   const attended = player.attended || [];
   const total = attended.reduce((a: number, b: number) => a + b, 0);
   const missed = attended.length - total;
-  const cells = events.slice(-Math.min(events.length, 18)).map((e, i) => {
-    const startIdx = events.length - Math.min(events.length, 18);
-    return { event: e, attended: attended[startIdx + i] === 1 };
-  });
+  const allCells = events.map((e, i) => ({ event: e, attended: attended[i] === 1 }));
+  const visibleCells = onlyAttended ? allCells.filter(c => c.attended) : allCells;
+  const cells = visibleCells.slice(-Math.min(visibleCells.length, 18));
 
   return (
     <div>
@@ -451,8 +452,8 @@ function AttendanceGrid({ player, events, onEventSelect }: { player: StandingEnt
           );
         })}
       </div>
-      {events.length > 18 && (
-        <div style={{ marginTop: 8, fontSize: 11, color: "var(--parchment-faint)", textAlign: "right" }}>Showing last 18 of {events.length} events</div>
+      {visibleCells.length > 18 && (
+        <div style={{ marginTop: 8, fontSize: 11, color: "var(--parchment-faint)", textAlign: "right" }}>Showing last 18 of {visibleCells.length} {onlyAttended ? "attended " : ""}events</div>
       )}
     </div>
   );

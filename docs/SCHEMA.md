@@ -30,6 +30,7 @@ erDiagram
         int id PK
         string display_name
         bool is_hidden
+        json aliases
         datetime created_at
         datetime updated_at
     }
@@ -52,6 +53,8 @@ erDiagram
         date ends_on
         int yearly_cup_id FK
         int qualifier_count
+        int event_count
+        string qualifying_type
         datetime created_at
         datetime updated_at
     }
@@ -63,6 +66,7 @@ erDiagram
         string name
         text notes
         bool has_match_detail
+        bool is_migrated
         datetime created_at
         datetime updated_at
     }
@@ -104,17 +108,22 @@ erDiagram
 
 ### Player
 
-| Column       | Type                | Notes                                               |
-|--------------|---------------------|-----------------------------------------------------|
-| id           | int PK              |                                                     |
-| display_name | str, required       | sole public identifier; shown on leaderboard        |
-| is_hidden    | bool, default false | true = excluded from leaderboard, history preserved |
-| created_at   | datetime            |                                                     |
-| updated_at   | datetime            |                                                     |
+| Column       | Type                  | Notes                                               |
+|--------------|-----------------------|-----------------------------------------------------|
+| id           | int PK                |                                                     |
+| display_name | str, required         | sole public identifier; shown on leaderboard        |
+| is_hidden    | bool, default false   | true = excluded from leaderboard, history preserved |
+| aliases      | json (`list[str]`), default `[]` | alternate spellings merged into this player (accents, initials, punctuation variants); not exposed via the API |
+| created_at   | datetime              |                                                     |
+| updated_at   | datetime              |                                                     |
 
 **Decision — display_name only:** email and full name are not captured at this stage. `display_name` is the sole player identifier. PII fields can be added later once a privacy/removal workflow is defined.
 
 **Decision — `is_hidden` soft-delete:** `is_hidden` replaces the legacy `Ignore` flag from limitedspoiler.com. Privacy requests result in a soft-hide rather than a hard delete so that aggregate stats for other players remain correct. History is never destroyed.
+
+**Decision — `aliases` for duplicate prevention:** when a player is created (or imported) under a name that normalises (accent/punctuation/case-insensitive token match) to an existing `display_name` or known alias, the existing player is reused and the new spelling is recorded as an alias instead of creating a duplicate row (`mm_ladder.services.player_matching`). The `migrate consolidate-players` CLI command performs the same matching retroactively to merge pre-existing duplicates: it repoints `tournament_participant`/`match` references to a chosen survivor, records the merged-away names as aliases, and deletes the duplicate rows.
+
+**`is_veteran` (computed, not a column):** `true` once a player has played more than 52 events all-time (`VETERAN_THRESHOLD`), computed via a correlated subquery in `PlayerService.list` / `StandingsService` and exposed on `PlayerRead.is_veteran` / `SeasonStandingRead.is_veteran`.
 
 ---
 
@@ -134,19 +143,25 @@ erDiagram
 
 ### Season
 
-| Column          | Type                | Notes                                       |
-|-----------------|---------------------|---------------------------------------------|
-| id              | int PK              |                                             |
-| name            | str                 | e.g. "Lorwyn Eclipsed"                      |
-| set_code        | str, unique         | e.g. "LCI"                                  |
-| starts_on       | date                |                                             |
-| ends_on         | date                |                                             |
-| yearly_cup_id   | FK YearlyCup, null  | null = standalone (non-qualifying) season   |
-| qualifier_count | int, default 2      | only meaningful when `yearly_cup_id` is set |
-| created_at      | datetime            |                                             |
-| updated_at      | datetime            |                                             |
+| Column          | Type                | Notes                                                  |
+|-----------------|---------------------|--------------------------------------------------------|
+| id              | int PK              |                                                        |
+| name            | str                 | e.g. "Lorwyn Eclipsed"                                 |
+| set_code        | str, unique         | e.g. "LCI"                                             |
+| starts_on       | date                |                                                        |
+| ends_on         | date                |                                                        |
+| yearly_cup_id   | FK YearlyCup, null  | null = standalone (non-qualifying) season              |
+| qualifier_count | int, default 2      | only meaningful when `yearly_cup_id` is set            |
+| event_count     | int, default 12     | number of scheduled events in the season               |
+| qualifying_type | str, default `"POINTS"` | `"POINTS"` or `"BEST"` — drives cup-qualification ranking (see below) |
+| created_at      | datetime            |                                                        |
+| updated_at      | datetime            |                                                        |
+
+**`comp_avg_n` (computed, not a column):** Python property `ceil(event_count * 0.66)` — the number of top per-event scores averaged into `comp_avg`, exposed in `SeasonRead`/`SeasonStandingRead`.
 
 **Decision — qualifying vs standalone:** a season is "qualifying" iff `yearly_cup_id IS NOT NULL`. No boolean flag needed — the FK presence carries the meaning.
+
+**Decision — `qualifying_type`:** controls how `GET /seasons/{id}/standings` ranks players for cup qualification — `POINTS` sorts by total points, `BEST` sorts by `comp_avg` (the mean of a player's top `comp_avg_n` event scores). Both tiebreak on trophies, then win %. Derived from each season's start date at import time (`BEST` from War of the Spark / 2019-04-27 onward — `migration.seasons.BEST_QUALIFYING_FROM`; `POINTS` before, and for non-qualifying seasons) and persisted so it can be overridden per-season later.
 
 **Decision — seeded via data migration:** Season rows are inserted in Alembic migration `0002_seed_seasons` from the MTG set list. This keeps seed data version-controlled alongside the schema.
 
@@ -162,6 +177,7 @@ erDiagram
 | name             | str, null           | e.g. "MMM #143"                        |
 | notes            | text, null          |                                        |
 | has_match_detail | bool, default false | true once Match rows exist             |
+| is_migrated      | bool, default false | true for events backfilled by `migrate migrate` from limitedspoiler.com (vs. created live via the API) |
 | created_at       | datetime            |                                        |
 | updated_at       | datetime            |                                        |
 

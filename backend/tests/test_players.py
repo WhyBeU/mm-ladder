@@ -60,3 +60,20 @@ async def test_delete_player(client: AsyncClient) -> None:
 async def test_get_missing_player(client: AsyncClient) -> None:
     resp = await client.get("/players/99999")
     assert resp.status_code == 404
+
+
+async def test_create_player_reuses_existing_alias(client: AsyncClient, async_session) -> None:
+    from mm_ladder.models.player import Player
+
+    canonical = Player(display_name="Damian Cengarle Barilari", aliases=["Damián Cengarle"])
+    async_session.add(canonical)
+    await async_session.commit()
+    await async_session.refresh(canonical)
+
+    # "Damian Cengarle" normalizes (accent-fold) to the same comparison string
+    # as the existing alias "Damián Cengarle" — a strict exact match.
+    resp = await client.post("/players/", json={"display_name": "Damian Cengarle"})
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["id"] == canonical.id
+    assert data["display_name"] == "Damian Cengarle Barilari"

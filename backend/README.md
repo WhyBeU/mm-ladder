@@ -102,6 +102,30 @@ poetry run migrate verify --set-code tdm
 
 > **Note:** `verify` re-fetches each Monday from the site using the same windows as the scraper, so it makes roughly one HTTP request per tournament. For a full history (~200+ tournaments) this takes a few minutes.
 
+### Player consolidation
+
+One-off interactive tool for merging duplicate player records (e.g. the same person imported under
+slightly different name spellings — accents, initials, punctuation). It records every merged-away
+spelling as an alias on the surviving player, so future imports and player creation reuse the
+existing record automatically instead of creating a new duplicate.
+
+```bash
+# Auto-detect candidate duplicate groups and review them one by one
+poetry run migrate consolidate-players --dry-run
+poetry run migrate consolidate-players
+
+# Manually browse and pick players to merge (optionally narrowed by a name prefix)
+poetry run migrate consolidate-players --select --select-filter dam --dry-run
+poetry run migrate consolidate-players --select --select-filter dam
+```
+
+For each candidate group, the survivor (the player with the longest display name) is proposed; you
+can exclude members, skip the whole group, or accept the proposed merge plan before it's applied.
+Groups where merging would violate a database constraint (shared tournament participation or a
+head-to-head match between members) are skipped automatically with an explanation. Always run with
+`--dry-run` first, and against a copy of the database — merges delete player rows and repoint
+`tournament_participant`/`match` references, and cannot be undone.
+
 ## Running the API server
 
 All commands must be run from the `backend/` directory.
