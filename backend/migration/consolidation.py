@@ -236,8 +236,8 @@ def _print_plan(plan: MergePlan) -> None:
 
 
 def review_group(session: Session, label: str, group: list[Player], *, dry_run: bool) -> None:
-    """Print a candidate group, let the operator exclude members or skip it,
-    then preview and (optionally) apply the resulting merge plan."""
+    """Print a candidate group, preview its merge plan, and — unless this is a dry run —
+    let the operator exclude members, skip the group, or apply the merge."""
     click.echo(f"\n{label}:")
     survivor = select_survivor(group)
     for index, player in enumerate(group, start=1):
@@ -250,6 +250,12 @@ def review_group(session: Session, label: str, group: list[Player], *, dry_run: 
             click.echo(
                 f"    {conflict.player_a.display_name} & {conflict.player_b.display_name}: {conflict.description}"
             )
+        return
+
+    if dry_run:
+        plan = plan_merge(session, group)
+        _print_plan(plan)
+        click.echo("  (dry run — no changes made)")
         return
 
     raw = click.prompt(
@@ -277,10 +283,6 @@ def review_group(session: Session, label: str, group: list[Player], *, dry_run: 
 
     plan = plan_merge(session, remaining)
     _print_plan(plan)
-
-    if dry_run:
-        click.echo("  (dry run — no changes made)")
-        return
 
     if not click.confirm("  Apply this merge?", default=False):
         click.echo("  Skipped.")
