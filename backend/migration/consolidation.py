@@ -171,10 +171,11 @@ class MergePlan:
     match_count: int
 
 
-def plan_merge(session: Session, group: list[Player]) -> MergePlan:
+def plan_merge(session: Session, group: list[Player], *, survivor: Player | None = None) -> MergePlan:
     """Compute the merge plan for a (conflict-free) candidate group without
-    making any changes."""
-    survivor = select_survivor(group)
+    making any changes. Uses the auto-selected survivor unless one is given."""
+    if survivor is None:
+        survivor = select_survivor(group)
     merged = [player for player in group if player.id != survivor.id]
     merged_ids = [player.id for player in merged]
 
@@ -240,8 +241,12 @@ def review_group(session: Session, label: str, group: list[Player], *, dry_run: 
     let the operator exclude members, skip the group, or apply the merge."""
     click.echo(f"\n{label}:")
     survivor = select_survivor(group)
-    for index, player in enumerate(group, start=1):
-        click.echo(f"  [{index}] {_describe_player(player, is_survivor=player.id == survivor.id)}")
+
+    def _print_roster() -> None:
+        for index, player in enumerate(group, start=1):
+            click.echo(f"  [{index}] {_describe_player(player, is_survivor=player.id == survivor.id)}")
+
+    _print_roster()
 
     conflicts = find_conflicts(session, group)
     if conflicts:
@@ -253,35 +258,55 @@ def review_group(session: Session, label: str, group: list[Player], *, dry_run: 
         return
 
     if dry_run:
-        plan = plan_merge(session, group)
+        plan = plan_merge(session, group, survivor=survivor)
         _print_plan(plan)
         click.echo("  (dry run — no changes made)")
         return
 
-    raw = click.prompt(
-        "  Exclude any from this merge? (comma-separated numbers, blank = merge all, 's' = skip group)",
-        default="",
-        show_default=False,
-    )
-    choice = raw.strip().lower()
-    if choice == "s":
-        click.echo("  Skipped.")
-        return
-
     excluded: set[int] = set()
-    if choice:
-        try:
-            excluded = {int(part.strip()) for part in choice.split(",") if part.strip()}
-        except ValueError:
-            click.echo("  Invalid input — skipping group.")
+    while True:
+        raw = click.prompt(
+            "  Exclude any from this merge? (comma-separated numbers, "
+            "'p' = pick a different survivor, blank = merge all, 's' = skip group)",
+            default="",
+            show_default=False,
+        )
+        choice = raw.strip().lower()
+        if choice == "s":
+            click.echo("  Skipped.")
             return
+
+        if choice == "p":
+            pick = click.prompt("  Which number should survive?", type=int)
+            if pick < 1 or pick > len(group):
+                click.echo("  Invalid number — try again.")
+                continue
+            survivor = group[pick - 1]
+            click.echo(f'  Survivor set to "{survivor.display_name}" (id={survivor.id}).')
+            _print_roster()
+            continue
+
+        if choice:
+            try:
+                excluded = {int(part.strip()) for part in choice.split(",") if part.strip()}
+            except ValueError:
+                click.echo("  Invalid input — try again.")
+                continue
+        else:
+            excluded = set()
+
+        if any(group[index - 1].id == survivor.id for index in excluded):
+            click.echo("  Cannot exclude the survivor — pick a different one with 'p' or leave it included.")
+            continue
+
+        break
 
     remaining = [player for index, player in enumerate(group, start=1) if index not in excluded]
     if len(remaining) < 2:
         click.echo("  Fewer than 2 players remain — skipping group.")
         return
 
-    plan = plan_merge(session, remaining)
+    plan = plan_merge(session, remaining, survivor=survivor)
     _print_plan(plan)
 
     if not click.confirm("  Apply this merge?", default=False):
