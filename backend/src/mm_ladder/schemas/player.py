@@ -15,5 +15,8 @@ class PlayerRead(BaseReadSchema):
     display_name: str
     is_hidden: bool
     is_veteran: bool = False
+    season_champion_set_codes: list[str] = []
+    player_of_the_year_cup_names: list[str] = []
+    cup_champion_cup_names: list[str] = []
     created_at: datetime
     updated_at: datetime

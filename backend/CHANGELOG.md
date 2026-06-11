@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.10.0] - 2026-06-11
+
+### Added
+
+- `Season.champion_player_id` (nullable FK to `player.id`) — the season champion. Exposed on `SeasonRead` as `champion_player_id` and `champion_name` (the player's display name, or `null`).
+- `YearlyCup.player_of_the_year_id` / `YearlyCup.cup_winner_id` (nullable FKs to `player.id`) — the cup's Player of the Year and cup champion. Exposed on `YearlyCupRead` as `player_of_the_year_id`/`player_of_the_year_name` and `cup_winner_id`/`cup_winner_name`.
+- `YearlyCup.qualified_players` — many-to-many relationship (new `yearly_cup_qualification` table) tracking players qualified for a cup's playoff. Exposed on `YearlyCupRead` as `qualified_player_ids`.
+- `Player.season_champion_set_codes`, `Player.player_of_the_year_cup_names`, `Player.cup_champion_cup_names` — reverse-lookup properties assembling a player's "trophy case" from the relationships above. Exposed on `PlayerRead` (only populated by `GET /players/{id}`, default `[]` on the leaderboard list).
+- `SeasonCreateRequest`/`SeasonUpdateRequest`/`SeasonPatchRequest` accept `champion_player_id`. `YearlyCupCreateRequest`/`YearlyCupUpdateRequest`/`YearlyCupPatchRequest` accept `player_of_the_year_id`, `cup_winner_id`, and `qualified_player_ids`.
+- Migration `0008_add_champions_and_cup_qualification` — adds the new FK columns and the `yearly_cup_qualification` association table.
+
 ## [0.9.0] - 2026-06-08
 
 ### Added

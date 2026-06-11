@@ -77,3 +77,36 @@ async def test_create_player_reuses_existing_alias(client: AsyncClient, async_se
     data = resp.json()
     assert data["id"] == canonical.id
     assert data["display_name"] == "Damian Cengarle Barilari"
+
+
+async def test_get_player_includes_trophy_lists(client: AsyncClient) -> None:
+    resp = await client.post("/players/", json={"display_name": "Jim Bandas"})
+    player_id = resp.json()["id"]
+    data = resp.json()
+    assert data["season_champion_set_codes"] == []
+    assert data["player_of_the_year_cup_names"] == []
+    assert data["cup_champion_cup_names"] == []
+
+    season_resp = await client.post(
+        "/seasons/",
+        json={"name": "Core Set 2021", "set_code": "M21", "starts_on": "2020-06-26", "ends_on": "2020-09-18"},
+    )
+    season_id = season_resp.json()["id"]
+    await client.patch(f"/seasons/{season_id}", json={"champion_player_id": player_id})
+
+    cup_resp = await client.post(
+        "/yearly-cups/",
+        json={"year": 2024, "name": "2024 Magic Mates Cup", "starts_on": "2024-01-01", "ends_on": "2024-12-31"},
+    )
+    cup_id = cup_resp.json()["id"]
+    await client.patch(
+        f"/yearly-cups/{cup_id}",
+        json={"player_of_the_year_id": player_id, "cup_winner_id": player_id},
+    )
+
+    resp = await client.get(f"/players/{player_id}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["season_champion_set_codes"] == ["M21"]
+    assert data["player_of_the_year_cup_names"] == ["2024 Magic Mates Cup"]
+    assert data["cup_champion_cup_names"] == ["2024 Magic Mates Cup"]

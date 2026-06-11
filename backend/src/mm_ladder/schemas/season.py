@@ -27,5 +27,7 @@ class SeasonRead(BaseReadSchema):
     event_count: int
     comp_avg_n: int
     qualifying_type: str
+    champion_player_id: int | None
+    champion_name: str | None
     created_at: datetime
     updated_at: datetime
