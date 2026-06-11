@@ -3,6 +3,7 @@ from datetime import date
 import pytest
 from sqlalchemy.exc import IntegrityError
 
+from mm_ladder.models.player import Player
 from mm_ladder.models.season import Season
 from mm_ladder.models.yearly_cup import YearlyCup
 
@@ -52,5 +53,36 @@ class TestSeason:
 
     def test_invalid_yearly_cup_fk(self, session):
         session.add(self._season(yearly_cup_id=99999))
+        with pytest.raises(IntegrityError):
+            session.flush()
+
+    def test_champion_relationship_and_name(self, session):
+        player = Player(display_name="Jim Bandas")
+        session.add(player)
+        session.flush()
+
+        s = self._season()
+        s.champion_player_id = player.id
+        session.add(s)
+        session.commit()
+        session.refresh(s)
+
+        assert s.champion is not None
+        assert s.champion.display_name == "Jim Bandas"
+        assert s.champion_name == "Jim Bandas"
+
+    def test_champion_name_none_without_champion(self, session):
+        s = self._season()
+        session.add(s)
+        session.commit()
+        session.refresh(s)
+
+        assert s.champion is None
+        assert s.champion_name is None
+
+    def test_invalid_champion_player_fk(self, session):
+        s = self._season()
+        s.champion_player_id = 99999
+        session.add(s)
         with pytest.raises(IntegrityError):
             session.flush()

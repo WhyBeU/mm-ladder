@@ -8,6 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import Base, TimestampMixin
 
 if TYPE_CHECKING:
+    from .player import Player
     from .tournament import Tournament
     from .yearly_cup import YearlyCup
 
@@ -27,10 +28,20 @@ class Season(Base, TimestampMixin):
     qualifier_count: Mapped[int] = mapped_column(Integer, default=2, nullable=False)
     event_count: Mapped[int] = mapped_column(Integer, default=12, nullable=False)
     qualifying_type: Mapped[str] = mapped_column(String(10), default="POINTS", nullable=False)
+    champion_player_id: Mapped[int | None] = mapped_column(
+        ForeignKey("player.id", name="fk_season_champion_player"), nullable=True
+    )
 
     yearly_cup: Mapped["YearlyCup | None"] = relationship("YearlyCup", back_populates="seasons")
     tournaments: Mapped[list["Tournament"]] = relationship("Tournament", back_populates="season")
+    champion: Mapped["Player | None"] = relationship(
+        "Player", foreign_keys=[champion_player_id], back_populates="season_championships", lazy="selectin"
+    )
 
     @property
     def comp_avg_n(self) -> int:
         return ceil(self.event_count * 0.66)
+
+    @property
+    def champion_name(self) -> str | None:
+        return self.champion.display_name if self.champion else None

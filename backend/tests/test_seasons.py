@@ -85,3 +85,25 @@ async def test_season_includes_comp_avg_n(client: AsyncClient) -> None:
     data = resp.json()
     assert "comp_avg_n" in data
     assert data["comp_avg_n"] == 8  # ceil(12 * 0.66) = 8
+
+
+async def test_patch_season_champion(client: AsyncClient) -> None:
+    player_resp = await client.post("/players/", json={"display_name": "Jim Bandas"})
+    player_id = player_resp.json()["id"]
+
+    resp = await client.post("/seasons/", json=_SEASON)
+    season_id = resp.json()["id"]
+
+    resp = await client.patch(f"/seasons/{season_id}", json={"champion_player_id": player_id})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["champion_player_id"] == player_id
+    assert data["champion_name"] == "Jim Bandas"
+
+
+async def test_season_champion_defaults_to_none(client: AsyncClient) -> None:
+    resp = await client.post("/seasons/", json=_SEASON)
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data["champion_player_id"] is None
+    assert data["champion_name"] is None

@@ -61,6 +61,11 @@ class TestYearlyCupSchemas:
                 "name": "2024 Cup",
                 "starts_on": date(2024, 1, 1),
                 "ends_on": date(2024, 12, 31),
+                "player_of_the_year_id": None,
+                "player_of_the_year_name": None,
+                "cup_winner_id": None,
+                "cup_winner_name": None,
+                "qualified_player_ids": [],
                 "created_at": _NOW,
                 "updated_at": _NOW,
             }
@@ -92,6 +97,8 @@ class TestSeasonSchemas:
                 "event_count": 12,
                 "comp_avg_n": 8,
                 "qualifying_type": "POINTS",
+                "champion_player_id": None,
+                "champion_name": None,
                 "created_at": _NOW,
                 "updated_at": _NOW,
             }
