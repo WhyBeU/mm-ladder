@@ -30,6 +30,8 @@ class SeasonPatchRequest(BaseModel):
     set_code: str | None = None
     starts_on: date | None = None
     ends_on: date | None = None
+    yearly_cup_id: int | None = None
     qualifier_count: int | None = None
     event_count: int | None = None
+    qualifying_type: str | None = None
     champion_player_id: int | None = None

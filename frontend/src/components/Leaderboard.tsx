@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import type { StandingEntry, MMLEvent, Scope, Season } from "@/lib/types";
 import { fmtPct, fmtAvg, PlayerAvatar, StreakChips, Sparkline } from "@/components/bits";
+import AwardsCluster from "@/components/AwardsCluster";
 
 type SortKey = "points" | "display_name" | "match_wins" | "win_pct" | "avg_pts" | "tournaments_played" | "trophies" | "comp_avg";
 type SortDir = "asc" | "desc";
@@ -18,6 +19,8 @@ interface LeaderboardProps {
   density?: Density;
   defaultSortKey?: SortKey;
   onEventSelect?: (event: MMLEvent) => void;
+  qualifiedPlayerIds?: Set<number>;
+  qualifiedCupYear?: number | null;
 }
 
 export default function Leaderboard({
@@ -30,6 +33,8 @@ export default function Leaderboard({
   density = "comfy",
   defaultSortKey = "points",
   onEventSelect,
+  qualifiedPlayerIds,
+  qualifiedCupYear,
 }: LeaderboardProps) {
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>(defaultSortKey);
@@ -190,7 +195,11 @@ export default function Leaderboard({
                 <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
                   <PlayerAvatar name={p.display_name} rank={rank} size={density === "compact" ? 32 : 36} isVeteran={p.is_veteran} />
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.display_name}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+                      <span style={{ fontWeight: 600, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.display_name}</span>
+                      {qualifiedPlayerIds?.has(p.player_id) && <QualifiedCheck year={qualifiedCupYear} />}
+                      <AwardsCluster player={p} />
+                    </div>
                     <div style={{ fontSize: 11, color: "var(--parchment-faint)", display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
                       <span style={{ fontVariantNumeric: "tabular-nums" }}>{p.tournaments_played} {eventLabel.toLowerCase()}</span>
                       {showStreak && p.streak && (
@@ -285,6 +294,19 @@ export default function Leaderboard({
         </div>
       )}
     </section>
+  );
+}
+
+// ---------- QualifiedCheck ----------
+
+function QualifiedCheck({ year }: { year?: number | null }) {
+  return (
+    <span className="aw" style={{ flexShrink: 0 }} title={`Qualified for MM Cup${year != null ? ` ${year}` : ""}`}>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent-300)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block" }}>
+        <path d="M20 6 9 17l-5-5" />
+      </svg>
+      <span className="aw-tip">Qualified for MM Cup{year != null ? ` ${year}` : ""}</span>
+    </span>
   );
 }
 

@@ -107,3 +107,19 @@ async def test_season_champion_defaults_to_none(client: AsyncClient) -> None:
     data = resp.json()
     assert data["champion_player_id"] is None
     assert data["champion_name"] is None
+
+
+async def test_patch_season_cup_and_qualifying_type(client: AsyncClient) -> None:
+    season_id = (await client.post("/seasons/", json=_SEASON)).json()["id"]
+    cup_id = (
+        await client.post(
+            "/yearly-cups/",
+            json={"year": 2024, "name": "2024 Cup", "starts_on": "2024-01-01", "ends_on": "2024-12-31"},
+        )
+    ).json()["id"]
+
+    resp = await client.patch(f"/seasons/{season_id}", json={"yearly_cup_id": cup_id, "qualifying_type": "BEST"})
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["yearly_cup_id"] == cup_id
+    assert data["qualifying_type"] == "BEST"

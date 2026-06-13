@@ -118,3 +118,25 @@ async def test_standings_trophies_counted_correctly(client: AsyncClient) -> None
     resp = await client.get(f"/seasons/{season_id}/standings")
     data = resp.json()
     assert data[0]["trophies"] == 2
+
+
+async def test_standings_include_awards(client: AsyncClient) -> None:
+    season_id = await _make_season(client)
+    player_id = await _make_player(client, "Champ")
+    tid = await _make_tournament(client, season_id, "2026-02-01")
+    await _add_participant(client, tid, player_id, wins=3, losses=0, draws=0)
+
+    await client.patch(f"/seasons/{season_id}", json={"champion_player_id": player_id})
+    cup = await client.post(
+        "/yearly-cups/",
+        json={"year": 2025, "name": "2025 Cup", "starts_on": "2025-01-01", "ends_on": "2025-12-31"},
+    )
+    cup_id = cup.json()["id"]
+    await client.patch(f"/yearly-cups/{cup_id}", json={"player_of_the_year_id": player_id, "cup_winner_id": player_id})
+
+    resp = await client.get(f"/seasons/{season_id}/standings")
+    assert resp.status_code == 200
+    row = next(r for r in resp.json() if r["player_id"] == player_id)
+    assert row["season_championships"] == [{"set_code": "TST", "season_name": "Test Season"}]
+    assert row["player_of_the_year_years"] == [2025]
+    assert row["cup_champion_years"] == [2025]

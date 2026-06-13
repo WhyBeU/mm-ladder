@@ -3,8 +3,7 @@
 ## Running the server
 
 ```bash
-# From backend/
-poetry run alembic upgrade head
+# From backend/ — the server auto-applies migrations on startup (AUTO_MIGRATE=1 by default)
 poetry run uvicorn mm_ladder.app:app --reload --port 8000
 ```
 
@@ -21,6 +20,9 @@ poetry run uvicorn mm_ladder.app:app --reload --port 8000
 |----------|---------|-------|
 | `DATABASE_URL` | `sqlite+aiosqlite:///./mm_ladder.db` | Any SQLAlchemy async URL |
 | `ENV` | `development` | `development` → coloured logs; else JSON |
+| `ADMIN_TOKEN` | _(unset)_ | Shared secret required on all writes (see Authentication). Unset → every write 401s. |
+| `AUTO_MIGRATE` | `1` | Apply Alembic migrations on startup. `0`/`false`/`no` to disable. |
+| `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowed frontend origins |
 
 ---
 
@@ -41,9 +43,30 @@ Request → Route → Service → AsyncSession → SQLite / Postgres
 
 | Status | Condition |
 |--------|-----------|
+| 401 | Missing/invalid `X-Admin-Token` on a write endpoint (see Authentication) |
 | 404 | Resource not found, or nested resource belongs to a different parent |
-| 409 | Unique constraint violation (e.g. duplicate `set_code`, same player in same tournament) |
+| 409 | Unique constraint violation, or a guarded conflict (deleting a player with participations; an un-mergeable merge) |
 | 422 | Request body validation failure (Pydantic) |
+
+---
+
+## Authentication
+
+All **mutating** endpoints (`POST`/`PUT`/`PATCH`/`DELETE`) require the shared admin secret in an
+`X-Admin-Token` header matching the backend's `ADMIN_TOKEN` env var. `GET` endpoints are public so
+the leaderboard works unauthenticated. If `ADMIN_TOKEN` is unset/empty the API fails closed (all
+writes 401).
+
+```bash
+curl -X POST http://localhost:8000/players/ \
+  -H "X-Admin-Token: $ADMIN_TOKEN" -H "Content-Type: application/json" \
+  -d '{"display_name": "Alice"}'
+```
+
+| Method | Path | Body | Response |
+|--------|------|------|----------|
+| GET | `/admin/check` | — | `{"status":"ok"}` (401 if token invalid) — validates a token |
+| GET | `/admin/audit` | — (query: `entity_type?`, `action?`, `limit=50`, `offset=0`) | `{ items: AuditLogRead[], total: int }` — append-only audit log, newest first |
 
 ---
 
@@ -63,6 +86,7 @@ Request → Route → Service → AsyncSession → SQLite / Postgres
 |--------|------|------|----------|
 | GET | `/players/` | — | `PlayerRead[]` |
 | POST | `/players/` | `PlayerCreateRequest` | `PlayerRead` (201) |
+| POST | `/players/merge` | `{ keep_id, duplicate_ids }` | `PlayerRead` — fold duplicates into the keeper |
 | GET | `/players/{id}` | — | `PlayerRead` |
 | PUT | `/players/{id}` | `PlayerUpdateRequest` | `PlayerRead` |
 | PATCH | `/players/{id}` | `PlayerPatchRequest` | `PlayerRead` |
@@ -75,12 +99,17 @@ Request → Route → Service → AsyncSession → SQLite / Postgres
 
 > If `display_name` normalises (accent/punctuation/case-insensitive token match) to an existing player's `display_name` or a known alias, the existing player is returned and the new spelling is recorded as an alias instead of creating a duplicate row.
 
-**`PlayerPatchRequest`** — all fields optional; omit to leave unchanged
+**`PlayerPatchRequest`** — all fields optional (`display_name`, `is_hidden`, `aliases`); omit to leave unchanged
 ```json
-{ "is_hidden": true }
+{ "is_hidden": true, "aliases": ["Alyce", "a.smith"] }
 ```
 
-> `PlayerRead.is_veteran` is computed (`true` once a player has played more than 52 events all-time) — read-only, not settable via create/update/patch.
+> `PlayerRead` exposes `aliases` (editable) and the read-only `is_veteran` (computed; `true` once a player has played more than 52 events all-time).
+
+**`/players/merge`** — reassigns every duplicate's participations and match references to `keep_id`, folds the duplicates' names/aliases into the keeper's aliases, repoints any champion/POTY/cup-winner/qualification records, and deletes the duplicates. 409 if `keep_id` is also a duplicate, or if the players share a tournament or faced each other (an impossible merged record).
+```json
+{ "keep_id": 7, "duplicate_ids": [12, 31] }
+```
 
 ---
 
@@ -126,7 +155,7 @@ Request → Route → Service → AsyncSession → SQLite / Postgres
 
 > `yearly_cup_id` is optional (null = standalone season). `qualifier_count` defaults to 2. `event_count` defaults to 12 (number of scheduled events in the season). `qualifying_type` is `"POINTS"` or `"BEST"` and defaults to `"POINTS"`.
 > PUT requires `qualifier_count` and `event_count` explicitly (no defaults).
-> PATCH cannot change `yearly_cup_id`; use PUT to update cup association.
+> `SeasonPatchRequest` also accepts `yearly_cup_id`, `qualifying_type`, and `champion_player_id` (set-only — passing null/omitting leaves the field unchanged; use PUT to clear).
 
 **`SeasonRead`** includes `event_count: int`, `comp_avg_n: int` (= `ceil(event_count × 0.66)`), and `qualifying_type: str`.
 
@@ -148,7 +177,10 @@ Request → Route → Service → AsyncSession → SQLite / Postgres
   "comp_avg_n": 8,
   "trophies": 3,
   "per_event_scores": [9, 6, null, 9, 8, null, 9, 7, 6, null, null, 9],
-  "is_veteran": false
+  "is_veteran": false,
+  "season_championships": [{ "set_code": "BLB", "season_name": "Bloomburrow" }],
+  "player_of_the_year_years": [2025],
+  "cup_champion_years": [2025]
 }
 ```
 
@@ -156,6 +188,7 @@ Request → Route → Service → AsyncSession → SQLite / Postgres
 > `per_event_scores` has length `event_count`; entries are `null` for events the player missed.
 > `trophies` is the count of events where the player scored 9 points.
 > `is_veteran` mirrors `PlayerRead.is_veteran` (true once a player has played more than 52 events all-time).
+> `season_championships` / `player_of_the_year_years` / `cup_champion_years` carry the player's awards (lifetime), driving the leaderboard award icons.
 
 ---
 
@@ -200,7 +233,7 @@ Nested under `/tournaments/{tournament_id}/participants`.
 > `points` is DB-computed (`match_wins × 3 + match_draws`) and read-only.
 > `tournament_id` comes from the URL path, not the request body.
 > Unique constraint: one participant row per `(tournament_id, player_id)` pair.
-> PATCH cannot change `player_id`; use DELETE + POST to reassign.
+> `TournamentParticipantPatchRequest` accepts `player_id` (in addition to W/L/D) to reassign a result to a different player.
 
 ---
 

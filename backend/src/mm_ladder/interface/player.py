@@ -9,8 +9,10 @@ class PlayerCreateRequest(BaseModel):
 class PlayerUpdateRequest(BaseModel):
     display_name: str
     is_hidden: bool
+    aliases: list[str] = []
 
 
 class PlayerPatchRequest(BaseModel):
     display_name: str | None = None
     is_hidden: bool | None = None
+    aliases: list[str] | None = None

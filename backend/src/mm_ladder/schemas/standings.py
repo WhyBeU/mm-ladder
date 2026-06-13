@@ -1,6 +1,11 @@
 from pydantic import BaseModel
 
 
+class SeasonChampionshipRead(BaseModel):
+    set_code: str
+    season_name: str
+
+
 class SeasonStandingRead(BaseModel):
     rank: int
     player_id: int
@@ -17,3 +22,6 @@ class SeasonStandingRead(BaseModel):
     trophies: int
     per_event_scores: list[int | None]
     is_veteran: bool = False
+    season_championships: list[SeasonChampionshipRead] = []
+    player_of_the_year_years: list[int] = []
+    cup_champion_years: list[int] = []

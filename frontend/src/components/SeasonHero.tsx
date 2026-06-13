@@ -2,6 +2,7 @@
 
 import type { Scope, Season, YearlyCup, StandingEntry, SeasonStats, MMLEvent } from "@/lib/types";
 import { fmtDate, fmtPct, PlayerAvatar, Sparkline } from "@/components/bits";
+import AwardsCluster from "@/components/AwardsCluster";
 
 interface SeasonHeroProps {
   scope: Scope;
@@ -62,6 +63,15 @@ export function SeasonHero({ scope, season, cup, event, leader, stats, eventsCou
             position: "absolute", right: 24, top: "50%", transform: "translateY(-50%)",
             fontSize: 180, color: "color-mix(in srgb, var(--parchment) 5%, transparent)",
             pointerEvents: "none",
+          }} />
+        )}
+        {(scope.kind === "cup" || scope.kind === "alltime") && (
+          <div aria-hidden style={{
+            position: "absolute", right: 18, top: "50%", transform: "translateY(-50%)",
+            width: 200, height: 200, pointerEvents: "none",
+            background: "color-mix(in srgb, var(--parchment) 14%, transparent)",
+            WebkitMask: "url(/mm-logo-svg.svg) center / contain no-repeat",
+            mask: "url(/mm-logo-svg.svg) center / contain no-repeat",
           }} />
         )}
         <div style={{ position: "relative", zIndex: 1 }}>
@@ -138,11 +148,12 @@ export function SeasonHero({ scope, season, cup, event, leader, stats, eventsCou
             background: "radial-gradient(circle, color-mix(in srgb, var(--accent-400) 30%, transparent), transparent 70%)",
           }} />
           <div style={{ position: "relative" }}>
-            <div className="eyebrow" style={{ color: "var(--accent-300)" }}>● {scope.kind === "pod" || scope.kind === "event" ? "Winner" : "Current leader"}</div>
+            <div className="eyebrow" style={{ color: "var(--accent-300)" }}>● {scope.kind === "pod" || scope.kind === "event" ? "Winner" : scope.kind === "cup" ? "Player of the Year" : "Current leader"}</div>
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 12 }}>
               <PlayerAvatar name={leader.display_name} rank={1} size={56} />
               <div style={{ minWidth: 0 }}>
                 <div className="font-display" style={{ fontSize: 22, lineHeight: 1.15, color: "var(--parchment)" }}>{leader.display_name}</div>
+                <div style={{ marginTop: 4 }}><AwardsCluster player={leader} /></div>
                 <div style={{ fontSize: 12, color: "var(--parchment-muted)", marginTop: 2 }}>
                   {leader.tournaments_played} events · {fmtPct(leader.win_pct)} win rate
                 </div>

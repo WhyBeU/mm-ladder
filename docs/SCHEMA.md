@@ -41,6 +41,8 @@ erDiagram
         string name
         date starts_on
         date ends_on
+        int player_of_the_year_id FK
+        int cup_winner_id FK
         datetime created_at
         datetime updated_at
     }
@@ -55,8 +57,21 @@ erDiagram
         int qualifier_count
         int event_count
         string qualifying_type
+        int champion_player_id FK
         datetime created_at
         datetime updated_at
+    }
+
+    AuditLog {
+        int id PK
+        datetime created_at
+        string actor
+        string action
+        string entity_type
+        int entity_id
+        string label
+        string summary
+        json changes
     }
 
     Tournament {
@@ -100,6 +115,10 @@ erDiagram
     Player ||--o{ TournamentParticipant : "results"
     Player ||--o{ Match : "player_a"
     Player ||--o{ Match : "player_b"
+    Player |o--o{ Season : "season champion"
+    Player |o--o{ YearlyCup : "player of the year"
+    Player |o--o{ YearlyCup : "cup winner"
+    YearlyCup }o--o{ Player : "qualified (yearly_cup_qualification)"
 ```
 
 ---
@@ -113,7 +132,7 @@ erDiagram
 | id           | int PK                |                                                     |
 | display_name | str, required         | sole public identifier; shown on leaderboard        |
 | is_hidden    | bool, default false   | true = excluded from leaderboard, history preserved |
-| aliases      | json (`list[str]`), default `[]` | alternate spellings merged into this player (accents, initials, punctuation variants); not exposed via the API |
+| aliases      | json (`list[str]`), default `[]` | alternate spellings merged into this player (accents, initials, punctuation variants); exposed on `PlayerRead` and editable via the player PUT/PATCH (admin) |
 | created_at   | datetime              |                                                     |
 | updated_at   | datetime              |                                                     |
 
@@ -125,19 +144,29 @@ erDiagram
 
 **`is_veteran` (computed, not a column):** `true` once a player has played more than 52 events all-time (`VETERAN_THRESHOLD`), computed via a correlated subquery in `PlayerService.list` / `StandingsService` and exposed on `PlayerRead.is_veteran` / `SeasonStandingRead.is_veteran`.
 
+**Trophy case (computed properties, not columns):** `season_champion_set_codes`, `player_of_the_year_cup_names`, and `cup_champion_cup_names` assemble a player's awards from the `Season.champion_player_id` / `YearlyCup.player_of_the_year_id` / `YearlyCup.cup_winner_id` back-references (exposed on `PlayerRead`, populated by `GET /players/{id}`). `SeasonStandingRead` additionally exposes `season_championships` (`{set_code, season_name}[]`), `player_of_the_year_years`, and `cup_champion_years` for the leaderboard award icons.
+
 ---
 
 ### YearlyCup
 
 | Column     | Type          | Notes                       |
 |------------|---------------|-----------------------------|
-| id         | int PK        |                             |
-| year       | int, unique   | e.g. 2024                   |
-| name       | str           | e.g. "2024 Magic Mates Cup" |
-| starts_on  | date          |                             |
-| ends_on    | date          |                             |
-| created_at | datetime      |                             |
-| updated_at | datetime      |                             |
+| id                   | int PK             |                             |
+| year                 | int, unique        | e.g. 2024                   |
+| name                 | str                | e.g. "2024 Magic Mates Cup" |
+| starts_on            | date               |                             |
+| ends_on              | date               |                             |
+| player_of_the_year_id| FK Player, null    | the cup's Player of the Year (manually assigned) |
+| cup_winner_id        | FK Player, null    | the cup's playoff winner (manually assigned)     |
+| created_at           | datetime           |                             |
+| updated_at           | datetime           |                             |
+
+**Qualified players (`yearly_cup_qualification`):** a many-to-many association table
+(`yearly_cup_id`, `player_id`; composite PK) tracking the players an admin has marked qualified for
+a cup's playoff. Exposed on `YearlyCupRead` as `qualified_player_ids`; settable via the cup
+create/update/patch requests. `player_of_the_year_name` / `cup_winner_name` are derived (display
+names) on `YearlyCupRead`.
 
 ---
 
@@ -154,6 +183,7 @@ erDiagram
 | qualifier_count | int, default 2      | only meaningful when `yearly_cup_id` is set            |
 | event_count     | int, default 12     | number of scheduled events in the season               |
 | qualifying_type | str, default `"POINTS"` | `"POINTS"` or `"BEST"` — drives cup-qualification ranking (see below) |
+| champion_player_id | FK Player, null  | the season champion (manually assigned). Exposed on `SeasonRead` as `champion_player_id` + derived `champion_name` |
 | created_at      | datetime            |                                                        |
 | updated_at      | datetime            |                                                        |
 
@@ -236,6 +266,30 @@ Constraint: `player_a_id <> player_b_id`.
 
 ---
 
+### AuditLog
+
+Append-only record of every admin write (created via the admin-guarded API; the migrate CLI/pipeline is not logged). Added in migration `0009_add_audit_log`.
+
+| Column      | Type                  | Notes                                                       |
+|-------------|-----------------------|-------------------------------------------------------------|
+| id          | int PK                |                                                             |
+| created_at  | datetime              | when the change was recorded                                |
+| updated_at  | datetime              | unused (from the shared timestamp mixin)                    |
+| actor       | str, default `"admin"`| the acting admin (single shared token → constant `"admin"`) |
+| action      | str                   | `CREATE` / `UPDATE` / `DELETE`                              |
+| entity_type | str                   | `player` / `season` / `yearly_cup` / `tournament` / `participant` / `match` |
+| entity_id   | int, null             | the affected row's id                                       |
+| label       | str                   | human label, e.g. `Player "Alice"`                          |
+| summary     | str                   | one-line description, e.g. `display_name: "Alice" → "Alyce"` |
+| changes     | json                  | list of `{field, old, new}`; CREATE → `old` null, DELETE → `new` null |
+
+**Decision — append-only, written in-transaction:** an `AuditRecorder` adds the row to the same
+session as the mutation it describes (atomic), so the log can't drift from the data. There are no
+update/delete routes for audit rows. Served by `GET /admin/audit` (filter by `entity_type`/`action`,
+paginated).
+
+---
+
 ## Constraints Summary
 
 | Table                 | Constraint                                        |
@@ -244,6 +298,7 @@ Constraint: `player_a_id <> player_b_id`.
 | Season                | `set_code` unique                                 |
 | TournamentParticipant | UNIQUE `(tournament_id, player_id)`               |
 | Match                 | `CHECK player_a_id <> player_b_id`                |
+| yearly_cup_qualification | composite PK `(yearly_cup_id, player_id)`      |
 
 ---
 
