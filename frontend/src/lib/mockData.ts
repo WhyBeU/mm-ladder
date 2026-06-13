@@ -1,16 +1,16 @@
 import type { YearlyCup, Season, MMLEvent, Player, StandingEntry } from "./types";
 
 export const yearlyCups: YearlyCup[] = [
-  { id: 1, year: 2026, name: "2026 Magic Mates Cup", starts_on: "2026-01-05", ends_on: "2026-12-31", is_current: true },
-  { id: 0, year: 2025, name: "2025 Magic Mates Cup", starts_on: "2025-01-06", ends_on: "2025-12-29", is_current: false },
+  { id: 1, year: 2026, name: "2026 Magic Mates Cup", starts_on: "2026-01-05", ends_on: "2026-12-31", player_of_the_year_id: null, cup_winner_id: null, qualified_player_ids: [], is_current: true },
+  { id: 0, year: 2025, name: "2025 Magic Mates Cup", starts_on: "2025-01-06", ends_on: "2025-12-29", player_of_the_year_id: null, cup_winner_id: null, qualified_player_ids: [], is_current: false },
 ];
 
 export const seasons: Season[] = [
-  { id: 1, name: "Bloomburrow",               set_code: "BLB", keyrune: "blb", starts_on: "2026-01-05", ends_on: "2026-02-23", yearly_cup_id: 1, qualifier_count: 2, event_count: 7,  comp_avg_n: 5, qualifying_type: "BEST",   is_current: false },
-  { id: 2, name: "Duskmourn",                 set_code: "DSK", keyrune: "dsk", starts_on: "2026-02-24", ends_on: "2026-04-19", yearly_cup_id: 1, qualifier_count: 2, event_count: 8,  comp_avg_n: 6, qualifying_type: "BEST",   is_current: false },
-  { id: 3, name: "Strixhaven",                set_code: "STX", keyrune: "stx", starts_on: "2026-04-20", ends_on: "2026-06-15", yearly_cup_id: 1, qualifier_count: 2, event_count: 12, comp_avg_n: 8, qualifying_type: "BEST",   is_current: true  },
-  { id: 4, name: "Edge of Eternities",        set_code: "EOE", keyrune: "eoe", starts_on: "2026-06-16", ends_on: "2026-08-10", yearly_cup_id: 1, qualifier_count: 2, event_count: 12, comp_avg_n: 8, qualifying_type: "POINTS", is_current: false },
-  { id: 5, name: "The Lost Caverns of Ixalan",set_code: "LCI", keyrune: "lci", starts_on: "2025-11-01", ends_on: "2025-12-31", yearly_cup_id: 0, qualifier_count: 2, event_count: 9,  comp_avg_n: 6, qualifying_type: "POINTS", is_current: false },
+  { id: 1, name: "Bloomburrow",               set_code: "BLB", keyrune: "blb", starts_on: "2026-01-05", ends_on: "2026-02-23", yearly_cup_id: 1, qualifier_count: 2, event_count: 7,  comp_avg_n: 5, qualifying_type: "BEST",   champion_player_id: null, is_current: false },
+  { id: 2, name: "Duskmourn",                 set_code: "DSK", keyrune: "dsk", starts_on: "2026-02-24", ends_on: "2026-04-19", yearly_cup_id: 1, qualifier_count: 2, event_count: 8,  comp_avg_n: 6, qualifying_type: "BEST",   champion_player_id: null, is_current: false },
+  { id: 3, name: "Strixhaven",                set_code: "STX", keyrune: "stx", starts_on: "2026-04-20", ends_on: "2026-06-15", yearly_cup_id: 1, qualifier_count: 2, event_count: 12, comp_avg_n: 8, qualifying_type: "BEST",   champion_player_id: null, is_current: true  },
+  { id: 4, name: "Edge of Eternities",        set_code: "EOE", keyrune: "eoe", starts_on: "2026-06-16", ends_on: "2026-08-10", yearly_cup_id: 1, qualifier_count: 2, event_count: 12, comp_avg_n: 8, qualifying_type: "POINTS", champion_player_id: null, is_current: false },
+  { id: 5, name: "The Lost Caverns of Ixalan",set_code: "LCI", keyrune: "lci", starts_on: "2025-11-01", ends_on: "2025-12-31", yearly_cup_id: 0, qualifier_count: 2, event_count: 9,  comp_avg_n: 6, qualifying_type: "POINTS", champion_player_id: null, is_current: false },
 ];
 
 const playerNames = [

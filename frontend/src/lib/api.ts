@@ -4,6 +4,9 @@ export interface ApiYearlyCup {
   name: string
   starts_on: string
   ends_on: string
+  player_of_the_year_id: number | null
+  cup_winner_id: number | null
+  qualified_player_ids: number[]
 }
 
 export interface ApiSeason {
@@ -17,6 +20,7 @@ export interface ApiSeason {
   event_count: number
   comp_avg_n: number
   qualifying_type: "POINTS" | "BEST"
+  champion_player_id: number | null
 }
 
 export interface ApiTournament {
@@ -61,6 +65,9 @@ export interface ApiSeasonStanding {
   trophies: number
   per_event_scores: (number | null)[]
   is_veteran: boolean
+  season_championships: { set_code: string; season_name: string }[]
+  player_of_the_year_years: number[]
+  cup_champion_years: number[]
 }
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'

@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Scope, StandingEntry, SeasonStats, MMLEvent, YearlyCup, Season } from "@/lib/types";
-import type { ApiParticipant, ApiPlayer, ApiTournament, ApiSeasonStanding } from "@/lib/api";
+import type { ApiParticipant, ApiPlayer, ApiTournament, ApiSeasonStanding, ApiSeason, ApiYearlyCup } from "@/lib/api";
 import {
   fetchYearlyCups,
   fetchSeasons,
@@ -12,20 +12,22 @@ import {
   fetchTournamentParticipants,
   fetchSeasonStandings,
 } from "@/lib/api";
+import { buildPlayerAwards, type PlayerAwards } from "@/lib/awards";
 import Image from "next/image";
 import ManaSwitcher from "@/components/ManaSwitcher";
 import Leaderboard from "@/components/Leaderboard";
 import { SeasonHero, StatsStrip } from "@/components/SeasonHero";
 import { Podium } from "@/components/Podium";
+import { QualifiedCards } from "@/components/QualifiedCards";
 import ScopeBar from "@/components/ScopeBar";
 
 // ---------- Data adapters ----------
 
-function toYearlyCup(c: { id: number; year: number; name: string; starts_on: string; ends_on: string }, today: string): YearlyCup {
+function toYearlyCup(c: ApiYearlyCup, today: string): YearlyCup {
   return { ...c, is_current: c.starts_on <= today && today <= c.ends_on };
 }
 
-function toSeason(s: { id: number; name: string; set_code: string; starts_on: string; ends_on: string; yearly_cup_id: number | null; qualifier_count: number; event_count: number; comp_avg_n: number; qualifying_type: "POINTS" | "BEST" }, today: string): Season {
+function toSeason(s: ApiSeason, today: string): Season {
   return {
     ...s,
     keyrune: s.set_code.toLowerCase(),
@@ -67,6 +69,7 @@ function buildStandings(
   players: ApiPlayer[],
   scopeTournamentIds: number[],
   scopeKind: string = "alltime",
+  awards: Map<number, PlayerAwards> = new Map(),
 ): StandingEntry[] {
   const playerMap = new Map(
     players.filter(p => !p.is_hidden).map(p => [p.id, p]),
@@ -102,6 +105,9 @@ function buildStandings(
       per_event_points: scopeTournamentIds.map(tid => byTId.get(tid)?.points ?? null),
       attended: scopeTournamentIds.map(tid => (byTId.has(tid) ? 1 : 0)) as (0 | 1)[],
       is_veteran: player.is_veteran,
+      season_championships: awards.get(playerId)?.season_championships ?? [],
+      player_of_the_year_years: awards.get(playerId)?.player_of_the_year_years ?? [],
+      cup_champion_years: awards.get(playerId)?.cup_champion_years ?? [],
     };
   });
   const sorted = scopeKind === "cup"
@@ -130,6 +136,9 @@ function apiSeasonStandingToEntry(s: ApiSeasonStanding): StandingEntry {
     comp_avg: s.comp_avg,
     comp_avg_n: s.comp_avg_n,
     is_veteran: s.is_veteran,
+    season_championships: s.season_championships,
+    player_of_the_year_years: s.player_of_the_year_years,
+    cup_champion_years: s.cup_champion_years,
   };
 }
 
@@ -277,13 +286,16 @@ export default function LeaderboardPage() {
     enabled: scopeTournamentIds.length > 0 && scope.kind !== "season",
   });
 
+  // Champion awards, derived from already-fetched cups + seasons
+  const playerAwards = useMemo(() => buildPlayerAwards(yearlyCups, seasons), [yearlyCups, seasons]);
+
   // Compute standings: API-backed for season scope, client-side otherwise
   const scopeStandings = useMemo(() => {
     if (scope.kind === "season" && apiSeasonStandings) {
       return apiSeasonStandings.map(apiSeasonStandingToEntry);
     }
-    return buildStandings(rawParticipants, apiPlayers, scopeTournamentIds, scope.kind);
-  }, [scope, apiSeasonStandings, rawParticipants, apiPlayers, scopeTournamentIds]);
+    return buildStandings(rawParticipants, apiPlayers, scopeTournamentIds, scope.kind, playerAwards);
+  }, [scope, apiSeasonStandings, rawParticipants, apiPlayers, scopeTournamentIds, playerAwards]);
 
   // Resolve context objects
   const cup    = scope.cupId    != null ? yearlyCups.find(y => y.id === scope.cupId)  ?? null : null;
@@ -304,6 +316,15 @@ export default function LeaderboardPage() {
 
   const stats = useMemo(() => computeStats(scopedEvents, scopeStandings), [scopedEvents, scopeStandings]);
   const leader = scopeStandings[0];
+  const heroLeader = scope.kind === "cup" && cup?.player_of_the_year_id != null
+    ? (scopeStandings.find(e => e.player_id === cup.player_of_the_year_id) ?? leader)
+    : leader;
+
+  // Cup qualifiers for the season's cup (season scope only) → gold checkmark on qualified players
+  const seasonCup = scope.kind === "season" && season?.yearly_cup_id != null
+    ? yearlyCups.find(c => c.id === season.yearly_cup_id) ?? null
+    : null;
+  const qualifiedPlayerIds = seasonCup ? new Set(seasonCup.qualified_player_ids) : undefined;
 
   const showPodium = (scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime") && scopeStandings.length >= 3;
 
@@ -336,10 +357,11 @@ export default function LeaderboardPage() {
               boxShadow: "0 0 0 1px color-mix(in srgb, var(--accent-400) 40%, transparent), var(--shadow-gold-glow)",
             }}>
               <Image
-                src="/magic-mates-logo.png"
+                src="/mm-logo-svg.svg"
                 alt="Magic Mates"
                 width={34}
                 height={34}
+                unoptimized
                 style={{ objectFit: "contain" }}
                 onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
               />
@@ -363,7 +385,7 @@ export default function LeaderboardPage() {
             season={heroCtx.season}
             cup={heroCtx.cup}
             event={event}
-            leader={leader}
+            leader={heroLeader}
             stats={stats}
             eventsCount={scopedEvents.length}
             compAvgN={scope.kind === "season" ? apiSeasonStandings?.[0]?.comp_avg_n : undefined}
@@ -372,7 +394,9 @@ export default function LeaderboardPage() {
             onSeasonSelect={scope.kind === "cup" ? (s) => setScope({ kind: "season", cupId: s.yearly_cup_id ?? undefined, seasonId: s.id }) : undefined}
           />
           <StatsStrip stats={stats} totalPlayers={apiPlayers.filter(p => !p.is_hidden).length} />
-          {showPodium && <Podium standings={scopeStandings} />}
+          {scope.kind === "cup"
+            ? <QualifiedCards standings={scopeStandings} qualifiedPlayerIds={cup?.qualified_player_ids ?? []} />
+            : showPodium && <Podium standings={scopeStandings} />}
           <Leaderboard
             standings={scopeStandings}
             scope={scope}
@@ -380,6 +404,8 @@ export default function LeaderboardPage() {
             scopedEvents={scopedEvents}
             defaultSortKey={scope.kind === "cup" ? "trophies" : scope.kind === "season" && season?.qualifying_type === "BEST" ? "comp_avg" : "points"}
             onEventSelect={(e) => setScope({ kind: "event", cupId: scope.cupId, seasonId: e.season_id, eventId: e.id })}
+            qualifiedPlayerIds={qualifiedPlayerIds}
+            qualifiedCupYear={seasonCup?.year ?? null}
           />
         </main>
 

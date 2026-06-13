@@ -15,6 +15,9 @@ export interface YearlyCup {
   name: string;
   starts_on: string;
   ends_on: string;
+  player_of_the_year_id: number | null;
+  cup_winner_id: number | null;
+  qualified_player_ids: number[];
   is_current: boolean;
 }
 
@@ -30,6 +33,7 @@ export interface Season {
   event_count: number;
   comp_avg_n: number;
   qualifying_type: "POINTS" | "BEST";
+  champion_player_id: number | null;
   is_current: boolean;
 }
 
@@ -73,6 +77,9 @@ export interface StandingEntry {
   comp_avg?: number | null;
   comp_avg_n?: number;
   is_veteran?: boolean;
+  season_championships?: { set_code: string; season_name: string }[];
+  player_of_the_year_years?: number[];
+  cup_champion_years?: number[];
 }
 
 export interface SeasonStats {

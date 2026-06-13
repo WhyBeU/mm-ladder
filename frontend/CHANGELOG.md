@@ -2,6 +2,40 @@
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-06-14 — Admin portal, champion awards & cup view
+
+### Added
+
+- **Admin portal (`/admin`)** — password-gated dashboard (Cups / Seasons / Tournaments / Players)
+  to create, edit, and delete every scope; edit participant W/L/D (points stays DB-computed);
+  assign season champion / Player of the Year / cup winner and cup qualification; edit player names
+  and aliases; reassign or **merge** duplicate players; and delete duplicate tournaments. Typed-word
+  confirmation on every destructive action, Save/Reset dirty-form editors, and a searchable
+  `PlayerPicker`. Authenticates with a shared `ADMIN_TOKEN` sent as the `X-Admin-Token` header.
+- **Champion award icons** — `AwardsCluster` renders each player's awards beside their name: a
+  mythic (amber/red) set symbol for a season championship, a foil trophy for Player of the Year, and
+  the foil MM logo for a cup win — with count badges, hover tooltips, and wrapping.
+  Award data is derived client-side from cups + seasons (`lib/awards.ts`), so badges appear on the
+  season, cup, and all-time scopes.
+- **Qualified-for-cup checkmark** — on the season scope, a gold checkmark appears after the name
+  (before any awards) for players in that season's cup's qualified list, with a tooltip
+  "Qualified for MM Cup &lt;year&gt;".
+- **Cup view qualified-player cards** — on the cup scope the podium is replaced by `QualifiedCards`
+  (the players an admin marked qualified, each with their awards); hidden entirely when no
+  qualifiers are set. The hero leader card becomes the cup's **Player of the Year**.
+- **Admin History tab** — an append-only audit log of every admin change, with entity/action
+  filters, expandable `field | old | new` diffs, and pagination.
+
+### Changed
+
+- **Header logo** now uses the transparent `mm-logo-svg.svg` silhouette (crisp on the parchment
+  chip); the cup **and all-time** heroes show a faint MM-logo watermark behind the title.
+- **Award icons** — Player of the Year is now a foil **trophy** (was a star); the cup-winner foil
+  **MM logo** renders reliably (the logo SVG gained explicit dimensions for CSS masking).
+- **Admin child lists** — "Seasons in this cup" and "Tournaments in this season" are now clickable
+  and jump to that child's editor (in-app navigation via a small admin nav context).
+- **Admin season selector** lists each season as `SET — Name` over its `start – end` date range.
+
 ## [0.5.1] — 2026-06-08
 
 ### Fixed

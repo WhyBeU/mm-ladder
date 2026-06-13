@@ -30,6 +30,26 @@ npm run dev
 
 Open `http://localhost:3000` — the leaderboard loads data live from the API.
 
+## Admin portal
+
+A password-protected admin portal lives at `http://localhost:3000/admin` for viewing and correcting
+the data (cups, seasons, tournaments, participants, players), assigning champion / Player-of-the-Year
+/ cup-winner awards and cup qualification, merging duplicate players, and reviewing an audit log of
+every change. Set a shared secret on the backend first:
+
+```bash
+# backend environment — required for any write to succeed (bash/zsh)
+export ADMIN_TOKEN="choose-a-long-random-string"
+```
+
+```powershell
+# PowerShell (Windows)
+$env:ADMIN_TOKEN = "choose-a-long-random-string"
+```
+
+Set it in the same terminal you start the backend from. See [`docs/ADMIN.md`](docs/ADMIN.md) for the
+full operator guide.
+
 ## Testing the API connection
 
 ### Quick smoke test (curl)
