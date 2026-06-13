@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from mm_ladder.services.audit import AuditService
 from mm_ladder.services.match import MatchService
 from mm_ladder.services.player import PlayerService
 from mm_ladder.services.season import SeasonService
@@ -50,6 +51,10 @@ def get_standings_service(session: SessionDep) -> StandingsService:
     return StandingsService(session)
 
 
+def get_audit_service(session: SessionDep) -> AuditService:
+    return AuditService(session)
+
+
 PlayerServiceDep = Annotated[PlayerService, Depends(get_player_service)]
 YearlyCupServiceDep = Annotated[YearlyCupService, Depends(get_yearly_cup_service)]
 SeasonServiceDep = Annotated[SeasonService, Depends(get_season_service)]
@@ -57,3 +62,4 @@ TournamentServiceDep = Annotated[TournamentService, Depends(get_tournament_servi
 ParticipantServiceDep = Annotated[TournamentParticipantService, Depends(get_participant_service)]
 MatchServiceDep = Annotated[MatchService, Depends(get_match_service)]
 StandingsServiceDep = Annotated[StandingsService, Depends(get_standings_service)]
+AuditServiceDep = Annotated[AuditService, Depends(get_audit_service)]

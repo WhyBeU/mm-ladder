@@ -1,8 +1,10 @@
 from fastapi import APIRouter
 from fastapi import status as http_status
 
+from mm_ladder.auth import AdminDep
 from mm_ladder.deps import PlayerServiceDep
 from mm_ladder.interface.player import PlayerCreateRequest, PlayerPatchRequest, PlayerUpdateRequest
+from mm_ladder.interface.player_merge import PlayerMergeRequest
 from mm_ladder.schemas.player import PlayerRead
 
 router = APIRouter(prefix="/players", tags=["players"])
@@ -13,9 +15,14 @@ async def list_players(service: PlayerServiceDep) -> list[PlayerRead]:
     return await service.list()
 
 
-@router.post("/", response_model=PlayerRead, status_code=http_status.HTTP_201_CREATED)
+@router.post("/", response_model=PlayerRead, status_code=http_status.HTTP_201_CREATED, dependencies=[AdminDep])
 async def create_player(data: PlayerCreateRequest, service: PlayerServiceDep) -> PlayerRead:
     return PlayerRead.model_validate(await service.create(data))
+
+
+@router.post("/merge", response_model=PlayerRead, dependencies=[AdminDep])
+async def merge_players(data: PlayerMergeRequest, service: PlayerServiceDep) -> PlayerRead:
+    return PlayerRead.model_validate(await service.merge(data.keep_id, data.duplicate_ids))
 
 
 @router.get("/{player_id}", response_model=PlayerRead)
@@ -23,16 +30,16 @@ async def get_player(player_id: int, service: PlayerServiceDep) -> PlayerRead:
     return PlayerRead.model_validate(await service.get(player_id))
 
 
-@router.put("/{player_id}", response_model=PlayerRead)
+@router.put("/{player_id}", response_model=PlayerRead, dependencies=[AdminDep])
 async def update_player(player_id: int, data: PlayerUpdateRequest, service: PlayerServiceDep) -> PlayerRead:
     return PlayerRead.model_validate(await service.update(player_id, data))
 
 
-@router.patch("/{player_id}", response_model=PlayerRead)
+@router.patch("/{player_id}", response_model=PlayerRead, dependencies=[AdminDep])
 async def patch_player(player_id: int, data: PlayerPatchRequest, service: PlayerServiceDep) -> PlayerRead:
     return PlayerRead.model_validate(await service.patch(player_id, data))
 
 
-@router.delete("/{player_id}", status_code=http_status.HTTP_204_NO_CONTENT)
+@router.delete("/{player_id}", status_code=http_status.HTTP_204_NO_CONTENT, dependencies=[AdminDep])
 async def delete_player(player_id: int, service: PlayerServiceDep) -> None:
     await service.delete(player_id)

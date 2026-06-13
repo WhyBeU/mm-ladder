@@ -16,6 +16,7 @@ class TournamentParticipantUpdateRequest(BaseModel):
 
 
 class TournamentParticipantPatchRequest(BaseModel):
+    player_id: int | None = None
     match_wins: int | None = None
     match_losses: int | None = None
     match_draws: int | None = None

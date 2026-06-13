@@ -57,6 +57,22 @@ async def test_delete_player(client: AsyncClient) -> None:
     assert resp.status_code == 404
 
 
+async def test_delete_player_with_participations_is_blocked(client: AsyncClient) -> None:
+    season = await client.post(
+        "/seasons/",
+        json={"name": "S", "set_code": "AAA", "starts_on": "2025-01-01", "ends_on": "2025-03-01"},
+    )
+    tid = (await client.post("/tournaments/", json={"held_on": "2025-01-05", "season_id": season.json()["id"]})).json()[
+        "id"
+    ]
+    pid = (await client.post("/players/", json={"display_name": "Busy"})).json()["id"]
+    await client.post(f"/tournaments/{tid}/participants", json={"player_id": pid})
+
+    resp = await client.delete(f"/players/{pid}")
+    assert resp.status_code == 409
+    assert (await client.get(f"/players/{pid}")).status_code == 200
+
+
 async def test_get_missing_player(client: AsyncClient) -> None:
     resp = await client.get("/players/99999")
     assert resp.status_code == 404
@@ -77,6 +93,20 @@ async def test_create_player_reuses_existing_alias(client: AsyncClient, async_se
     data = resp.json()
     assert data["id"] == canonical.id
     assert data["display_name"] == "Damian Cengarle Barilari"
+
+
+async def test_patch_player_aliases(client: AsyncClient) -> None:
+    resp = await client.post("/players/", json={"display_name": "Greta"})
+    player_id = resp.json()["id"]
+
+    resp = await client.patch(f"/players/{player_id}", json={"aliases": ["G", "Gretta"]})
+    assert resp.status_code == 200
+    assert resp.json()["aliases"] == ["G", "Gretta"]
+
+    # display_name-only patch leaves aliases untouched
+    resp = await client.patch(f"/players/{player_id}", json={"display_name": "Greta H"})
+    assert resp.status_code == 200
+    assert resp.json()["aliases"] == ["G", "Gretta"]
 
 
 async def test_get_player_includes_trophy_lists(client: AsyncClient) -> None:

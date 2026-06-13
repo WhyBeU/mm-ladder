@@ -1,3 +1,4 @@
+import os
 from collections.abc import AsyncGenerator, Generator
 from typing import Any
 
@@ -10,6 +11,14 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from mm_ladder.app import create_app
 from mm_ladder.models.base import Base
+
+TEST_ADMIN_TOKEN = "test-admin-token"
+
+
+@pytest.fixture(autouse=True)
+def _set_admin_token() -> None:
+    os.environ["ADMIN_TOKEN"] = TEST_ADMIN_TOKEN
+
 
 # ── Sync fixtures (kept for test_imports.py and any future sync tests) ────────
 
@@ -60,6 +69,18 @@ async def async_session(async_engine: AsyncEngine) -> AsyncGenerator[AsyncSessio
 
 @pytest_asyncio.fixture  # type: ignore[misc]
 async def client(async_engine: AsyncEngine) -> AsyncGenerator[AsyncClient]:
+    app = create_app()
+    app.state.session_factory = async_sessionmaker(async_engine, expire_on_commit=False)
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        headers={"X-Admin-Token": TEST_ADMIN_TOKEN},
+    ) as c:
+        yield c
+
+
+@pytest_asyncio.fixture  # type: ignore[misc]
+async def noauth_client(async_engine: AsyncEngine) -> AsyncGenerator[AsyncClient]:
     app = create_app()
     app.state.session_factory = async_sessionmaker(async_engine, expire_on_commit=False)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:

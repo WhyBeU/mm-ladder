@@ -7,6 +7,23 @@ from mm_ladder.errors import NotFoundError
 from mm_ladder.interface.yearly_cup import YearlyCupCreateRequest, YearlyCupPatchRequest, YearlyCupUpdateRequest
 from mm_ladder.models.player import Player
 from mm_ladder.models.yearly_cup import YearlyCup
+from mm_ladder.services.audit import AuditRecorder, diff_fields
+
+
+def _cup_snapshot(c: YearlyCup) -> dict[str, object]:
+    return {
+        "year": c.year,
+        "name": c.name,
+        "starts_on": c.starts_on.isoformat(),
+        "ends_on": c.ends_on.isoformat(),
+        "player_of_the_year_id": c.player_of_the_year_id,
+        "cup_winner_id": c.cup_winner_id,
+        "qualified_player_ids": sorted(c.qualified_player_ids),
+    }
+
+
+def _cup_label(c: YearlyCup) -> str:
+    return f'Cup "{c.name}"'
 
 
 class YearlyCupService:
@@ -38,12 +55,21 @@ class YearlyCupService:
         )
         await self._set_qualified_players(cup, data.qualified_player_ids)
         self._session.add(cup)
+        await self._session.flush()
+        AuditRecorder(self._session).record(
+            action="CREATE",
+            entity_type="yearly_cup",
+            entity_id=cup.id,
+            label=_cup_label(cup),
+            changes=[{"field": k, "old": None, "new": v} for k, v in _cup_snapshot(cup).items()],
+        )
         await self._session.commit()
         await self._session.refresh(cup)
         return cup
 
     async def update(self, cup_id: int, data: YearlyCupUpdateRequest) -> YearlyCup:
         cup = await self.get(cup_id)
+        before = _cup_snapshot(cup)
         cup.year = data.year
         cup.name = data.name
         cup.starts_on = data.starts_on
@@ -51,12 +77,25 @@ class YearlyCupService:
         cup.player_of_the_year_id = data.player_of_the_year_id
         cup.cup_winner_id = data.cup_winner_id
         await self._set_qualified_players(cup, data.qualified_player_ids)
+        self._record_update(cup, before)
         await self._session.commit()
         await self._session.refresh(cup)
         return cup
 
+    def _record_update(self, cup: YearlyCup, before: dict[str, object]) -> None:
+        changes = diff_fields(before, _cup_snapshot(cup))
+        if changes:
+            AuditRecorder(self._session).record(
+                action="UPDATE",
+                entity_type="yearly_cup",
+                entity_id=cup.id,
+                label=_cup_label(cup),
+                changes=changes,
+            )
+
     async def patch(self, cup_id: int, data: YearlyCupPatchRequest) -> YearlyCup:
         cup = await self.get(cup_id)
+        before = _cup_snapshot(cup)
         if data.year is not None:
             cup.year = data.year
         if data.name is not None:
@@ -71,11 +110,19 @@ class YearlyCupService:
             cup.cup_winner_id = data.cup_winner_id
         if data.qualified_player_ids is not None:
             await self._set_qualified_players(cup, data.qualified_player_ids)
+        self._record_update(cup, before)
         await self._session.commit()
         await self._session.refresh(cup)
         return cup
 
     async def delete(self, cup_id: int) -> None:
         cup = await self.get(cup_id)
+        AuditRecorder(self._session).record(
+            action="DELETE",
+            entity_type="yearly_cup",
+            entity_id=cup_id,
+            label=_cup_label(cup),
+            changes=[{"field": k, "old": v, "new": None} for k, v in _cup_snapshot(cup).items()],
+        )
         await self._session.delete(cup)
         await self._session.commit()

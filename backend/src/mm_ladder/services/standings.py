@@ -41,9 +41,18 @@ class StandingsService:
 
         by_player: dict[int, list[tuple[TournamentParticipant, Player]]] = defaultdict(list)
         player_names: dict[int, str] = {}
+        player_awards: dict[int, dict[str, object]] = {}
         for tp, p in rows:
             by_player[p.id].append((tp, p))
             player_names[p.id] = p.display_name
+            if p.id not in player_awards:
+                player_awards[p.id] = {
+                    "season_championships": [
+                        {"set_code": s.set_code, "season_name": s.name} for s in p.season_championships
+                    ],
+                    "player_of_the_year_years": sorted((c.year for c in p.poty_cups), reverse=True),
+                    "cup_champion_years": sorted((c.year for c in p.cup_championships), reverse=True),
+                }
 
         # All-time event count per player for is_veteran
         veteran_result = await self._session.execute(
@@ -90,6 +99,9 @@ class StandingsService:
                     "trophies": trophies,
                     "per_event_scores": per_event_scores,
                     "is_veteran": total_events_by_player.get(player_id, 0) > VETERAN_THRESHOLD,
+                    "season_championships": player_awards[player_id]["season_championships"],
+                    "player_of_the_year_years": player_awards[player_id]["player_of_the_year_years"],
+                    "cup_champion_years": player_awards[player_id]["cup_champion_years"],
                 }
             )
 

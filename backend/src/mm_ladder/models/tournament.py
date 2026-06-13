@@ -25,6 +25,6 @@ class Tournament(Base, TimestampMixin):
 
     season: Mapped["Season"] = relationship("Season", back_populates="tournaments")
     participants: Mapped[list["TournamentParticipant"]] = relationship(
-        "TournamentParticipant", back_populates="tournament"
+        "TournamentParticipant", back_populates="tournament", cascade="all, delete-orphan"
     )
-    matches: Mapped[list["Match"]] = relationship("Match", back_populates="tournament")
+    matches: Mapped[list["Match"]] = relationship("Match", back_populates="tournament", cascade="all, delete-orphan")

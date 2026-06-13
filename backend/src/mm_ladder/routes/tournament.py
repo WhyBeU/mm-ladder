@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 from fastapi import status as http_status
 
+from mm_ladder.auth import AdminDep
 from mm_ladder.deps import MatchServiceDep, ParticipantServiceDep, TournamentServiceDep
 from mm_ladder.interface.match import MatchCreateRequest, MatchPatchRequest, MatchUpdateRequest
 from mm_ladder.interface.tournament import TournamentCreateRequest, TournamentPatchRequest, TournamentUpdateRequest
@@ -24,7 +25,7 @@ async def list_tournaments(service: TournamentServiceDep) -> list[TournamentRead
     return [TournamentRead.model_validate(t) for t in await service.list()]
 
 
-@router.post("/", response_model=TournamentRead, status_code=http_status.HTTP_201_CREATED)
+@router.post("/", response_model=TournamentRead, status_code=http_status.HTTP_201_CREATED, dependencies=[AdminDep])
 async def create_tournament(data: TournamentCreateRequest, service: TournamentServiceDep) -> TournamentRead:
     return TournamentRead.model_validate(await service.create(data))
 
@@ -34,21 +35,21 @@ async def get_tournament(tournament_id: int, service: TournamentServiceDep) -> T
     return TournamentRead.model_validate(await service.get(tournament_id))
 
 
-@router.put("/{tournament_id}", response_model=TournamentRead)
+@router.put("/{tournament_id}", response_model=TournamentRead, dependencies=[AdminDep])
 async def update_tournament(
     tournament_id: int, data: TournamentUpdateRequest, service: TournamentServiceDep
 ) -> TournamentRead:
     return TournamentRead.model_validate(await service.update(tournament_id, data))
 
 
-@router.patch("/{tournament_id}", response_model=TournamentRead)
+@router.patch("/{tournament_id}", response_model=TournamentRead, dependencies=[AdminDep])
 async def patch_tournament(
     tournament_id: int, data: TournamentPatchRequest, service: TournamentServiceDep
 ) -> TournamentRead:
     return TournamentRead.model_validate(await service.patch(tournament_id, data))
 
 
-@router.delete("/{tournament_id}", status_code=http_status.HTTP_204_NO_CONTENT)
+@router.delete("/{tournament_id}", status_code=http_status.HTTP_204_NO_CONTENT, dependencies=[AdminDep])
 async def delete_tournament(tournament_id: int, service: TournamentServiceDep) -> None:
     await service.delete(tournament_id)
 
@@ -65,6 +66,7 @@ async def list_participants(tournament_id: int, service: ParticipantServiceDep) 
     "/{tournament_id}/participants",
     response_model=TournamentParticipantRead,
     status_code=http_status.HTTP_201_CREATED,
+    dependencies=[AdminDep],
 )
 async def create_participant(
     tournament_id: int, data: TournamentParticipantCreateRequest, service: ParticipantServiceDep
@@ -79,7 +81,11 @@ async def get_participant(
     return TournamentParticipantRead.model_validate(await service.get(tournament_id, participant_id))
 
 
-@router.put("/{tournament_id}/participants/{participant_id}", response_model=TournamentParticipantRead)
+@router.put(
+    "/{tournament_id}/participants/{participant_id}",
+    response_model=TournamentParticipantRead,
+    dependencies=[AdminDep],
+)
 async def update_participant(
     tournament_id: int,
     participant_id: int,
@@ -89,7 +95,11 @@ async def update_participant(
     return TournamentParticipantRead.model_validate(await service.update(tournament_id, participant_id, data))
 
 
-@router.patch("/{tournament_id}/participants/{participant_id}", response_model=TournamentParticipantRead)
+@router.patch(
+    "/{tournament_id}/participants/{participant_id}",
+    response_model=TournamentParticipantRead,
+    dependencies=[AdminDep],
+)
 async def patch_participant(
     tournament_id: int,
     participant_id: int,
@@ -99,7 +109,11 @@ async def patch_participant(
     return TournamentParticipantRead.model_validate(await service.patch(tournament_id, participant_id, data))
 
 
-@router.delete("/{tournament_id}/participants/{participant_id}", status_code=http_status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{tournament_id}/participants/{participant_id}",
+    status_code=http_status.HTTP_204_NO_CONTENT,
+    dependencies=[AdminDep],
+)
 async def delete_participant(tournament_id: int, participant_id: int, service: ParticipantServiceDep) -> None:
     await service.delete(tournament_id, participant_id)
 
@@ -116,6 +130,7 @@ async def list_matches(tournament_id: int, service: MatchServiceDep) -> list[Mat
     "/{tournament_id}/matches",
     response_model=MatchRead,
     status_code=http_status.HTTP_201_CREATED,
+    dependencies=[AdminDep],
 )
 async def create_match(tournament_id: int, data: MatchCreateRequest, service: MatchServiceDep) -> MatchRead:
     return MatchRead.model_validate(await service.create(tournament_id, data))
@@ -126,20 +141,22 @@ async def get_match(tournament_id: int, match_id: int, service: MatchServiceDep)
     return MatchRead.model_validate(await service.get(tournament_id, match_id))
 
 
-@router.put("/{tournament_id}/matches/{match_id}", response_model=MatchRead)
+@router.put("/{tournament_id}/matches/{match_id}", response_model=MatchRead, dependencies=[AdminDep])
 async def update_match(
     tournament_id: int, match_id: int, data: MatchUpdateRequest, service: MatchServiceDep
 ) -> MatchRead:
     return MatchRead.model_validate(await service.update(tournament_id, match_id, data))
 
 
-@router.patch("/{tournament_id}/matches/{match_id}", response_model=MatchRead)
+@router.patch("/{tournament_id}/matches/{match_id}", response_model=MatchRead, dependencies=[AdminDep])
 async def patch_match(
     tournament_id: int, match_id: int, data: MatchPatchRequest, service: MatchServiceDep
 ) -> MatchRead:
     return MatchRead.model_validate(await service.patch(tournament_id, match_id, data))
 
 
-@router.delete("/{tournament_id}/matches/{match_id}", status_code=http_status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{tournament_id}/matches/{match_id}", status_code=http_status.HTTP_204_NO_CONTENT, dependencies=[AdminDep]
+)
 async def delete_match(tournament_id: int, match_id: int, service: MatchServiceDep) -> None:
     await service.delete(tournament_id, match_id)

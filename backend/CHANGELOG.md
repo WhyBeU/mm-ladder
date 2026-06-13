@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.11.0] - 2026-06-14 — Admin auth, player merge & audit log
+
+### Added
+
+- **Admin authentication** — `mm_ladder.auth.require_admin` checks an `X-Admin-Token` header against the `ADMIN_TOKEN` env var (constant-time compare) and is applied to **every** mutating route (players, seasons, yearly-cups, tournaments, participants, matches). Fails closed: if `ADMIN_TOKEN` is unset/empty, all writes are rejected with 401. GET endpoints stay public. New `GET /admin/check` validates a token.
+- **`POST /players/merge`** (`{keep_id, duplicate_ids}`) — folds duplicate players into a keeper: repoints `tournament_participant` and `match` references, repoints the champion / POTY / cup-winner FKs and `yearly_cup_qualification` rows, folds the duplicates' names/aliases into the keeper, and deletes the duplicates. Rejects (409) a self-merge or a merge that would violate `uq_tp_tournament_player` / `ck_match_different_players`.
+- **Audit log** — new `audit_log` table (migration `0009_add_audit_log`) + `AuditLog` model. An `AuditRecorder` writes an append-only entry (action, entity, human label/summary, and a `{field, old, new}` diff) into the same transaction as each admin mutation across all six entities — so the log is atomic with the change and excludes the (sync) migrate pipeline. Served by `GET /admin/audit` (filter by `entity_type`/`action`, `limit`/`offset` pagination, newest first).
+- **Champion-award data on standings** — `SeasonStandingRead` now carries `season_championships` (`{set_code, season_name}[]`), `player_of_the_year_years`, and `cup_champion_years` for the leaderboard award icons.
+- **Auto-migrate on startup** — `run_db_migrations()` runs `alembic upgrade head` in the app lifespan (derives a sync URL from `DATABASE_URL`); disable with `AUTO_MIGRATE=0`.
+
+### Changed
+
+- **Player aliases over the API** — `PlayerUpdateRequest`/`PlayerPatchRequest` accept `aliases`, and `PlayerRead` exposes it (previously model-only).
+- **Participant reassignment** — `TournamentParticipantPatchRequest` accepts `player_id` to move a result to a different player without recreating the row.
+- **Season patch** — `SeasonPatchRequest` now also accepts `yearly_cup_id` and `qualifying_type`.
+- **Safe deletes** — deleting a player with tournament participations is rejected (409) — merge instead; deleting a tournament cascades its participants and matches.
+
 ## [0.10.0] - 2026-06-11
 
 ### Added

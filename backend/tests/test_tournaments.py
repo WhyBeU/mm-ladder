@@ -179,3 +179,32 @@ async def test_get_missing_match(client: AsyncClient) -> None:
     tid = await _make_tournament(client, season_id)
     resp = await client.get(f"/tournaments/{tid}/matches/99999")
     assert resp.status_code == 404
+
+
+async def test_reassign_participant_to_another_player(client: AsyncClient) -> None:
+    season_id = await _make_season(client)
+    tid = await _make_tournament(client, season_id)
+    p1 = (await client.post("/players/", json={"display_name": "P1"})).json()["id"]
+    p2 = (await client.post("/players/", json={"display_name": "P2"})).json()["id"]
+
+    part = await client.post(
+        f"/tournaments/{tid}/participants",
+        json={"player_id": p1, "match_wins": 2, "match_losses": 1, "match_draws": 0},
+    )
+    part_id = part.json()["id"]
+
+    resp = await client.patch(f"/tournaments/{tid}/participants/{part_id}", json={"player_id": p2})
+    assert resp.status_code == 200
+    assert resp.json()["player_id"] == p2
+
+
+async def test_delete_tournament_removes_participants(client: AsyncClient) -> None:
+    season_id = await _make_season(client)
+    tid = await _make_tournament(client, season_id)
+    pid = (await client.post("/players/", json={"display_name": "Solo"})).json()["id"]
+    await client.post(f"/tournaments/{tid}/participants", json={"player_id": pid})
+
+    resp = await client.delete(f"/tournaments/{tid}")
+    assert resp.status_code == 204
+    assert (await client.get(f"/tournaments/{tid}")).status_code == 404
+    assert (await client.get(f"/tournaments/{tid}/participants")).json() == []

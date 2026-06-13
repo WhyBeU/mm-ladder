@@ -131,11 +131,12 @@ head-to-head match between members) are skipped automatically with an explanatio
 All commands must be run from the `backend/` directory.
 
 ```bash
-# 1. Apply migrations (creates mm_ladder.db on first run)
-poetry run alembic upgrade head
-
-# 2. Start the development server (hot reload)
+# The server applies pending migrations on startup (AUTO_MIGRATE=1 by default),
+# so a fresh checkout just needs:
 poetry run uvicorn mm_ladder.app:app --reload --port 8000
+
+# To apply migrations manually instead (e.g. with AUTO_MIGRATE=0):
+poetry run alembic upgrade head
 ```
 
 | URL | Description |
@@ -151,6 +152,17 @@ poetry run uvicorn mm_ladder.app:app --reload --port 8000
 |----------|---------|-------------|
 | `DATABASE_URL` | `sqlite+aiosqlite:///./mm_ladder.db` | SQLAlchemy async DB URL |
 | `ENV` | `development` | `development` = coloured logs; anything else = JSON logs |
+| `AUTO_MIGRATE` | `1` | Apply Alembic migrations (`upgrade head`) automatically on app startup. Set to `0`/`false`/`no` to manage migrations out-of-band. |
+| `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated list of allowed frontend origins |
+| `ADMIN_TOKEN` | _(unset)_ | Shared secret for the admin portal. **Required** to perform any write — all `POST`/`PUT`/`PATCH`/`DELETE` endpoints check the `X-Admin-Token` header against it. Fails closed: if unset, every write is rejected with 401. GET endpoints stay public. |
+
+### Admin API & audit log
+
+All mutating endpoints are guarded by `ADMIN_TOKEN` (see above). `GET /admin/check` validates a
+token, and `GET /admin/audit` returns the append-only audit log (every admin create/update/delete,
+with a field-level diff) — filterable by `entity_type`/`action` and paginated via `limit`/`offset`.
+The admin UI lives at the frontend's `/admin` route; see [`docs/ADMIN.md`](../docs/ADMIN.md) for the
+operator guide.
 
 ## Running the toolchain
 
