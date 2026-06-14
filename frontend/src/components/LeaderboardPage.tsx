@@ -14,7 +14,7 @@ import {
 } from "@/lib/api";
 import { buildPlayerAwards, type PlayerAwards } from "@/lib/awards";
 import Image from "next/image";
-import ManaSwitcher from "@/components/ManaSwitcher";
+import HeaderNav from "@/components/HeaderNav";
 import Leaderboard from "@/components/Leaderboard";
 import { SeasonHero, StatsStrip } from "@/components/SeasonHero";
 import { Podium } from "@/components/Podium";
@@ -372,7 +372,7 @@ export default function LeaderboardPage() {
               <h2 className="font-display" style={{ margin: "1px 0 0", fontSize: 20, color: "var(--parchment)", letterSpacing: "0.02em" }}>Draft Ladder</h2>
             </div>
           </div>
-          <ManaSwitcher />
+          <HeaderNav current="leaderboard" />
         </header>
 
         {/* Scope bar */}
