@@ -2,6 +2,28 @@
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-06-14 — Pod-maker
+
+### Added
+
+- **Pod-maker (`/pods`)** — an organiser tool that splits a chosen set of players into draft pods
+  of 6–11 (8 ideal, even sizes favoured). Pick players from the roster (active live-season players
+  first, then the rest, both alphabetical, with live search), add ad-hoc **Extras** as editable
+  rows, choose a **seeding method** (Random / Average / Best / Total), and **Generate** to slice the
+  seeded list into pods. Strongest players seed into pod 1; Extras always land in the last pod.
+  Results render inline as per-pod cards with **Copy** / **Copy all** plain-text export. Purely
+  client-side — nothing is persisted. A live pod-size preview (e.g. `19 → 6 · 6 · 7`) updates as you
+  select.
+- **Pod-split algorithm** (`lib/pods.ts`) — ported from the LimitedSpoiler `calculatePodStructure`
+  (balanced fill-of-8 with steal-2 rebalancing), with a Vitest suite covering the known sizing table
+  and the seeding/sort rules.
+- **Header navigation** — a shared `HeaderNav` cluster (Ladder / Pod / Admin links beside the mana
+  switch) now appears on the leaderboard and the pod-maker headers.
+
+### Developer
+
+- Added **Vitest** and a `test` script (`npm test`) for fast pure-logic unit tests.
+
 ## [0.6.0] — 2026-06-14 — Admin portal, champion awards & cup view
 
 ### Added
