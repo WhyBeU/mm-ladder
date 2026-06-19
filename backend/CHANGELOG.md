@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.12.0] - 2026-06-19 — Non-destructive, idempotent migrate
+
+### Changed
+
+- **`migrate migrate` is now non-destructive by default.** It no longer wipes and rebuilds all migrated data on every run. Players are never deleted (so their ids stay stable for champion / POTY / cup-winner / qualification / match FK references), and tournaments already in the database (matched by season + date) are skipped — only missing events are imported. Re-running is a safe no-op.
+
+### Added
+
+- **`migrate migrate --force-re-upload`** — opt-in rebuild of the migrated tournaments in scope (the `-s` set(s), or all if no `-s`): deletes those tournaments and their participants and re-imports them from JSON, recomputing results, while preserving all player rows/ids. Use it to apply corrected source data; pairs with `migrate scrape --force`, which re-fetches and overwrites the JSON on disk.
+
 ## [0.11.0] - 2026-06-14 — Admin auth, player merge & audit log
 
 ### Added

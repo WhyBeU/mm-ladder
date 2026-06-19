@@ -129,8 +129,10 @@ def import_tournament(session: Session, season: Season, data: dict) -> Tournamen
 
 
 def reset_migrated(session: Session, db_season_id: int | None = None) -> None:
-    """Delete migrated tournaments (and participants), then orphaned players.
+    """Delete migrated tournaments and their participants, keeping all players.
 
+    Players are intentionally preserved so their ids stay stable across re-imports:
+    champion / POTY / cup-winner / qualification / match FKs all reference player.id.
     If db_season_id is given, only resets that season's migrated tournaments.
     """
     query = session.query(Tournament.id).filter_by(is_migrated=True)
@@ -145,15 +147,6 @@ def reset_migrated(session: Session, db_season_id: int | None = None) -> None:
             synchronize_session=False
         )
         session.query(Tournament).filter(Tournament.id.in_(migrated_ids)).delete(synchronize_session=False)
-
-    orphans_deleted = 0
-    for player in session.query(Player).all():
-        if not session.query(TournamentParticipant).filter_by(player_id=player.id).first():
-            session.delete(player)
-            orphans_deleted += 1
-
-    if orphans_deleted:
-        log.info("removed orphaned players", count=orphans_deleted)
 
     session.flush()
 
@@ -191,19 +184,27 @@ def seed_cups(session: Session) -> int:
     return cups_upserted
 
 
-def run_import(session: Session, set_code: str | None = None) -> tuple[int, int, int]:
+def run_import(session: Session, set_code: str | None = None, force_re_upload: bool = False) -> tuple[int, int, int]:
     """
-    Full idempotent import: reset migrated data, then re-import all saved JSON files.
-    If set_code is given (e.g. "tdm"), only processes that season.
+    Idempotent import of saved JSON files. Players are never deleted, so their ids
+    stay stable across runs.
+
+    By default, tournaments already in the database (matched by season + date) are
+    skipped, and only missing events are imported. With force_re_upload=True, the
+    migrated tournaments in scope are deleted and rebuilt from the JSON (recomputing
+    results), while players are preserved.
+
+    If set_code is given (e.g. "tdm"), only that season is processed.
     Returns (seasons_processed, tournaments_imported, players_created).
     """
     seasons_to_process = [s for s in SEASONS if s["set_code"] == set_code] if set_code else SEASONS
 
-    if set_code is not None:
-        db_season = session.query(Season).filter_by(set_code=set_code).first()
-        reset_migrated(session, db_season_id=db_season.id if db_season else None)
-    else:
-        reset_migrated(session)
+    if force_re_upload:
+        if set_code is not None:
+            db_season = session.query(Season).filter_by(set_code=set_code).first()
+            reset_migrated(session, db_season_id=db_season.id if db_season else None)
+        else:
+            reset_migrated(session)
 
     seasons_processed = 0
     tournaments_imported = 0
@@ -233,6 +234,19 @@ def run_import(session: Session, set_code: str | None = None) -> tuple[int, int,
                 log.warning("falling back to cp1252 encoding", file=json_file.name)
                 text = json_file.read_text(encoding="cp1252")
             data = json.loads(text)
+
+            held_on = date.fromisoformat(data["tournament_date"])
+            existing = (
+                session.query(Tournament.id)
+                .filter_by(season_id=season.id, held_on=held_on, is_migrated=True)
+                .first()
+            )
+            if existing is not None:
+                # force_re_upload deleted in-scope tournaments above, so a survivor
+                # here means a default run: leave it untouched.
+                log.debug("tournament already imported, skipping", date=held_on.isoformat(), set_code=season.set_code)
+                continue
+
             import_tournament(session, season, data)
             tournaments_imported += 1
 

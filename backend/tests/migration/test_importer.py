@@ -1,9 +1,15 @@
+import json
 from datetime import date
+from pathlib import Path
 
 import pytest
 from sqlalchemy.orm import Session
 
-from migration.seasons import SEASONS
+from migration.importer import run_import
+from migration.seasons import SEASONS, season_dir_name
+from mm_ladder.models.player import Player
+from mm_ladder.models.tournament import Tournament
+from mm_ladder.models.tournament_participant import TournamentParticipant
 from mm_ladder.models.yearly_cup import YearlyCup
 
 TOURNAMENT_FILE = {
@@ -152,6 +158,25 @@ def test_reset_migrated_removes_only_migrated(session: Session) -> None:
     assert remaining[0].is_migrated is False
 
 
+def test_reset_migrated_preserves_players(session: Session) -> None:
+    from migration.importer import ensure_season, import_tournament, reset_migrated
+    from mm_ladder.models.player import Player
+    from mm_ladder.models.tournament import Tournament
+
+    season = ensure_season(session, SEASON_META)
+    import_tournament(session, season, TOURNAMENT_FILE)
+    session.flush()
+    assert session.query(Player).count() == 3
+
+    reset_migrated(session)
+    session.flush()
+
+    # Tournaments are wiped but players are kept so their ids stay stable for
+    # champion / POTY / cup-winner FK references.
+    assert session.query(Tournament).count() == 0
+    assert session.query(Player).count() == 3
+
+
 def test_ensure_season_sets_qualifier_count(session: Session) -> None:
     from migration.importer import ensure_season
 
@@ -256,6 +281,115 @@ def test_import_is_idempotent(session: Session) -> None:
     session.flush()
 
     assert session.query(Tournament).filter_by(is_migrated=True).count() == 1
+
+
+# ── run_import skip / force-re-upload behavior ────────────────────────────────
+
+# A real season from SEASONS so run_import's season loop processes it.
+SOI_META = {
+    "id": 7,
+    "name": "Shadows over Innistrad",
+    "set_code": "soi",
+    "starts_on": "2016-04-02",
+    "ends_on": "2016-07-15",
+    "cup_year": 2016,
+}
+
+
+def _tournament_file(tournament_date: str, alice_points: int) -> dict:
+    return {
+        "tournament_date": tournament_date,
+        "players": [{"Firstname": "Alice", "Lastname": "Smith", "NbTournaments": 1, "TotalMatchPoints": alice_points}],
+    }
+
+
+def _seed_data_dir(tmp_path: Path, files: dict[str, dict]) -> Path:
+    """Create a DATA_DIR layout with one SOI season dir holding the given JSON files."""
+    season_dir = tmp_path / season_dir_name(SOI_META)
+    season_dir.mkdir()
+    for filename, data in files.items():
+        (season_dir / filename).write_text(json.dumps(data), encoding="utf-8")
+    return tmp_path
+
+
+def _alice(session: Session) -> TournamentParticipant:
+    return (
+        session.query(TournamentParticipant)
+        .join(TournamentParticipant.player)
+        .filter_by(display_name="Alice Smith")
+        .one()
+    )
+
+
+def test_run_import_default_skips_existing_tournaments(
+    session: Session, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    data_dir = _seed_data_dir(tmp_path, {"2016-04-04.json": _tournament_file("2016-04-04", 9)})
+    monkeypatch.setattr("migration.importer.DATA_DIR", data_dir)
+
+    run_import(session, set_code="soi")
+    assert _alice(session).match_wins == 3
+
+    # The source data changes, but a default re-run must leave the already-imported
+    # tournament untouched (idempotent skip, not a rebuild).
+    (data_dir / season_dir_name(SOI_META) / "2016-04-04.json").write_text(
+        json.dumps(_tournament_file("2016-04-04", 0)), encoding="utf-8"
+    )
+    run_import(session, set_code="soi")
+
+    assert session.query(Tournament).filter_by(is_migrated=True).count() == 1
+    assert _alice(session).match_wins == 3  # unchanged — skipped
+
+
+def test_run_import_default_adds_new_tournaments(
+    session: Session, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    data_dir = _seed_data_dir(tmp_path, {"2016-04-04.json": _tournament_file("2016-04-04", 9)})
+    monkeypatch.setattr("migration.importer.DATA_DIR", data_dir)
+
+    run_import(session, set_code="soi")
+    assert session.query(Tournament).filter_by(is_migrated=True).count() == 1
+
+    # A later event appears on disk; a default re-run imports only the missing one.
+    (data_dir / season_dir_name(SOI_META) / "2016-04-11.json").write_text(
+        json.dumps(_tournament_file("2016-04-11", 6)), encoding="utf-8"
+    )
+    run_import(session, set_code="soi")
+
+    assert session.query(Tournament).filter_by(is_migrated=True).count() == 2
+
+
+def test_run_import_force_re_upload_rebuilds_results(
+    session: Session, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    data_dir = _seed_data_dir(tmp_path, {"2016-04-04.json": _tournament_file("2016-04-04", 9)})
+    monkeypatch.setattr("migration.importer.DATA_DIR", data_dir)
+
+    run_import(session, set_code="soi")
+    assert _alice(session).match_wins == 3
+
+    (data_dir / season_dir_name(SOI_META) / "2016-04-04.json").write_text(
+        json.dumps(_tournament_file("2016-04-04", 0)), encoding="utf-8"
+    )
+    run_import(session, set_code="soi", force_re_upload=True)
+
+    assert session.query(Tournament).filter_by(is_migrated=True).count() == 1
+    assert _alice(session).match_wins == 0  # rebuilt from new data
+
+
+def test_run_import_force_re_upload_preserves_player_ids(
+    session: Session, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    data_dir = _seed_data_dir(tmp_path, {"2016-04-04.json": _tournament_file("2016-04-04", 9)})
+    monkeypatch.setattr("migration.importer.DATA_DIR", data_dir)
+
+    run_import(session, set_code="soi")
+    alice_id = session.query(Player).filter_by(display_name="Alice Smith").one().id
+
+    run_import(session, set_code="soi", force_re_upload=True)
+
+    alice = session.query(Player).filter_by(display_name="Alice Smith").one()
+    assert alice.id == alice_id  # same player row survived the rebuild
 
 
 def test_ensure_player_reuses_player_with_matching_alias(session: Session) -> None:
