@@ -122,7 +122,13 @@ def scrape(force: bool, set_code: tuple[str, ...]) -> None:
 @click.option("--db", default="mm_ladder.db", show_default=True, help="Path to SQLite database file.")
 @click.option("--set-code", "-s", multiple=True, help="Season set code to migrate (repeatable: -s tdm -s dft). Default: all.")
 @click.option("--recreate-db", is_flag=True, default=False, help="Drop and recreate all tables before migrating.")
-def migrate(db: str, set_code: tuple[str, ...], recreate_db: bool) -> None:
+@click.option(
+    "--force-re-upload",
+    is_flag=True,
+    default=False,
+    help="Delete and rebuild migrated tournaments in scope (players are preserved). Default skips already-imported events.",
+)
+def migrate(db: str, set_code: tuple[str, ...], recreate_db: bool, force_re_upload: bool) -> None:
     """Import all scraped data from migration/data/ into the database (idempotent)."""
     set_codes: list[str | None] = list(set_code) or [None]
     for sc in set_codes:
@@ -132,10 +138,16 @@ def migrate(db: str, set_code: tuple[str, ...], recreate_db: bool) -> None:
 
     total_seasons = total_tournaments = total_players = 0
     for i, sc in enumerate(set_codes):
-        log.info("starting migration", db=db, set_code=sc or "all", recreate_db=(recreate_db and i == 0))
+        log.info(
+            "starting migration",
+            db=db,
+            set_code=sc or "all",
+            recreate_db=(recreate_db and i == 0),
+            force_re_upload=force_re_upload,
+        )
         session = _make_session(db, recreate=(recreate_db and i == 0))
         try:
-            seasons, tournaments, players = run_import(session, set_code=sc)
+            seasons, tournaments, players = run_import(session, set_code=sc, force_re_upload=force_re_upload)
             total_seasons += seasons
             total_tournaments += tournaments
             total_players += players

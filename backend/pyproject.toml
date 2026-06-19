@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mm-ladder"
-version = "0.11.0"
+version = "0.12.0"
 description = "Draft league ladder tracker for Magic Mates Monday"
 authors = ["Yoann <yoann.buratti@gmail.com>"]
 readme = "README.md"
