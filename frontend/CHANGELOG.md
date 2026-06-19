@@ -2,6 +2,38 @@
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-06-19 — Pod-registration board
+
+### Added
+
+- **Pod-registration board (`/board`)** — a shared, always-on, public sign-up board the store can post to
+  Discord each week. Players claim themselves from the roster (active live-season players first, then the
+  rest, with live search) or add themselves as a free-text **extra**; the organiser marks who's **present**
+  (per-player or **Mark all present**); anyone can then **Generate** pods (same client-side `lib/pods.ts`
+  seeding as the pod-maker — Random / Average / Best / Total, extras seeded last) and set the **Wizards pod
+  code** on each pod card (with **Copy**). The board polls every ~4s so sign-ups and pods appear live across
+  devices, shows a collapsible **activity feed**, warns when sign-ups changed since the last generate, and
+  has a confirm-guarded **Clear board**. Nothing here touches the official tournament / standings data.
+- **Up to two formats** — add a **second format** beside the active season: either pick one of the existing
+  seasons (seeded from its standings) or choose **"Other…"** and type a name (seeded Random). Once a second
+  format exists the signed-up list **splits into per-format sections** (each with its own present count,
+  **Mark all present**, and pod-size preview), every sign-up gets **▲/▼ arrows** to move between formats,
+  and **Generate** runs the pod algorithm **within each format** — pods are labelled **"{format} pod N"**
+  and grouped by format. Removing the second format folds its players back into the first. With one format
+  the board is unchanged.
+- **Header navigation** — a new **Board** link sits beside **Pod** (the existing `/pods` quick tool is
+  unchanged and still linked).
+
+### Changed
+
+- **Refactor for reuse** — `fmtMetric` moved into `lib/pods.ts` (with Vitest coverage) and the seeding
+  selector extracted to a shared `SeedingSelector` component, both now used by `/pods` and `/board`.
+
+### Developer
+
+- New pure helper `lib/boardGenerate.ts` (`buildGenerateGroups`) with Vitest coverage for the per-format
+  seeding / payload logic.
+
 ## [0.7.0] — 2026-06-14 — Pod-maker
 
 ### Added

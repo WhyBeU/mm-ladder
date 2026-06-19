@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,6 +41,17 @@ class SeasonService:
         if season is None:
             raise NotFoundError("Season", season_id)
         return season
+
+    async def current_season(self, today: date | None = None) -> Season | None:
+        """The season covering ``today``, else the most recent by ``ends_on``, else None."""
+        today = today or date.today()
+        seasons = list(await self.list())
+        if not seasons:
+            return None
+        covering = [s for s in seasons if s.starts_on <= today <= s.ends_on]
+        if covering:
+            return max(covering, key=lambda s: s.ends_on)
+        return max(seasons, key=lambda s: s.ends_on)
 
     async def create(self, data: SeasonCreateRequest) -> Season:
         season = Season(

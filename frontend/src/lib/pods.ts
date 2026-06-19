@@ -78,6 +78,21 @@ export function podSizePreview(n: number): string {
   return calculatePodStructure(n).join(" · ");
 }
 
+/**
+ * Display string for a player's seed metric under the given method, or `null` for
+ * Random (no metric shown). Returns `—` when the metric is 0/unrated. Total and Best
+ * are integer point sums; Average is points-per-event (one decimal).
+ */
+export function fmtMetric(
+  method: SeedMethod,
+  p: Pick<SeedablePlayer, "total" | "average" | "best">,
+): string | null {
+  if (method === "Random") return null;
+  const v = metricFor({ ...p, key: "", name: "", isExtra: false }, method);
+  if (!v) return "—";
+  return method === "Average" ? v.toFixed(1) : String(v);
+}
+
 /** The metric value used for a given seeding method (0 for Random). */
 export function metricFor(p: SeedablePlayer, method: SeedMethod): number {
   switch (method) {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import ManaSwitcher from "@/components/ManaSwitcher";
 
-type NavTarget = "leaderboard" | "pods";
+type NavTarget = "leaderboard" | "pods" | "board";
 
 function NavLink({ href, label, active }: { href: string; label: string; active: boolean }) {
   const [hover, setHover] = useState(false);
@@ -38,6 +38,7 @@ export default function HeaderNav({ current }: { current: NavTarget }) {
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
       <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
         <NavLink href="/" label="Ladder" active={current === "leaderboard"} />
+        <NavLink href="/board" label="Board" active={current === "board"} />
         <NavLink href="/pods" label="Pod" active={current === "pods"} />
         <NavLink href="/admin" label="Admin" active={false} />
       </nav>

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.13.0] - 2026-06-19 — Pod-registration board
+
+### Added
+
+- **Public pod-registration board** — a new always-on, no-auth slice (migrations `0010_add_pod_registration_board` + `0011_add_pod_formats`, models `PodRegistration` / `PodSignup` / `PodPod` / `PodEvent` / `PodFormat`) serving a single shared sign-up board at `/board`, fully detached from the official Tournament / standings flow. Endpoints (all public): `GET /board` (state + formats + signups + pods + events), `POST /board/signups` (roster claim by `player_id` — 409 if already claimed, 404 if unknown — or an extra by `display_name`), `DELETE /board/signups/{id}`, `PATCH /board/signups/{id}` (toggle `present` and/or move `format_id`), `POST /board/present-all`, `POST /board/generate`, `PATCH /board/pods/{pod_id}` (set the Wizards pod code), and `POST /board/reset`. Every mutation appends a denormalised `pod_event` to the activity feed and bumps `last_activity_at`.
+- **Up to two formats** — format 1 is auto-created from the **active season** (derived server-side by date, `SeasonService.current_season()`), and a second can be added via `POST /board/formats` (`{season_id?, name?}` — 409 if one already exists, 404 on unknown season): either **season-backed** (seeds from that season's standings) or **"Other"** (no `season_id` ⇒ Random seeding client-side). `DELETE /board/formats/{id}` folds its sign-ups back into format 1 and deletes its pods (400 on the default). `generate`'s body is per-format (`{ formats: [{ format_id, seeding_label?, pods }] }`); each `signup_id` must exist, be present, **and belong to its format** (else 400). Pod ordinals restart per format (`pod_pod` unique on `(format_id, ordinal)`); pod codes are addressed by pod id.
+- **Lazy auto-clear** — `GET /board` wipes a *generated* board that has been idle for more than 3 days (`AUTO_CLEAR_AFTER`) and recreates the default format from the then-current season, so the next visitor sees an empty board; the clock is injectable for tests. Open (never-generated) boards persist until a manual reset.
+- **`BadRequestError` (400)** handler, used by the generate / format validation paths.
+- `pod_event` kinds: `signup_added` / `signup_removed` / `present_toggled` / `present_all` / `signup_moved` / `pods_generated` / `pod_code_set` / `format_added` / `format_removed`.
+
 ## [0.12.0] - 2026-06-19 — Non-destructive, idempotent migrate
 
 ### Changed

@@ -16,6 +16,12 @@ class ConflictError(Exception):
         super().__init__(message)
 
 
+class BadRequestError(Exception):
+    def __init__(self, message: str) -> None:
+        self.message = message
+        super().__init__(message)
+
+
 async def not_found_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, NotFoundError)
     return JSONResponse(status_code=404, content={"detail": f"{exc.resource} {exc.id} not found"})
@@ -24,6 +30,11 @@ async def not_found_handler(request: Request, exc: Exception) -> JSONResponse:
 async def conflict_handler(request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, ConflictError)
     return JSONResponse(status_code=409, content={"detail": exc.message})
+
+
+async def bad_request_handler(request: Request, exc: Exception) -> JSONResponse:
+    assert isinstance(exc, BadRequestError)
+    return JSONResponse(status_code=400, content={"detail": exc.message})
 
 
 async def integrity_error_handler(request: Request, exc: Exception) -> JSONResponse:
