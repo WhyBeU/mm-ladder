@@ -5,6 +5,7 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mm_ladder.services.audit import AuditService
+from mm_ladder.services.board import BoardService
 from mm_ladder.services.match import MatchService
 from mm_ladder.services.player import PlayerService
 from mm_ladder.services.season import SeasonService
@@ -55,6 +56,10 @@ def get_audit_service(session: SessionDep) -> AuditService:
     return AuditService(session)
 
 
+def get_board_service(session: SessionDep) -> BoardService:
+    return BoardService(session)
+
+
 PlayerServiceDep = Annotated[PlayerService, Depends(get_player_service)]
 YearlyCupServiceDep = Annotated[YearlyCupService, Depends(get_yearly_cup_service)]
 SeasonServiceDep = Annotated[SeasonService, Depends(get_season_service)]
@@ -63,3 +68,4 @@ ParticipantServiceDep = Annotated[TournamentParticipantService, Depends(get_part
 MatchServiceDep = Annotated[MatchService, Depends(get_match_service)]
 StandingsServiceDep = Annotated[StandingsService, Depends(get_standings_service)]
 AuditServiceDep = Annotated[AuditService, Depends(get_audit_service)]
+BoardServiceDep = Annotated[BoardService, Depends(get_board_service)]

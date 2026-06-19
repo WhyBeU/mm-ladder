@@ -123,3 +123,48 @@ async def test_patch_season_cup_and_qualifying_type(client: AsyncClient) -> None
     data = resp.json()
     assert data["yearly_cup_id"] == cup_id
     assert data["qualifying_type"] == "BEST"
+
+
+# ── current_season helper ────────────────────────────────────────────────────
+
+
+async def test_current_season_picks_the_one_covering_today(async_session) -> None:
+    from datetime import date
+
+    from mm_ladder.interface.season import SeasonCreateRequest
+    from mm_ladder.services.season import SeasonService
+
+    svc = SeasonService(async_session)
+    await svc.create(
+        SeasonCreateRequest(name="Old", set_code="OLD", starts_on=date(2024, 1, 1), ends_on=date(2024, 6, 30))
+    )
+    await svc.create(
+        SeasonCreateRequest(name="Now", set_code="NOW", starts_on=date(2024, 7, 1), ends_on=date(2024, 12, 31))
+    )
+
+    season = await svc.current_season(today=date(2024, 8, 15))
+    assert season is not None
+    assert season.set_code == "NOW"
+
+
+async def test_current_season_falls_back_to_most_recent(async_session) -> None:
+    from datetime import date
+
+    from mm_ladder.interface.season import SeasonCreateRequest
+    from mm_ladder.services.season import SeasonService
+
+    svc = SeasonService(async_session)
+    await svc.create(SeasonCreateRequest(name="A", set_code="A", starts_on=date(2024, 1, 1), ends_on=date(2024, 6, 30)))
+    await svc.create(
+        SeasonCreateRequest(name="B", set_code="B", starts_on=date(2024, 7, 1), ends_on=date(2024, 12, 31))
+    )
+
+    season = await svc.current_season(today=date(2025, 3, 1))
+    assert season is not None
+    assert season.set_code == "B"
+
+
+async def test_current_season_none_when_empty(async_session) -> None:
+    from mm_ladder.services.season import SeasonService
+
+    assert await SeasonService(async_session).current_season() is None

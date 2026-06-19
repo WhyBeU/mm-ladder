@@ -6,13 +6,13 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchSeasons, fetchPlayers, fetchSeasonStandings } from "@/lib/api";
 import {
   buildPods,
-  metricFor,
+  fmtMetric,
   podSizePreview,
-  SEED_METHODS,
   type SeedMethod,
   type SeedablePlayer,
 } from "@/lib/pods";
 import HeaderNav from "@/components/HeaderNav";
+import SeedingSelector from "@/components/SeedingSelector";
 
 // ---------- Local types ----------
 interface RosterPlayer {
@@ -30,14 +30,6 @@ interface Extra {
 }
 
 // ---------- Helpers ----------
-function fmtMetric(method: SeedMethod, p: Pick<SeedablePlayer, "total" | "average" | "best">): string | null {
-  if (method === "Random") return null;
-  const v = metricFor({ ...p, key: "", name: "", isExtra: false }, method);
-  if (!v) return "—";
-  // Total and Best are integer point sums; Average is points-per-event.
-  return method === "Average" ? v.toFixed(1) : String(v);
-}
-
 function podToText(pod: SeedablePlayer[], idx: number): string {
   const lines = pod.map((p, i) => `${i + 1}. ${p.name}`);
   return `Pod ${idx + 1} (${pod.length})\n${lines.join("\n")}`;
@@ -287,27 +279,7 @@ export default function PodMaker() {
                   <label className="eyebrow" style={{ color: "var(--parchment-muted)", display: "block", marginBottom: 6 }}>
                     Seeding method
                   </label>
-                  <div style={{ display: "inline-flex", border: "1px solid var(--ink-600)", borderRadius: 8, overflow: "hidden" }}>
-                    {SEED_METHODS.map((m) => (
-                      <button
-                        key={m}
-                        onClick={() => setMethod(m)}
-                        style={{
-                          padding: "6px 14px",
-                          fontSize: 12,
-                          fontFamily: "var(--font-sans)",
-                          cursor: "pointer",
-                          border: "none",
-                          borderLeft: m === SEED_METHODS[0] ? "none" : "1px solid var(--ink-700)",
-                          background: method === m ? "var(--primary-700)" : "var(--ink-850)",
-                          color: method === m ? "var(--parchment)" : "var(--parchment-muted)",
-                          fontWeight: method === m ? 600 : 400,
-                        }}
-                      >
-                        {m}
-                      </button>
-                    ))}
-                  </div>
+                  <SeedingSelector method={method} onChange={setMethod} />
                 </div>
 
                 {/* Pod-size preview */}

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildPods,
   calculatePodStructure,
+  fmtMetric,
   podSizePreview,
   seedPlayers,
   type SeedablePlayer,
@@ -94,6 +95,27 @@ function player(
     isExtra,
   };
 }
+
+describe("fmtMetric", () => {
+  const metrics = { total: 24, average: 4.25, best: 18 };
+
+  it("returns null for Random (no metric shown)", () => {
+    expect(fmtMetric("Random", metrics)).toBeNull();
+  });
+
+  it("shows the integer point sum for Total and Best", () => {
+    expect(fmtMetric("Total", metrics)).toBe("24");
+    expect(fmtMetric("Best", metrics)).toBe("18");
+  });
+
+  it("shows one decimal for Average", () => {
+    expect(fmtMetric("Average", metrics)).toBe("4.3");
+  });
+
+  it("shows a dash for a 0/unrated metric", () => {
+    expect(fmtMetric("Total", { total: 0, average: 0, best: 0 })).toBe("—");
+  });
+});
 
 describe("seedPlayers", () => {
   it("sorts real players descending by the chosen metric", () => {
