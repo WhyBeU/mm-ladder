@@ -111,7 +111,7 @@ export default function ScopeBar({ scope, setScope, yearlyCups, seasons, events 
       ref={barRef}
       style={{
         display: "flex", alignItems: "center", gap: 6,
-        padding: "10px 32px",
+        padding: "7px 32px",
         borderBottom: "1px solid var(--ink-700)",
         background: "color-mix(in srgb, var(--ink-950) 92%, transparent)",
         backdropFilter: "blur(8px)", fontSize: 13,
@@ -308,9 +308,9 @@ function AddChip({
       <button
         onClick={onToggle}
         style={{
-          background: "none", border: "1px dashed var(--ink-600)", cursor: "pointer",
+          background: "none", border: "1px dashed color-mix(in srgb, var(--ink-600) 70%, transparent)", cursor: "pointer",
           fontFamily: "inherit", fontSize: 12, color: "var(--parchment-faint)",
-          padding: "3px 12px", borderRadius: 20,
+          padding: "2px 8px", borderRadius: 6,
         }}
       >
         {label}
@@ -344,21 +344,21 @@ function SelectionChip({
     <div ref={ref} style={{ position: "relative", flexShrink: 0 }}>
       <div style={{
         display: "inline-flex", alignItems: "center",
-        border: "1px solid var(--ink-600)", borderRadius: 20, overflow: "hidden",
-        background: "var(--ink-850)",
+        border: "1px solid transparent", borderRadius: 6, overflow: "hidden",
+        background: "none",
       }}>
         <button
           onClick={onToggle}
           style={{
-            background: "none", border: "none", cursor: "pointer",
-            fontFamily: "inherit", fontSize: 12, color: "var(--parchment)",
-            padding: "4px 8px 4px 12px", display: "flex", alignItems: "center", gap: 5,
+            background: "none", border: "none", cursor: "pointer", borderRadius: 6,
+            fontFamily: "inherit", fontSize: 13, color: "var(--parchment)",
+            padding: "3px 6px 3px 8px", display: "flex", alignItems: "center", gap: 5,
           }}
         >
           {label}
           <span style={{ fontSize: 10, color: "var(--parchment-faint)" }}>▾</span>
         </button>
-        <span style={{ width: 1, height: 16, background: "var(--ink-600)", flexShrink: 0 }} />
+        <span style={{ width: 1, height: 14, background: "var(--ink-700)", flexShrink: 0 }} />
         <button
           onClick={onDismiss}
           aria-label={`Remove ${label}`}

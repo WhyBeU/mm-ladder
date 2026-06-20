@@ -50,10 +50,12 @@ export function Podium({ standings }: PodiumProps) {
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
                     <span className="font-display" style={{ fontSize: idx === 0 ? 19 : 17, color: "var(--parchment)", lineHeight: 1.15, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.display_name}</span>
-                    <AwardsCluster player={p} />
                   </div>
                   <div style={{ fontSize: 11, color: "var(--parchment-muted)", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>
                     {p.match_wins}W · {p.match_losses}L · {p.match_draws}D
+                  </div>
+                  <div style={{ marginTop: 6 }}>
+                    <AwardsCluster player={p} wrap />
                   </div>
                 </div>
               </div>

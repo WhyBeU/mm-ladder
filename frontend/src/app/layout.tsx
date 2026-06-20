@@ -33,6 +33,7 @@ export default function RootLayout({
     >
       <head>
         <link rel="stylesheet" href="/css/keyrune.min.css" />
+        <link rel="stylesheet" href="/css/mana.min.css" />
       </head>
       <body className="min-h-full flex flex-col">
         <QueryProvider>

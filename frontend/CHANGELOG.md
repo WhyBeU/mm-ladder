@@ -2,6 +2,40 @@
 
 ## [Unreleased]
 
+## [0.9.0] — 2026-06-20 — Frontend rework + banner
+
+### Added
+
+- **Admin Docs** — a new **📚 Docs** section in the admin portal with task-oriented how-tos
+  (run a Monday night, fix participants/results, merge vs. rename players, set champions /
+  POTY / cup winners & qualified players, start a season + link a cup, pod-maker & sign-up
+  board, read the audit log). Content is authored as plain markdown in `public/docs/*.md`,
+  fetched at runtime and rendered with `react-markdown` + `remark-gfm`; a Vitest guard test
+  keeps the registry and files in sync.
+- **Mana pentagon roundel** — the theme picker is now the five official **Mana font** pips
+  arranged as the canonical WUBRG wheel (W top, U/B right, R/G left); the active pip glows gold.
+- **Event-scope trophy line** — in a single tournament's view, sorted by points, a centred
+  `🏆 3-0` divider marks the cut below the last player on 9 points.
+- **Points-by-event hover** — hovering a point on the per-event sparkline shows that event's
+  total, so totals are readable even when per-point labels are hidden (many events).
+
+### Changed
+
+- **Merged scope selector** — the duplicated header breadcrumb is gone; the scope bar is now
+  the single, subtler selector (click a level to navigate, ▾ to change it, ✕ to remove it).
+- **Bigger banner** — the logo is ~2× larger and the ladder is titled **"Magic Mates Draft
+  Ladder"**; the masthead (logo + title + nav) is now a shared `<Masthead>` component used by
+  the ladder, board and pod-maker.
+- **Podium awards** moved below the player's name and wrap to the card width, matching the
+  qualified-player cards.
+- **Qualified cards** are equal height regardless of award count (stats pinned to the card
+  bottom), and **ladder name + awards wrap** gracefully as the window narrows.
+- **Event scope decluttered** — single-event rows no longer expand and drop the winner
+  highlight (a single event has no per-event series).
+- **Admin participants** are sortable by player name or points (view-only — never changes the
+  saved order).
+- **Admin → "← Ladder"** link added to the admin sidebar.
+
 ## [0.8.0] — 2026-06-19 — Pod-registration board
 
 ### Added

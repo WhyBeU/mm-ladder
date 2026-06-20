@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 
-export type AdminSection = "cups" | "seasons" | "tournaments" | "players" | "history";
+export type AdminSection = "cups" | "seasons" | "tournaments" | "players" | "history" | "docs";
 
 export interface NavRequest {
   section: AdminSection;

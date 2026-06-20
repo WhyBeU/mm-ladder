@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import { fetchSeasons, fetchPlayers, fetchSeasonStandings } from "@/lib/api";
 import {
@@ -11,7 +10,7 @@ import {
   type SeedMethod,
   type SeedablePlayer,
 } from "@/lib/pods";
-import HeaderNav from "@/components/HeaderNav";
+import Masthead from "@/components/Masthead";
 import SeedingSelector from "@/components/SeedingSelector";
 
 // ---------- Local types ----------
@@ -174,63 +173,11 @@ export default function PodMaker() {
   return (
     <div style={{ minHeight: "100vh", overflowX: "hidden" }}>
       {/* Header */}
-      <header
-        style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 20,
-          background: "color-mix(in srgb, var(--ink-950) 88%, transparent)",
-          backdropFilter: "blur(8px)",
-          borderBottom: "1px solid var(--ink-700)",
-          padding: "12px 32px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 16,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 9,
-              flexShrink: 0,
-              background: "var(--parchment)",
-              padding: 3,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow:
-                "0 0 0 1px color-mix(in srgb, var(--accent-400) 40%, transparent), var(--shadow-gold-glow)",
-            }}
-          >
-            <Image
-              src="/mm-logo-svg.svg"
-              alt="Magic Mates"
-              width={34}
-              height={34}
-              unoptimized
-              style={{ objectFit: "contain" }}
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div className="eyebrow" style={{ color: "var(--parchment-muted)" }}>
-              {liveSeason ? `Seeding from ${liveSeason.name}` : "Pod-maker"}
-            </div>
-            <h2
-              className="font-display"
-              style={{ margin: "1px 0 0", fontSize: 20, color: "var(--parchment)", letterSpacing: "0.02em" }}
-            >
-              Pod-maker
-            </h2>
-          </div>
-        </div>
-        <HeaderNav current="pods" />
-      </header>
+      <Masthead
+        current="pods"
+        title="Pod-maker"
+        eyebrow={liveSeason ? `Seeding from ${liveSeason.name}` : "Pod-maker"}
+      />
 
       {/* Main */}
       <main style={{ flex: 1, padding: "28px 32px 48px", maxWidth: 1320, width: "100%", margin: "0 auto" }}>

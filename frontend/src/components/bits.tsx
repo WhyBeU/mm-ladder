@@ -167,6 +167,11 @@ export function Sparkline({ data, width = 80, height = 24, color = "var(--accent
       {pts.map(([x, y, v], i) => (
         <g key={i}>
           <circle cx={x} cy={y} r={i === pts.length - 1 ? 1.8 : 1.2} fill={color} />
+          {/* Invisible larger hit area so hovering a point reveals its total — useful
+              when per-point labels are hidden (many events). */}
+          <circle cx={x} cy={y} r={6} fill="transparent" style={{ cursor: "default" }}>
+            <title>{`${v} pts`}</title>
+          </circle>
           {showLabels && (
             <text x={x} y={y - 4} textAnchor="middle" fontSize={9} fill={color} opacity="0.9" fontFamily="var(--font-mono)">
               {v}
