@@ -13,8 +13,7 @@ import {
   fetchSeasonStandings,
 } from "@/lib/api";
 import { buildPlayerAwards, type PlayerAwards } from "@/lib/awards";
-import Image from "next/image";
-import HeaderNav from "@/components/HeaderNav";
+import Masthead from "@/components/Masthead";
 import Leaderboard from "@/components/Leaderboard";
 import { SeasonHero, StatsStrip } from "@/components/SeasonHero";
 import { Podium } from "@/components/Podium";
@@ -140,48 +139,6 @@ function apiSeasonStandingToEntry(s: ApiSeasonStanding): StandingEntry {
     player_of_the_year_years: s.player_of_the_year_years,
     cup_champion_years: s.cup_champion_years,
   };
-}
-
-// ---------- Scope breadcrumb ----------
-function ScopeBreadcrumb({ scope, onPart, yearlyCups, seasons, events }: {
-  scope: Scope;
-  onPart: (s: Scope) => void;
-  yearlyCups: YearlyCup[];
-  seasons: Season[];
-  events: MMLEvent[];
-}) {
-  const parts: { label: string; onClick: () => void }[] = [];
-  parts.push({ label: "All-time", onClick: () => onPart({ kind: "alltime" }) });
-  if (scope.cupId != null) {
-    const cup = yearlyCups.find(y => y.id === scope.cupId);
-    if (cup) parts.push({ label: cup.name, onClick: () => onPart({ kind: "cup", cupId: cup.id }) });
-  }
-  if (scope.seasonId != null) {
-    const s = seasons.find(x => x.id === scope.seasonId);
-    if (s) parts.push({ label: s.name, onClick: () => onPart({ kind: "season", cupId: s.yearly_cup_id ?? undefined, seasonId: s.id }) });
-  }
-  if (scope.eventId != null) {
-    const e = events.find(x => x.id === scope.eventId);
-    if (e) parts.push({ label: `MMM #${e.number}`, onClick: () => onPart({ kind: "event", cupId: scope.cupId, seasonId: scope.seasonId, eventId: e.id }) });
-  }
-  if (scope.podId != null) {
-    const e = events.find(x => x.id === scope.eventId);
-    const pod = e?.pods.find(p => p.id === scope.podId);
-    if (pod) parts.push({ label: pod.name.replace(/^MMM #\d+\s*·\s*/, "Pod "), onClick: () => {} });
-  }
-
-  return (
-    <div className="eyebrow" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", lineHeight: 1.5 }}>
-      {parts.map((p, i) => (
-        <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          {i > 0 && <span style={{ color: "color-mix(in srgb, var(--parchment-faint) 50%, transparent)" }}>›</span>}
-          {i < parts.length - 1
-            ? <button onClick={p.onClick} style={{ background: "none", border: "none", color: "var(--parchment-muted)", padding: 0, cursor: "pointer", fontFamily: "inherit", fontSize: "inherit", letterSpacing: "inherit", textTransform: "inherit", fontWeight: "inherit" }}>{p.label}</button>
-            : <span style={{ color: "var(--parchment)" }}>{p.label}</span>}
-        </span>
-      ))}
-    </div>
-  );
 }
 
 // ---------- Helpers ----------
@@ -340,42 +297,9 @@ export default function LeaderboardPage() {
       <div style={{ display: "flex", flexDirection: "column" }}>
 
         {/* Sticky header */}
-        <header style={{
-          position: "sticky", top: 0, zIndex: 20,
-          background: "color-mix(in srgb, var(--ink-950) 88%, transparent)",
-          backdropFilter: "blur(8px)",
-          borderBottom: "1px solid var(--ink-700)",
-          padding: "12px 32px",
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-            {/* Logo */}
-            <div style={{
-              width: 40, height: 40, borderRadius: 9, flexShrink: 0,
-              background: "var(--parchment)", padding: 3,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              boxShadow: "0 0 0 1px color-mix(in srgb, var(--accent-400) 40%, transparent), var(--shadow-gold-glow)",
-            }}>
-              <Image
-                src="/mm-logo-svg.svg"
-                alt="Magic Mates"
-                width={34}
-                height={34}
-                unoptimized
-                style={{ objectFit: "contain" }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-              />
-            </div>
-            {/* Title + breadcrumb */}
-            <div style={{ minWidth: 0 }}>
-              <ScopeBreadcrumb scope={scope} onPart={setScope} yearlyCups={yearlyCups} seasons={seasons} events={events} />
-              <h2 className="font-display" style={{ margin: "1px 0 0", fontSize: 20, color: "var(--parchment)", letterSpacing: "0.02em" }}>Draft Ladder</h2>
-            </div>
-          </div>
-          <HeaderNav current="leaderboard" />
-        </header>
+        <Masthead current="leaderboard" title="Magic Mates Draft Ladder" />
 
-        {/* Scope bar */}
+        {/* Scope bar — the single scope selector */}
         <ScopeBar scope={scope} setScope={setScope} yearlyCups={yearlyCups} seasons={seasons} events={events} />
 
         {/* Main content */}

@@ -42,6 +42,7 @@ export function QualifiedCards({ standings, qualifiedPlayerIds }: QualifiedCards
               border: "1px solid color-mix(in srgb, var(--accent-400) 30%, transparent)",
               padding: "16px 16px 14px",
               boxShadow: "var(--shadow-card)",
+              display: "flex", flexDirection: "column", height: "100%",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -65,7 +66,7 @@ export function QualifiedCards({ standings, qualifiedPlayerIds }: QualifiedCards
               </div>
             )}
 
-            <div style={{ display: "flex", gap: 10, marginTop: 12, paddingTop: 10, borderTop: "1px solid var(--ink-800)" }}>
+            <div style={{ display: "flex", gap: 10, marginTop: "auto", paddingTop: 10, borderTop: "1px solid var(--ink-800)" }}>
               <Stat label="Points" value={p.points} accent />
               <Stat label="Win %" value={fmtPct(p.win_pct)} />
               <Stat label="Trophies" value={p.trophies || "—"} />

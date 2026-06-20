@@ -1,13 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchPlayers, fetchSeasons, fetchSeasonStandings } from "@/lib/api";
 import { boardApi, type ApiBoard, type ApiBoardFormat, type ApiBoardPod, type ApiBoardSignup } from "@/lib/boardApi";
 import { buildGenerateGroups, type SeedMetrics } from "@/lib/boardGenerate";
 import { fmtMetric, podSizePreview, type SeedMethod } from "@/lib/pods";
-import HeaderNav from "@/components/HeaderNav";
+import Masthead from "@/components/Masthead";
 import SeedingSelector from "@/components/SeedingSelector";
 
 const ZERO: SeedMetrics = { total: 0, average: 0, best: 0 };
@@ -151,32 +150,11 @@ export default function RegistrationBoard() {
 
   return (
     <div style={{ minHeight: "100vh", overflowX: "hidden" }}>
-      <header style={headerStyle}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-          <div style={logoBoxStyle}>
-            <Image
-              src="/mm-logo-svg.svg"
-              alt="Magic Mates"
-              width={34}
-              height={34}
-              unoptimized
-              style={{ objectFit: "contain" }}
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div className="eyebrow" style={{ color: "var(--parchment-muted)" }}>
-              {defaultFormat ? `Seeding from ${defaultFormat.name}` : "Sign-up board"}
-            </div>
-            <h2 className="font-display" style={{ margin: "1px 0 0", fontSize: 20, color: "var(--parchment)", letterSpacing: "0.02em" }}>
-              Pod sign-up
-            </h2>
-          </div>
-        </div>
-        <HeaderNav current="board" />
-      </header>
+      <Masthead
+        current="board"
+        title="Pod sign-up"
+        eyebrow={defaultFormat ? `Seeding from ${defaultFormat.name}` : "Sign-up board"}
+      />
 
       <main style={{ flex: 1, padding: "28px 32px 48px", maxWidth: 1320, width: "100%", margin: "0 auto" }}>
         <p style={{ color: "var(--parchment-muted)", fontSize: 14, margin: "0 0 8px", maxWidth: 720 }}>
@@ -660,33 +638,6 @@ function ConfirmDialog({ onCancel, onConfirm }: { onCancel: () => void; onConfir
 }
 
 // ---------- shared styles ----------
-const headerStyle: React.CSSProperties = {
-  position: "sticky",
-  top: 0,
-  zIndex: 20,
-  background: "color-mix(in srgb, var(--ink-950) 88%, transparent)",
-  backdropFilter: "blur(8px)",
-  borderBottom: "1px solid var(--ink-700)",
-  padding: "12px 32px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 16,
-};
-
-const logoBoxStyle: React.CSSProperties = {
-  width: 40,
-  height: 40,
-  borderRadius: 9,
-  flexShrink: 0,
-  background: "var(--parchment)",
-  padding: 3,
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  boxShadow: "0 0 0 1px color-mix(in srgb, var(--accent-400) 40%, transparent), var(--shadow-gold-glow)",
-};
-
 const inputStyle: React.CSSProperties = {
   width: "100%",
   marginTop: 0,

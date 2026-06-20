@@ -1,4 +1,5 @@
 import type { StandingEntry } from "@/lib/types";
+import { chunk } from "@/lib/awardsLayout";
 
 function Award({ children, tip, badge }: { children: React.ReactNode; tip: React.ReactNode; badge?: number }) {
   return (
@@ -20,10 +21,12 @@ export default function AwardsCluster({
   player,
   wrap = false,
   max,
+  perRow,
 }: {
   player: StandingEntry;
   wrap?: boolean;
   max?: number;
+  perRow?: number;
 }) {
   const champs = player.season_championships ?? [];
   const potyYears = player.player_of_the_year_years ?? [];
@@ -64,6 +67,25 @@ export default function AwardsCluster({
         </Award>
       ),
     });
+  }
+
+  // perRow: show every award, wrapping into rows of `perRow` icons. Takes
+  // precedence over max/+N folding.
+  if (perRow != null && perRow > 0) {
+    const rows = chunk(items, perRow);
+    return (
+      <span style={{ display: "inline-flex", flexDirection: "column", gap: 6 }}>
+        {rows.map((row, ri) => (
+          <span key={ri} style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+            {row.map((it) => (
+              <span key={it.key} style={{ display: "inline-flex" }}>
+                {it.node}
+              </span>
+            ))}
+          </span>
+        ))}
+      </span>
+    );
   }
 
   // When a max is set and exceeded, keep (max - 1) icons and fold the rest into a "+N" chip

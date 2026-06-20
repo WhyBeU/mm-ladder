@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import type { StandingEntry, MMLEvent, Scope, Season } from "@/lib/types";
 import { fmtPct, fmtAvg, PlayerAvatar, StreakChips, Sparkline } from "@/components/bits";
 import AwardsCluster from "@/components/AwardsCluster";
+import { trophyCutoffIndex } from "@/lib/trophyLine";
 
 type SortKey = "points" | "display_name" | "match_wins" | "win_pct" | "avg_pts" | "tournaments_played" | "trophies" | "comp_avg";
 type SortDir = "asc" | "desc";
@@ -77,6 +78,13 @@ export default function Leaderboard({
   const cupLineEnabled =
     showCupLine && scope.kind === "season" && !!season?.yearly_cup_id && sortKey === qualifyingSortKey && sortDir === "desc";
 
+  const isEvent = scope.kind === "event";
+  // Trophy line: only in event scope, sorted points-desc; index of last 9-pt row.
+  const trophyIdx =
+    isEvent && sortKey === "points" && sortDir === "desc"
+      ? trophyCutoffIndex(rows.map((r) => r.points))
+      : -1;
+
   // Build grid template
   const cols: string[] = [];
   cols.push("44px");
@@ -146,7 +154,7 @@ export default function Leaderboard({
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 6 }}>
         {rows.map(p => {
           const rank = p.rank;
-          const isMedal = showMedals && rank <= 3;
+          const isMedal = !isEvent && showMedals && rank <= 3;
           const cupLine = cupLineEnabled && rank === qualifierCount && rows.length > qualifierCount;
           const isExpanded = expanded === p.player_id;
 
@@ -164,10 +172,10 @@ export default function Leaderboard({
           return (
             <li key={p.player_id}>
               <button
-                onClick={() => setExpanded(isExpanded ? null : p.player_id)}
+                onClick={isEvent ? undefined : () => setExpanded(isExpanded ? null : p.player_id)}
                 className="themed-surface"
                 style={{
-                  position: "relative", width: "100%", textAlign: "left", cursor: "pointer",
+                  position: "relative", width: "100%", textAlign: "left", cursor: isEvent ? "default" : "pointer",
                   display: "grid", gridTemplateColumns: colTemplate, gap: 8, alignItems: "center",
                   background: "var(--ink-900)",
                   border: `1px solid ${borderColor}`,
@@ -195,10 +203,10 @@ export default function Leaderboard({
                 <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
                   <PlayerAvatar name={p.display_name} rank={rank} size={density === "compact" ? 32 : 36} isVeteran={p.is_veteran} />
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-                      <span style={{ fontWeight: 600, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.display_name}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, rowGap: 4, minWidth: 0, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 600, fontSize: 14, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "100%" }}>{p.display_name}</span>
                       {qualifiedPlayerIds?.has(p.player_id) && <QualifiedCheck year={qualifiedCupYear} />}
-                      <AwardsCluster player={p} />
+                      <AwardsCluster player={p} wrap />
                     </div>
                     <div style={{ fontSize: 11, color: "var(--parchment-faint)", display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
                       <span style={{ fontVariantNumeric: "tabular-nums" }}>{p.tournaments_played} {eventLabel.toLowerCase()}</span>
@@ -262,11 +270,27 @@ export default function Leaderboard({
                 )}
 
                 {/* Expand arrow */}
-                <span style={{ color: "var(--parchment-faint)", fontSize: 12, transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 200ms" }}>▸</span>
+                {!isEvent
+                  ? <span style={{ color: "var(--parchment-faint)", fontSize: 12, transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 200ms" }}>▸</span>
+                  : <span />}
               </button>
 
-              {isExpanded && (
+              {!isEvent && isExpanded && (
                 <ExpandedDetail player={p} scope={scope} scopedEvents={scopedEvents} onEventSelect={onEventSelect} />
+              )}
+              {trophyIdx >= 0 && trophyIdx === rows.indexOf(p) && (
+                <div style={{ position: "relative", margin: "10px 0 4px", borderBottom: "1px dashed color-mix(in srgb, var(--accent-400) 45%, transparent)" }}>
+                  <span style={{
+                    position: "absolute", left: "50%", transform: "translateX(-50%)", bottom: -11,
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                    background: "var(--ink-950)", padding: "0 10px",
+                    fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase",
+                    color: "var(--accent-300)", fontWeight: 700,
+                  }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4h14l-1 8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4L5 4Zm5 13h4l1 3H9l1-3Z" /></svg>
+                    3-0
+                  </span>
+                </div>
               )}
               {cupLine && (
                 <div style={{ position: "relative", margin: "6px 0 2px", borderBottom: "1px dashed color-mix(in srgb, var(--accent-400) 50%, transparent)" }}>

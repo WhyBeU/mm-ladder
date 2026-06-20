@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { AdminAuthProvider, useAdminAuth } from "@/context/AdminAuth";
 import { ToastProvider } from "@/components/admin/ui";
 import { AdminNavContext, type AdminSection, type NavRequest } from "@/components/admin/nav";
@@ -10,6 +11,7 @@ import SeasonSection from "@/components/admin/SeasonSection";
 import TournamentSection from "@/components/admin/TournamentSection";
 import PlayerSection from "@/components/admin/PlayerSection";
 import HistorySection from "@/components/admin/HistorySection";
+import DocsSection from "@/components/admin/DocsSection";
 
 type Section = AdminSection;
 const NAV: { key: Section; label: string }[] = [
@@ -18,6 +20,7 @@ const NAV: { key: Section; label: string }[] = [
   { key: "tournaments", label: "🎲 Tournaments" },
   { key: "players", label: "👤 Players" },
   { key: "history", label: "📜 History" },
+  { key: "docs", label: "📚 Docs" },
 ];
 
 function Shell() {
@@ -34,6 +37,7 @@ function Shell() {
     <AdminNavContext.Provider value={{ navigate, request }}>
     <div style={{ display: "flex", minHeight: "100vh", color: "var(--parchment)" }}>
       <nav style={{ width: 200, borderRight: "1px solid var(--ink-700)", padding: 16, display: "flex", flexDirection: "column", gap: 6 }}>
+        <Link href="/" style={{ color: "var(--parchment-muted)", textDecoration: "none", fontSize: 13, marginBottom: 6 }}>← Ladder</Link>
         <strong style={{ marginBottom: 10 }}>🗂️ Admin</strong>
         {NAV.map((n) => (
           <button
@@ -66,6 +70,7 @@ function Shell() {
         {section === "tournaments" && <TournamentSection />}
         {section === "players" && <PlayerSection />}
         {section === "history" && <HistorySection />}
+        {section === "docs" && <DocsSection />}
       </main>
     </div>
     </AdminNavContext.Provider>

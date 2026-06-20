@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchTournamentParticipants, type ApiParticipant } from "@/lib/api";
+import { fetchTournamentParticipants, fetchPlayers, type ApiParticipant } from "@/lib/api";
 import { adminApi } from "@/lib/adminApi";
 import PlayerPicker from "@/components/admin/PlayerPicker";
 import { inputStyle, useToast } from "@/components/admin/ui";
@@ -12,7 +12,29 @@ export default function ParticipantsTable({ tournamentId }: { tournamentId: numb
   const toast = useToast();
   const key = ["admin", "participants", tournamentId];
   const { data: parts = [] } = useQuery({ queryKey: key, queryFn: () => fetchTournamentParticipants(tournamentId) });
+  const { data: players = [] } = useQuery({ queryKey: ["players"], queryFn: fetchPlayers });
   const invalidate = () => qc.invalidateQueries({ queryKey: key });
+
+  const [sortKey, setSortKey] = useState<"name" | "points">("points");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const onSort = (k: "name" | "points") => {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(k); setSortDir(k === "name" ? "asc" : "desc"); }
+  };
+  const nameOf = (id: number) => players.find((pl) => pl.id === id)?.display_name ?? "";
+  // View-only sort over a copy — never reorders the stored data or save payloads.
+  const sortedParts = useMemo(() => {
+    const copy = [...parts];
+    copy.sort((a, b) => {
+      if (sortKey === "name") {
+        const r = nameOf(a.player_id).localeCompare(nameOf(b.player_id));
+        return sortDir === "asc" ? r : -r;
+      }
+      return sortDir === "asc" ? a.points - b.points : b.points - a.points;
+    });
+    return copy;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [parts, players, sortKey, sortDir]);
   const [adding, setAdding] = useState<{ player_id: number | null; w: number; l: number; d: number }>({
     player_id: null,
     w: 0,
@@ -67,20 +89,33 @@ export default function ParticipantsTable({ tournamentId }: { tournamentId: numb
     <input type="number" defaultValue={v} onBlur={(e) => on(Number(e.target.value))} style={{ ...inputStyle, width: 50 }} />
   );
 
+  const thSortStyle: React.CSSProperties = {
+    background: "none", border: "none", padding: 0, cursor: "pointer",
+    color: "inherit", font: "inherit", fontWeight: 600,
+  };
+
   return (
     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
       <thead>
         <tr style={{ textAlign: "left", opacity: 0.7 }}>
-          <th>Player</th>
+          <th>
+            <button onClick={() => onSort("name")} style={thSortStyle}>
+              Player {sortKey === "name" ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}
+            </button>
+          </th>
           <th>W</th>
           <th>L</th>
           <th>D</th>
-          <th>Pts</th>
+          <th>
+            <button onClick={() => onSort("points")} style={thSortStyle}>
+              Pts {sortKey === "points" ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}
+            </button>
+          </th>
           <th />
         </tr>
       </thead>
       <tbody>
-        {parts.map((p) => (
+        {sortedParts.map((p) => (
           <tr key={p.id} style={{ borderTop: "1px solid var(--ink-800)" }}>
             <td>
               <PlayerPicker value={p.player_id} onChange={(id) => reassign(p, id)} allowNone={false} />
