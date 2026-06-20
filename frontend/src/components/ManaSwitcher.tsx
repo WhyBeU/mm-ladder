@@ -14,8 +14,8 @@ const THEME_NAMES: Record<ManaCode, string> = {
 };
 
 const PENTAGON_BOX = 72;   // px container
-const ORB = 22;            // px per orb (matches mana-cost circle font-size)
-const RADIUS = 26;         // px from centre to orb centre
+const ORB = 12;            // px per orb (matches mana-cost circle font-size)
+const RADIUS = 19;         // px from centre to orb centre
 
 // angle per code, degrees clockwise from top (canonical WUBRG wheel)
 const ANGLE: Record<ManaCode, number> = { W: 0, U: 72, B: 144, R: 216, G: 288 };
@@ -52,15 +52,31 @@ export default function ManaSwitcher() {
               position: "absolute", left, top, width: ORB, height: ORB,
               padding: 0, border: "none", background: "none", cursor: "pointer",
               borderRadius: "50%", lineHeight: 0,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              zIndex: active ? 2 : 1,
               transition: "transform 150ms",
-              transform: active ? "scale(1.18)" : "scale(1)",
-              boxShadow: active ? "var(--shadow-gold-glow), 0 0 0 2px var(--accent-400)" : "none",
-              filter: active ? "none" : "grayscale(0.35) opacity(0.8)",
+              transform: active ? "scale(1.35)" : "scale(1)",
+              boxShadow: active ? "0 0 0 1.5px var(--accent-300)" : "none",
+              filter: active ? "none" : "grayscale(0.6) opacity(0.55)",
             }}
-            onMouseEnter={(e) => { if (!active) e.currentTarget.style.filter = "none"; }}
-            onMouseLeave={(e) => { if (!active) e.currentTarget.style.filter = "grayscale(0.35) opacity(0.8)"; }}
+            onMouseEnter={(e) => { if (!active) e.currentTarget.style.filter = "grayscale(0.2) opacity(0.85)"; }}
+            onMouseLeave={(e) => { if (!active) e.currentTarget.style.filter = "grayscale(0.6) opacity(0.55)"; }}
           >
-            <i className={`ms ms-${code.toLowerCase()} ms-cost`} style={{ fontSize: ORB }} />
+            {/* Soft gold glow halo behind the selected pip — makes the active colour obvious */}
+            {active && (
+              <span
+                aria-hidden
+                style={{
+                  position: "absolute", inset: -8, borderRadius: "50%", zIndex: 0,
+                  background: "radial-gradient(circle, color-mix(in srgb, var(--accent-400) 65%, transparent) 0%, color-mix(in srgb, var(--accent-400) 25%, transparent) 45%, transparent 72%)",
+                  filter: "blur(1.5px)",
+                  pointerEvents: "none",
+                }}
+              />
+            )}
+            {/* ms-cost renders a 1.3em coloured disc, so size the font to ORB/1.3 → a
+                disc of exactly ORB px, centred in the button so ring + halo line up. */}
+            <i className={`ms ms-${code.toLowerCase()} ms-cost`} style={{ fontSize: ORB / 1.3, position: "relative", zIndex: 1 }} />
           </button>
         );
       })}
