@@ -35,7 +35,7 @@ Copy `.env.local.example` to `.env.local` and adjust for your environment. `.env
 ```
 src/
 ├── app/
-│   ├── layout.tsx          # Root HTML shell — fonts (Inter, Cinzel), Keyrune (local), ManaThemeProvider
+│   ├── layout.tsx          # Root HTML shell — fonts (Inter, Cinzel), Keyrune + Mana (local), ManaThemeProvider
 │   ├── page.tsx            # "/" route — renders <LeaderboardPage />
 │   └── globals.css         # Tailwind v4 @theme tokens + @utility classes (eyebrow, pulse-soft, set-placard)
 ├── components/
@@ -65,27 +65,73 @@ Themes are driven by a `data-mana` attribute on `<html>` (values: `W` `U` `B` `R
 
 `layout.tsx` and `page.tsx` are server components (no directive). Every interactive component (`"use client"`) opts in explicitly — `ManaThemeProvider`, `ManaSwitcher`, `NavSidebar`, `Leaderboard`, `LeaderboardPage`.
 
-## Updating Keyrune (MTG set icons)
+## Updating the MTG icon fonts (set symbols & mana pips)
 
-Set symbols are served from local font files rather than a CDN so the app works offline and version is pinned.
+Two icon fonts are **vendored locally** (copied into `public/`, not loaded from a CDN and
+not listed in `package.json`) so the app works offline and the version is pinned:
 
-**Files:**
-- `public/fonts/keyrune.woff2` — primary font (modern browsers)
-- `public/fonts/keyrune.woff` — fallback
-- `public/css/keyrune.min.css` — stylesheet with `@font-face` + `.ss-*` classes
+| Font | Purpose | Markup | Loaded by |
+|---|---|---|---|
+| **Keyrune** | Set / expansion symbols | `<i class="ss ss-{setcode}" />` | `public/css/keyrune.min.css` |
+| **Mana** | Mana pips (W/U/B/R/G…) | `<i class="ms ms-{w\|u\|b\|r\|g}" />` (add `ms-cost` for the coloured disc) | `public/css/mana.min.css` |
 
-**To update to a new version:**
+Both stylesheets are linked from `src/app/layout.tsx` and reference their font files via
+relative `../fonts/` URLs, so **no code changes are needed when you update them** — you only
+replace files in `public/`.
 
-1. Download the latest release from [github.com/andrewgioia/keyrune](https://github.com/andrewgioia/keyrune/releases)
-2. Replace the files:
-   ```
-   public/fonts/keyrune.woff2   ← fonts/keyrune.woff2
-   public/fonts/keyrune.woff    ← fonts/keyrune.woff
-   public/css/keyrune.min.css   ← css/keyrune.min.css
-   ```
-3. No code changes needed — `layout.tsx` loads `/css/keyrune.min.css` and the CSS references `../fonts/` relatively.
+### When you need this
 
-**Usage in components:** `<i className="ss ss-{setcode}" />` where `setcode` is lowercase (e.g. `ss-blb`). Display set codes in the UI as uppercase (e.g. `BLB`). See the [Keyrune cheatsheet](https://keyrune.andrewgioia.com/cheatsheet.html) for all available codes.
+A set symbol `ss-{setcode}` only exists once Keyrune ships support for that set. So **when a
+new MTG set releases** and you want its symbol on a season, you must bump the vendored Keyrune
+to a version that includes the new set, then use the new code. (The app already renders
+`<i class="ss ss-{set_code}">` from a season's `set_code`, lowercased — so once the font knows
+the code, simply creating/editing the season with that `set_code` shows its symbol; see the
+admin **Docs → Start a new season** how-to.)
+
+### Update Keyrune (set symbols)
+
+Recommended — pull a pinned version via npm, copy the dist files into `public/`, then drop the
+package (it stays vendored, never a dependency):
+
+```bash
+cd frontend
+npm install --no-save keyrune@latest          # or @3.20.0 etc — pin a specific version
+cp node_modules/keyrune/fonts/keyrune.woff2 public/fonts/
+cp node_modules/keyrune/fonts/keyrune.woff  public/fonts/
+cp node_modules/keyrune/css/keyrune.min.css public/css/
+rm -rf node_modules/keyrune                    # vendored only — keep it out of package.json
+```
+
+> The `.min.css` also references `keyrune.eot/.ttf/.svg` relatively; we only ship `.woff2`
+> (+ `.woff` fallback) because every supported browser uses those — the others 404 harmlessly
+> and are never requested. Copy them too if you want a clean network tab.
+
+Alternative: download the release zip from
+[github.com/andrewgioia/keyrune/releases](https://github.com/andrewgioia/keyrune/releases) and
+copy the same three files.
+
+### Update Mana (mana pips) — same procedure
+
+```bash
+cd frontend
+npm install --no-save mana-font@latest         # or pin a version
+cp node_modules/mana-font/css/mana.min.css   public/css/
+cp node_modules/mana-font/fonts/mana.*       public/fonts/
+cp node_modules/mana-font/fonts/mplantin.*   public/fonts/   # referenced by the css; vendored to avoid 404s
+rm -rf node_modules/mana-font
+```
+
+### Verify after either update
+
+1. `npm run build` (must compile).
+2. `npm run dev`, open a page that uses the icon, and confirm it renders — e.g. a season with
+   the new `set_code` (Keyrune), or the header mana roundel (Mana).
+3. Find available codes: the [Keyrune cheatsheet](https://keyrune.andrewgioia.com/cheatsheet.html)
+   and [Mana cheatsheet](https://mana.andrewgioia.com/), or grep the vendored CSS, e.g.
+   `grep "ss-{newcode}" public/css/keyrune.min.css`.
+
+**Usage note:** set codes are lowercase in markup (`ss-blb`) but shown uppercase in the UI
+(`BLB`).
 
 ## Connecting to the backend
 
