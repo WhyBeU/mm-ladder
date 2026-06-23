@@ -9,6 +9,7 @@ from migration.consolidation import run_auto_consolidation, run_select_consolida
 from migration.importer import run_import, seed_cups
 from migration.scraper import ScrapeSummary, scrape_season
 from migration.seasons import SEASONS
+from migration.trophies import compute_trophy_leaderboard, print_trophy_table
 from migration.verifier import run_verify
 from mm_ladder.logger import configure_logging, get_logger
 from mm_ladder.models import Base  # registers all models with metadata
@@ -211,6 +212,18 @@ def seed_cups_cmd(db: str) -> None:
         raise SystemExit(1) from None
     finally:
         session.close()
+
+
+@cli.command()
+@click.option("--set-code", "-s", required=True, help="Season set code to report (e.g. ecl).")
+def trophies(set_code: str) -> None:
+    """Print the draft-trophy (ss-uncommon) leaderboard for a season, combining all its JSON snapshots."""
+    season = _find_season(set_code)
+    if season is None:
+        log.error("season not found", set_code=set_code)
+        raise SystemExit(1)
+    rows = compute_trophy_leaderboard(season)
+    print_trophy_table(season, rows)
 
 
 @cli.command("consolidate-players")

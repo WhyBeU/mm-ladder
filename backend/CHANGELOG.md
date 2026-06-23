@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.14.0] - 2026-06-23 — Season trophy leaderboard
+
+### Added
+
+- **`migrate trophies --set-code <set>`** — read-only report ranking players by the draft awards they hold during a season, combining every scraped JSON snapshot directly (no database needed). Tracks the css classes listed in `TROPHY_CSS` (`migration/trophies.py`): `fa fa-trophy ss-uncommon` (draft trophies) and `fa fa-star ss-uncommon` (e.g. Cube). Each award is counted once per player (max per name across snapshots, not summed across files), players are keyed by normalised name to merge spelling variants, and a player's total is the sum of their distinct award counts. Prints a ranked table (total desc, then name) with a one-award-per-line breakdown; output is downgraded to the console encoding so emoji in player names can't crash it.
+
+### Docs
+
+- Documented the `trophies` command and back-filled the `migrate migrate` flag reference (`--force-re-upload` / `--recreate-db`) in `backend/README.md`.
+
 ## [0.13.0] - 2026-06-19 — Pod-registration board
 
 ### Added
