@@ -81,7 +81,9 @@ Files are saved to `migration/data/season_{id}/YYYY-MM-DD.json` and are gitignor
 
 ### 2. Migrate
 
-Imports scraped JSON files into the database (idempotent — resets and re-imports on each run).
+Imports scraped JSON files into the database. The default run is idempotent and
+non-destructive: tournaments already imported (matched by season + date) are skipped, only
+missing events are added, and existing player rows/ids are always preserved.
 
 ```bash
 # Apply DB schema first if not already done
@@ -89,6 +91,22 @@ poetry run alembic upgrade head
 
 poetry run migrate migrate               # all seasons
 poetry run migrate migrate --set-code tdm --db mm_ladder.db
+```
+
+Two opt-in flags change this behaviour:
+
+| Flag | Effect |
+|------|--------|
+| `--force-re-upload` | Delete and rebuild the migrated tournaments **in scope** (the `-s` set(s), or all if no `-s`) from JSON, recomputing results. Player rows/ids are preserved. Use it to apply corrected source data — pairs with `migrate scrape --force`, which re-fetches and overwrites the JSON on disk. |
+| `--recreate-db` | Drop and recreate **all** tables before migrating (a full from-scratch rebuild, including players). Applied once, before the first season in the run. |
+
+```bash
+# Re-import one season's tournaments after re-scraping corrected data
+poetry run migrate scrape --set-code tdm --force
+poetry run migrate migrate --set-code tdm --force-re-upload
+
+# Wipe everything and rebuild the database from scratch
+poetry run migrate migrate --recreate-db
 ```
 
 ### 3. Verify
@@ -125,6 +143,35 @@ Groups where merging would violate a database constraint (shared tournament part
 head-to-head match between members) are skipped automatically with an explanation. Always run with
 `--dry-run` first, and against a copy of the database — merges delete player rows and repoint
 `tournament_participant`/`match` references, and cannot be undone.
+
+### Season trophy leaderboard
+
+Read-only report that ranks players by the draft awards they hold during a season — currently the
+`fa fa-trophy ss-uncommon` (draft trophies) and `fa fa-star ss-uncommon` (e.g. Cube) css classes
+listed in `TROPHY_CSS` in `migration/trophies.py`. It reads the season's scraped JSON directly (no
+database needed) and combines every dated snapshot: a player's award collection repeats unchanged
+across snapshots, so each award is counted once (max per name, not summed across files), and players
+are keyed by normalised name so spelling variants merge.
+
+```bash
+poetry run migrate trophies --set-code ecl
+poetry run migrate trophies -s ecl
+```
+
+It prints a ranked table — each player's total (sum of their distinct award counts) plus a
+breakdown listing one award per line — ordered by total descending, then name:
+
+```
+   #  Player           Total  Breakdown
+  -------------------------------------
+   1  Damon Merry         10  Cube x5
+                              Draft Trophy TDM x2
+                              Draft Trophy TLA x1
+                              ...
+   2  Jim Bandas           8  Draft Trophy ECL x3
+                              EOE Draft Trophy x2
+                              ...
+```
 
 ## Running the API server
 
