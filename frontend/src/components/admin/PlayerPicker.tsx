@@ -6,7 +6,7 @@ import { fetchPlayers, type ApiPlayer } from "@/lib/api";
 import { inputStyle } from "@/components/admin/ui";
 
 export function usePlayers() {
-  return useQuery({ queryKey: ["admin", "players"], queryFn: fetchPlayers });
+  return useQuery({ queryKey: ["players"], queryFn: fetchPlayers });
 }
 
 export default function PlayerPicker({

@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import Session, sessionmaker
 
 from mm_ladder.app import create_app
+from mm_ladder.db import enable_sqlite_foreign_keys
 from mm_ladder.models.base import Base
 
 TEST_ADMIN_TOKEN = "test-admin-token"
@@ -52,6 +53,7 @@ def session(engine: Engine) -> Generator[Session]:
 @pytest_asyncio.fixture  # type: ignore[misc]
 async def async_engine() -> AsyncGenerator[AsyncEngine]:
     eng = create_async_engine("sqlite+aiosqlite:///:memory:")
+    enable_sqlite_foreign_keys(eng)
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield eng

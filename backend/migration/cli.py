@@ -1,3 +1,4 @@
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -22,7 +23,15 @@ def _log_file(command: str) -> Path:
     return _LOGS_DIR / f"{command}_{ts}.log"
 
 
-configure_logging(dev=True, log_file=_log_file("scraper"))
+def _invoked_command() -> str:
+    """Best-effort name of the subcommand being run, for the log filename."""
+    for arg in sys.argv[1:]:
+        if not arg.startswith("-"):
+            return arg
+    return "migrate"
+
+
+configure_logging(dev=True, log_file=_log_file(_invoked_command()))
 log = get_logger("migration.cli")
 
 

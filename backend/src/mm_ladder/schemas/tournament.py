@@ -1,15 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel
-
 from .base import BaseReadSchema
-
-
-class TournamentCreate(BaseModel):
-    held_on: date
-    season_id: int
-    name: str | None = None
-    notes: str | None = None
 
 
 class TournamentRead(BaseReadSchema):

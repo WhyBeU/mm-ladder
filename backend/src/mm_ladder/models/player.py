@@ -11,6 +11,9 @@ if TYPE_CHECKING:
     from .tournament_participant import TournamentParticipant
     from .yearly_cup import YearlyCup
 
+# A player is a "veteran" once they have played more than this many events all-time.
+VETERAN_THRESHOLD = 52
+
 
 class Player(Base, TimestampMixin):
     __tablename__ = "player"

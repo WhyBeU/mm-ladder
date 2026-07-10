@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.14.1] - 2026-07-10 — Audit quick wins
+
+### Fixed
+
+- **SQLite foreign keys are now enforced** on the application engine (`db.enable_sqlite_foreign_keys`, wired into `make_engine` and the async test fixtures). SQLite defaults foreign-key enforcement OFF per connection, so deleting a parent row previously orphaned its children silently; it now raises. No-op on Postgres.
+- **Player delete is blocked (409) when the player has match history**, not only tournament participations — previously a player referenced solely by `match` rows could be deleted, orphaning those rows.
+
+### Changed
+
+- **Request validation bounds** added across `interface/*Request` models: non-negative match/game counts, positive foreign-key ids, `event_count ≥ 1`, `display_name`/`name`/`set_code` length caps, and `qualifying_type` restricted to `Literal["POINTS", "BEST"]`.
+- **`GET /admin/audit`** now bounds `limit` to `1..200` (default 50) and requires `offset ≥ 0`.
+- **CORS** no longer sets `allow_credentials` — the API uses no cookies (auth is the `X-Admin-Token` header), which also avoids the unsafe wildcard-with-credentials case.
+- **Migrate CLI log files** are named after the invoked subcommand (e.g. `migrate_*.log`, `verify_*.log`) instead of always `scraper_*.log`.
+- **`VETERAN_THRESHOLD`** is defined once on the `Player` model and imported by both services (was duplicated).
+
+### Removed
+
+- Unused `schemas/*Create` Pydantic classes (`PlayerCreate`, `SeasonCreate`, `TournamentCreate`, `TournamentParticipantCreate`, `MatchCreate`, `YearlyCupCreate`) — routes use the `interface/*Request` models; only tests referenced them.
+
 ## [0.14.0] - 2026-06-23 — Season trophy leaderboard
 
 ### Added

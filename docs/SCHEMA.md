@@ -10,7 +10,7 @@ mm-ladder is a leaderboard for **Magic Mates Monday**, a weekly Booster Draft FN
 
 | Concern    | Choice                                             |
 |------------|----------------------------------------------------|
-| Language   | Python 3.12+                                       |
+| Language   | Python 3.13+                                       |
 | ORM        | SQLAlchemy 2.0 (typed `Mapped[...]` style)         |
 | Migrations | Alembic                                            |
 | DB engine  | SQLite (file on disk) for dev; Postgres later      |
@@ -193,7 +193,7 @@ names) on `YearlyCupRead`.
 
 **Decision — `qualifying_type`:** controls how `GET /seasons/{id}/standings` ranks players for cup qualification — `POINTS` sorts by total points, `BEST` sorts by `comp_avg` (the mean of a player's top `comp_avg_n` event scores). Both tiebreak on trophies, then win %. Derived from each season's start date at import time (`BEST` from War of the Spark / 2019-04-27 onward — `migration.seasons.BEST_QUALIFYING_FROM`; `POINTS` before, and for non-qualifying seasons) and persisted so it can be overridden per-season later.
 
-**Decision — seeded via data migration:** Season rows are inserted in Alembic migration `0002_seed_seasons` from the MTG set list. This keeps seed data version-controlled alongside the schema.
+**Decision — seeded via the migrate CLI:** Season rows are created by the migrate pipeline, not Alembic — `migration.importer.ensure_season` upserts each season (name, set_code, dates, `qualifying_type`) from the version-controlled `migration.seasons.SEASONS` list while importing scraped results, and `migrate seed-cups` (`migration.importer.seed_cups`) creates the `YearlyCup` rows and links each season's `yearly_cup_id`. (Alembic revision `0002` was removed; the chain runs `0001` → `0003`.)
 
 ---
 
@@ -302,9 +302,16 @@ paginated).
 
 ---
 
-## Cup Qualifiers (computed, not materialised)
+## Cup Qualifiers
 
-Qualifiers are **computed on read**: the top `qualifier_count` players by win % across a qualifying season's TournamentParticipant rows. No `CupQualifier` table exists yet.
+Cup qualification is **manually curated and materialised** in the `yearly_cup_qualification`
+association table (`yearly_cup_id`, `player_id`; composite PK — see the YearlyCup section). An admin
+sets a cup's qualified players through the portal / cup create/update/patch requests, and they are
+exposed on `YearlyCupRead.qualified_player_ids`.
 
-**Decision:** a materialised table will be added only when manual override cases arise (ties, player declines). Premature materialisation would add write-path complexity with no current benefit.
+Ranking is still **computed on read** as an input to that decision: `GET /seasons/{id}/standings`
+orders players by the season's `qualifying_type` (`POINTS` → total points; `BEST` → `comp_avg`), both
+tiebreaking on trophies then win %. `qualifier_count` records how many top players a qualifying season
+sends to the cup. The admin uses that ranking to choose whom to mark qualified — the table is not
+auto-populated, so ties and declines can be handled by hand.
 
