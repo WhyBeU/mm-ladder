@@ -53,11 +53,12 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS — allow the frontend dev server and future production origin
+    # CORS — allow the frontend dev server and future production origin.
+    # No cookies are used (auth is the X-Admin-Token header), so credentials are not allowed —
+    # this also avoids the unsafe wildcard-with-credentials case if CORS_ORIGINS is ever set to "*".
     app.add_middleware(
         CORSMiddleware,
         allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000").split(","),
-        allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )

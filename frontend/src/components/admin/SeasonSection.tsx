@@ -62,7 +62,7 @@ function SeasonEditor({ season, onDeleted }: { season: ApiSeason; onDeleted: () 
   const qc = useQueryClient();
   const toast = useToast();
   const { navigate } = useAdminNav();
-  const { data: cups = [] } = useQuery({ queryKey: ["yearlyCups"], queryFn: fetchYearlyCups });
+  const { data: cups = [] } = useQuery({ queryKey: ["yearly-cups"], queryFn: fetchYearlyCups });
   const { data: tournaments = [] } = useQuery({ queryKey: ["tournaments"], queryFn: fetchTournaments });
   const { draft, setDraft, dirty, reset, commit } = useDraft({
     name: season.name,

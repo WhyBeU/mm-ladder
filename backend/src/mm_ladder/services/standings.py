@@ -4,13 +4,11 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from mm_ladder.errors import NotFoundError
-from mm_ladder.models.player import Player
+from mm_ladder.models.player import VETERAN_THRESHOLD, Player
 from mm_ladder.models.season import Season
 from mm_ladder.models.tournament import Tournament
 from mm_ladder.models.tournament_participant import TournamentParticipant
 from mm_ladder.schemas.standings import SeasonStandingRead
-
-VETERAN_THRESHOLD = 52
 
 
 class StandingsService:

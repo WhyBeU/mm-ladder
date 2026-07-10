@@ -1,4 +1,6 @@
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, Query
 
 from mm_ladder.auth import AdminDep
 from mm_ladder.deps import AuditServiceDep
@@ -17,8 +19,8 @@ async def list_audit(
     service: AuditServiceDep,
     entity_type: str | None = None,
     action: str | None = None,
-    limit: int = 50,
-    offset: int = 0,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
 ) -> AuditLogPage:
     rows, total = await service.list(entity_type=entity_type, action=action, limit=limit, offset=offset)
     return AuditLogPage(items=[AuditLogRead.model_validate(r) for r in rows], total=total)

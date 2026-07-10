@@ -39,16 +39,21 @@ src/
 │   ├── page.tsx            # "/" route — renders <LeaderboardPage />
 │   └── globals.css         # Tailwind v4 @theme tokens + @utility classes (eyebrow, pulse-soft, set-placard)
 ├── components/
-│   ├── LeaderboardPage.tsx # Top-level page: scope state, layout, mobile drawer, breadcrumb
+│   ├── LeaderboardPage.tsx # Top-level page: scope state, layout, data fetching/adapters
 │   ├── Leaderboard.tsx     # Sortable ranked table — rank delta, streak chips, sparkline, expandable rows
-│   ├── NavSidebar.tsx      # Hierarchical scope tree (All-time → Cup → Season → Event → Pod)
+│   ├── ScopeBar.tsx        # Scope selector bar (All-time → Cup → Season → Event → Pod)
 │   ├── SeasonHero.tsx      # Title card (set symbol watermark, cup progress) + leader card + StatsStrip
 │   ├── Podium.tsx          # Top-3 gold/silver/bronze cards
 │   ├── ManaSwitcher.tsx    # 5-button mana theme radio group
+│   ├── RegistrationBoard.tsx # Public pod-registration board (/board)
+│   ├── PodMaker.tsx        # Draft pod-splitter (/pods)
+│   ├── admin/              # Admin portal (/admin): cups, seasons, tournaments, players, merge, history, docs
 │   └── bits.tsx            # Shared UI atoms: PlayerAvatar, RankDelta, StreakChips, Sparkline, PointsByEventChart
 ├── lib/
 │   ├── types.ts            # TypeScript types: Scope, YearlyCup, Season, MMLEvent, StandingEntry, SeasonStats
-│   └── mockData.ts         # Typed mock dataset — 30 players, 5 seasons, 6 events; computed standings
+│   ├── api.ts              # Public read API client
+│   ├── adminApi.ts         # Token-guarded admin write client
+│   └── boardApi.ts         # Public pod-board client
 ├── context/
 │   └── ManaThemeContext.tsx # Runtime theme state — reads/writes localStorage
 └── styles/
@@ -63,7 +68,7 @@ Themes are driven by a `data-mana` attribute on `<html>` (values: `W` `U` `B` `R
 
 ### Server vs client components
 
-`layout.tsx` and `page.tsx` are server components (no directive). Every interactive component (`"use client"`) opts in explicitly — `ManaThemeProvider`, `ManaSwitcher`, `NavSidebar`, `Leaderboard`, `LeaderboardPage`.
+`layout.tsx` and `page.tsx` are server components (no directive). Every interactive component (`"use client"`) opts in explicitly — `ManaThemeProvider`, `ManaSwitcher`, `ScopeBar`, `Leaderboard`, `LeaderboardPage`.
 
 ## Updating the MTG icon fonts (set symbols & mana pips)
 
@@ -139,7 +144,7 @@ Start the FastAPI backend:
 
 ```bash
 cd backend
-poetry run uvicorn mm_ladder.main:app --reload
+poetry run uvicorn mm_ladder.app:app --reload
 # API docs at http://localhost:8000/docs
 ```
 

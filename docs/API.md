@@ -148,13 +148,13 @@ curl -X POST http://localhost:8000/players/ \
 {
   "name": "Lorwyn Eclipsed", "set_code": "LCI",
   "starts_on": "2024-01-01", "ends_on": "2024-06-30",
-  "yearly_cup_id": 1, "qualifier_count": 2, "event_count": 12,
-  "qualifying_type": "POINTS"
+  "yearly_cup_id": 1, "qualifier_count": 2, "event_count": 12
 }
 ```
 
-> `yearly_cup_id` is optional (null = standalone season). `qualifier_count` defaults to 2. `event_count` defaults to 12 (number of scheduled events in the season). `qualifying_type` is `"POINTS"` or `"BEST"` and defaults to `"POINTS"`.
+> `yearly_cup_id` is optional (null = standalone season). `qualifier_count` defaults to 2. `event_count` defaults to 12 (number of scheduled events in the season) and must be ≥ 1.
 > PUT requires `qualifier_count` and `event_count` explicitly (no defaults).
+> `qualifying_type` (`"POINTS"` or `"BEST"`) is **not** a create/update field — it is set by the migrate importer from the season's start date and can be changed afterwards via PATCH.
 > `SeasonPatchRequest` also accepts `yearly_cup_id`, `qualifying_type`, and `champion_player_id` (set-only — passing null/omitting leaves the field unchanged; use PUT to clear).
 
 **`SeasonRead`** includes `event_count: int`, `comp_avg_n: int` (= `ceil(event_count × 0.66)`), and `qualifying_type: str`.

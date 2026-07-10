@@ -83,7 +83,7 @@ function PlayerEditor({ player, onChanged, onDeleted }: { player: AdminPlayer; o
     try {
       const saved = await adminApi.patchPlayer(player.id, draft);
       commit({ display_name: saved.display_name, is_hidden: saved.is_hidden, aliases: saved.aliases ?? [] });
-      qc.invalidateQueries({ queryKey: ["admin", "players"] });
+      qc.invalidateQueries({ queryKey: ["players"] });
       onChanged();
       toast("Saved");
     } catch (e) {

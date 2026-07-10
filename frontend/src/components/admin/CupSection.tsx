@@ -11,7 +11,7 @@ import { useAdminNav } from "@/components/admin/nav";
 
 export default function CupSection() {
   const qc = useQueryClient();
-  const { data: cups = [] } = useQuery({ queryKey: ["yearlyCups"], queryFn: fetchYearlyCups });
+  const { data: cups = [] } = useQuery({ queryKey: ["yearly-cups"], queryFn: fetchYearlyCups });
   const [sel, setSel] = useState<number | null>(null);
   const toast = useToast();
   const current = cups.find((c) => c.id === sel);
@@ -20,7 +20,7 @@ export default function CupSection() {
     const year = new Date().getFullYear();
     try {
       const c = await adminApi.createCup({ year, name: `${year} Cup`, starts_on: `${year}-01-01`, ends_on: `${year}-12-31` });
-      qc.invalidateQueries({ queryKey: ["yearlyCups"] });
+      qc.invalidateQueries({ queryKey: ["yearly-cups"] });
       setSel(c.id);
     } catch (e) {
       toast((e as Error).message, "err");
@@ -84,7 +84,7 @@ function CupEditor({ cup, onDeleted }: { cup: ApiYearlyCup; onDeleted: () => voi
         cup_winner_id: saved.cup_winner_id,
         qualified_player_ids: saved.qualified_player_ids ?? [],
       });
-      qc.invalidateQueries({ queryKey: ["yearlyCups"] });
+      qc.invalidateQueries({ queryKey: ["yearly-cups"] });
       toast("Saved");
     } catch (e) {
       toast((e as Error).message, "err");
@@ -95,7 +95,7 @@ function CupEditor({ cup, onDeleted }: { cup: ApiYearlyCup; onDeleted: () => voi
   const del = async () => {
     try {
       await adminApi.deleteCup(cup.id);
-      qc.invalidateQueries({ queryKey: ["yearlyCups"] });
+      qc.invalidateQueries({ queryKey: ["yearly-cups"] });
       toast("Deleted");
       onDeleted();
     } catch (e) {

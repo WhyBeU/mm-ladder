@@ -6,15 +6,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from mm_ladder.errors import ConflictError, NotFoundError
 from mm_ladder.interface.player import PlayerCreateRequest, PlayerPatchRequest, PlayerUpdateRequest
 from mm_ladder.models.match import Match
-from mm_ladder.models.player import Player
+from mm_ladder.models.player import VETERAN_THRESHOLD, Player
 from mm_ladder.models.season import Season
 from mm_ladder.models.tournament_participant import TournamentParticipant
 from mm_ladder.models.yearly_cup import YearlyCup, yearly_cup_qualification
 from mm_ladder.schemas.player import PlayerRead
 from mm_ladder.services.audit import AuditRecorder, diff_fields
 from mm_ladder.services.player_matching import find_matching_player, register_alias_if_new
-
-VETERAN_THRESHOLD = 52
 
 
 def _player_snapshot(p: Player) -> dict[str, object]:
@@ -230,6 +228,11 @@ class PlayerService:
         count = await self._session.execute(select(func.count()).where(TournamentParticipant.player_id == player_id))
         if count.scalar_one() > 0:
             raise ConflictError("Player has tournament participations; merge instead of deleting")
+        match_count = await self._session.execute(
+            select(func.count()).where((Match.player_a_id == player_id) | (Match.player_b_id == player_id))
+        )
+        if match_count.scalar_one() > 0:
+            raise ConflictError("Player has match history; merge instead of deleting")
         before = _player_snapshot(player)
         AuditRecorder(self._session).record(
             action="DELETE",

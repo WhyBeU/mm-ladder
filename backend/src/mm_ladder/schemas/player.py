@@ -1,13 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
-
 from .base import BaseReadSchema
-
-
-class PlayerCreate(BaseModel):
-    display_name: str
-    is_hidden: bool = False
 
 
 class PlayerRead(BaseReadSchema):

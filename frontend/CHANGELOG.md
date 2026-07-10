@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+## [0.9.1] — 2026-07-10 — Audit quick wins
+
+### Fixed
+
+- **Vitest suite now runs in CI** — the frontend CI workflow gained a `test` job (`npm test`), so the
+  `pods` / `boardGenerate` / `awardsLayout` / `trophyLine` / `docsRegistry` suites can no longer break silently.
+- **Unified React Query keys** so admin edits invalidate the public caches: cups use `["yearly-cups"]`
+  everywhere (was `["yearlyCups"]` in the admin sections) and players use `["players"]` everywhere (the
+  player picker/section used `["admin","players"]`, so a rename didn't refresh the leaderboard).
+
+### Removed
+
+- Dead `src/lib/mockData.ts` (nothing imported it).
+
+### Docs
+
+- Corrected the README architecture map (`ScopeBar` replaces the removed `NavSidebar`; dropped `mockData`;
+  added the admin portal, board/pod clients and components) and fixed the backend run command
+  (`uvicorn mm_ladder.app:app`).
+
 ## [0.9.0] — 2026-06-20 — Frontend rework + banner
 
 ### Added
