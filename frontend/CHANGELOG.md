@@ -2,6 +2,28 @@
 
 ## [Unreleased]
 
+## [0.11.0] — 2026-07-14 — Admin: add player, event-count suggestion, new-cup fix
+
+### Added
+
+- **Add a player** directly in the admin Players section — an inline name + **Add** field above
+  the search box creates the player (`POST /players/`), selects it for editing, and clears the
+  input. Empty names are a no-op.
+- **Event-count suggestion** in the season editor — a non-destructive `Suggested: N · apply` hint
+  under the Event count field, derived from the Starts/Ends dates (`floor((end − start) / 7) + 1`
+  weekly events, matching the importer). Click to fill; it never overwrites a typed value.
+- `lib/seasonDates.ts` — unit-tested `weeklyEventCount()` helper.
+
+### Fixed
+
+- **"+ New" cup no longer errors with a unique-constraint conflict** — it now picks the next free
+  year (highest existing cup year + 1) instead of hard-coding the current year.
+- **"+ New" season** picks a free `set_code` placeholder (`NEW`, `NEW2`, …) so repeated clicks
+  can't collide on the unique set-code constraint before the admin renames it.
+- **Masthead logo** no longer renders oversized/edge-to-edge — the `<Image>` uses
+  `maxWidth/maxHeight: 100%` (was `width/height: 100%`), restoring the inset desktop size while
+  still shrinking on mobile; `priority` is set to clear the LCP warning for the above-the-fold logo.
+
 ## [0.10.0] — 2026-07-13 — Mobile-friendly public pages
 
 ### Added

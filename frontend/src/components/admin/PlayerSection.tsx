@@ -13,7 +13,27 @@ export default function PlayerSection() {
   const [sel, setSel] = useState<number | null>(null);
   const [q, setQ] = useState("");
   const [merging, setMerging] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [adding, setAdding] = useState(false);
+  const toast = useToast();
   const current = players.find((p) => p.id === sel) as AdminPlayer | undefined;
+
+  const addPlayer = async () => {
+    const display_name = newName.trim();
+    if (!display_name || adding) return;
+    setAdding(true);
+    try {
+      const p = await adminApi.createPlayer({ display_name });
+      setNewName("");
+      await refetch();
+      setSel(p.id);
+      toast("Player added");
+    } catch (e) {
+      toast((e as Error).message, "err");
+    } finally {
+      setAdding(false);
+    }
+  };
 
   return (
     <div>
@@ -21,6 +41,23 @@ export default function PlayerSection() {
         <h2 style={{ margin: 0 }}>Players</h2>
         <button onClick={() => setMerging(true)} style={{ ...inputStyle, cursor: "pointer" }}>
           ⚙ Merge players
+        </button>
+      </div>
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+        <input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              addPlayer();
+            }
+          }}
+          placeholder="new player name…"
+          style={{ ...inputStyle, flex: 1 }}
+        />
+        <button onClick={addPlayer} disabled={adding || !newName.trim()} style={{ ...inputStyle, cursor: adding || !newName.trim() ? "not-allowed" : "pointer", opacity: adding || !newName.trim() ? 0.5 : 1 }}>
+          + Add
         </button>
       </div>
       <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="search…" style={{ ...inputStyle, width: "100%", marginBottom: 8 }} />
