@@ -164,11 +164,11 @@ breakdown listing one award per line — ordered by total descending, then name:
 ```
    #  Player           Total  Breakdown
   -------------------------------------
-   1  Damon Merry         10  Cube x5
+   1  Player A            10  Cube x5
                               Draft Trophy TDM x2
                               Draft Trophy TLA x1
                               ...
-   2  Jim Bandas           8  Draft Trophy ECL x3
+   2  Player B             8  Draft Trophy ECL x3
                               EOE Draft Trophy x2
                               ...
 ```
