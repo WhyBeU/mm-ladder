@@ -156,7 +156,7 @@ export default function RegistrationBoard() {
         eyebrow={defaultFormat ? `Seeding from ${defaultFormat.name}` : "Sign-up board"}
       />
 
-      <main style={{ flex: 1, padding: "28px 32px 48px", maxWidth: 1320, width: "100%", margin: "0 auto" }}>
+      <main className="page-main" style={{ paddingBottom: 48 }}>
         <p style={{ color: "var(--parchment-muted)", fontSize: 14, margin: "0 0 8px", maxWidth: 720 }}>
           Magic Mates draft pod sign-up. Tap your name to sign up, or add yourself as an extra. On the night
           the organiser marks who&apos;s here and generates the pods.

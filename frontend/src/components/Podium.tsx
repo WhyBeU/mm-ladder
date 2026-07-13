@@ -19,7 +19,7 @@ export function Podium({ standings }: PodiumProps) {
   } as const;
 
   return (
-    <section style={{ marginBottom: 24 }}>
+    <section className="podium" style={{ marginBottom: 24 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
         <div className="eyebrow">● Podium</div>
         <div style={{ fontSize: 11, color: "var(--parchment-faint)" }}>Top 3 by points · win % tiebreak</div>

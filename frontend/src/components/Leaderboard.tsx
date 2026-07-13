@@ -5,6 +5,7 @@ import type { StandingEntry, MMLEvent, Scope, Season } from "@/lib/types";
 import { fmtPct, fmtAvg, PlayerAvatar, StreakChips, Sparkline } from "@/components/bits";
 import AwardsCluster from "@/components/AwardsCluster";
 import { trophyCutoffIndex } from "@/lib/trophyLine";
+import { leaderboardGridTemplates } from "@/lib/leaderboardGrid";
 
 type SortKey = "points" | "display_name" | "match_wins" | "win_pct" | "avg_pts" | "tournaments_played" | "trophies" | "comp_avg";
 type SortDir = "asc" | "desc";
@@ -69,7 +70,6 @@ export default function Leaderboard({
 
   const showMedals = sortDir === "desc" && (sortKey === "points" || (scope.kind === "season" && sortKey === "comp_avg"));
   const qualifierCount = season?.qualifier_count ?? 2;
-  const padY = density === "compact" ? 8 : 12;
   const showAvg     = scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime";
   const showCompAvg = scope.kind === "season";
   const showEvents  = showAvg;
@@ -85,22 +85,11 @@ export default function Leaderboard({
       ? trophyCutoffIndex(rows.map((r) => r.points))
       : -1;
 
-  // Build grid template
-  const cols: string[] = [];
-  cols.push("44px");
-  cols.push("minmax(0, 1.6fr)");
-  if (showAvg) cols.push("74px");
-  cols.push("70px");
-  if (showEvents) cols.push("56px");
-  cols.push("96px");
-  cols.push("70px");
-  if (showAvg) cols.push("78px");
-  if (showCompAvg) cols.push("80px");
-  cols.push("24px");
-  const colTemplate = cols.join(" ");
+  // Grid templates (desktop + mobile) — see lib/leaderboardGrid.ts
+  const gridTemplates = leaderboardGridTemplates({ showAvg, showEvents, showCompAvg });
 
   return (
-    <section>
+    <section style={{ "--lb-cols": gridTemplates.desktop, "--lb-cols-m": gridTemplates.mobile } as React.CSSProperties}>
       {/* Search bar */}
       <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 14 }}>
         <div style={{ position: "relative", flex: 1 }}>
@@ -120,22 +109,22 @@ export default function Leaderboard({
             }}
           />
         </div>
-        <div style={{ fontSize: 11, color: "var(--parchment-faint)", letterSpacing: "0.12em", textTransform: "uppercase", display: "flex", gap: 16 }}>
+        <div className="lb-counters" style={{ fontSize: 11, color: "var(--parchment-faint)", letterSpacing: "0.12em", textTransform: "uppercase" }}>
           <span><span style={{ color: "var(--accent-300)", fontWeight: 700 }}>{rows.length}</span> showing</span>
           <span>{standings.length} total</span>
         </div>
       </div>
 
       {/* Column headers */}
-      <div style={{ display: "grid", gridTemplateColumns: colTemplate, gap: 8, padding: "10px 20px", alignItems: "center" }}>
+      <div className="lb-grid lb-head">
         <SortHead label="#"        k="points"      align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
         <SortHead label="Player"   k="display_name" align="left"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-        {showAvg && <SortHead label="Trophies" k="trophies" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} title="Events where you scored 9 points" />}
+        {showAvg && <SortHead label="Trophies" labelShort="🏆" k="trophies" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} title="Events where you scored 9 points" />}
         <SortHead label="Pts"      k="points"             align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
         {showEvents && <SortHead label="Evts" k="tournaments_played" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
-        <SortHead label="W–L–D"    k="match_wins"         align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-        <SortHead label="Win %"    k="win_pct"            align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />
-        {showAvg && <SortHead label="Avg" k="avg_pts" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} />}
+        <SortHead label="W–L–D"    k="match_wins"         align="center" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className={showAvg ? "lb-m-hide" : undefined} />
+        <SortHead label="Win %"    k="win_pct"            align="right"  sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="lb-m-hide" />
+        {showAvg && <SortHead label="Avg" k="avg_pts" align="right" sortKey={sortKey} sortDir={sortDir} onSort={handleSort} className="lb-m-hide" />}
         {showCompAvg && (
           <SortHead
             label="Best"
@@ -147,7 +136,7 @@ export default function Leaderboard({
             title={`Total of your top ${standings[0]?.comp_avg_n ?? "N"} event scores`}
           />
         )}
-        <span />
+        <span className="lb-m-hide" />
       </div>
 
       {/* Rows */}
@@ -173,14 +162,12 @@ export default function Leaderboard({
             <li key={p.player_id}>
               <button
                 onClick={isEvent ? undefined : () => setExpanded(isExpanded ? null : p.player_id)}
-                className="themed-surface"
+                className={`themed-surface lb-grid lb-row${density === "compact" ? " lb-compact" : ""}`}
                 style={{
                   position: "relative", width: "100%", textAlign: "left", cursor: isEvent ? "default" : "pointer",
-                  display: "grid", gridTemplateColumns: colTemplate, gap: 8, alignItems: "center",
                   background: "var(--ink-900)",
                   border: `1px solid ${borderColor}`,
                   borderRadius: "var(--radius-card)",
-                  padding: `${padY}px 16px`,
                   color: "var(--parchment)", fontFamily: "inherit",
                   boxShadow: isMedal ? "var(--shadow-card)" : "none",
                 }}
@@ -193,8 +180,8 @@ export default function Leaderboard({
 
                 {/* Rank */}
                 <div style={{ textAlign: "center" }}>
-                  <span className="font-display" style={{
-                    fontSize: 22, fontWeight: 700, fontVariantNumeric: "tabular-nums",
+                  <span className="font-display lb-rank" style={{
+                    fontWeight: 700, fontVariantNumeric: "tabular-nums",
                     color: rank === 1 ? "var(--accent-300)" : rank === 2 ? "var(--silver-300)" : rank === 3 ? "var(--bronze-300)" : "var(--parchment-muted)",
                   }}>{rank}</span>
                 </div>
@@ -225,7 +212,7 @@ export default function Leaderboard({
 
                 {/* Points */}
                 <div style={{ textAlign: "right" }}>
-                  <span className="font-display" style={{ fontSize: 20, color: rank === 1 ? "var(--accent-300)" : "var(--parchment)", fontVariantNumeric: "tabular-nums" }}>{p.points}</span>
+                  <span className="font-display lb-pts" style={{ color: rank === 1 ? "var(--accent-300)" : "var(--parchment)", fontVariantNumeric: "tabular-nums" }}>{p.points}</span>
                 </div>
 
                 {/* Events played */}
@@ -236,7 +223,7 @@ export default function Leaderboard({
                 )}
 
                 {/* W–L–D */}
-                <div style={{ textAlign: "center", fontSize: 13, fontVariantNumeric: "tabular-nums" }}>
+                <div className={showAvg ? "lb-m-hide" : undefined} style={{ textAlign: "center", fontSize: 13, fontVariantNumeric: "tabular-nums" }}>
                   <span style={{ color: "var(--win)", fontWeight: 600 }}>{p.match_wins}</span>
                   <span style={{ color: "var(--parchment-faint)", margin: "0 3px" }}>–</span>
                   <span style={{ color: "var(--loss)", fontWeight: 600 }}>{p.match_losses}</span>
@@ -245,7 +232,7 @@ export default function Leaderboard({
                 </div>
 
                 {/* Win % */}
-                <div style={{ textAlign: "right" }}>
+                <div className="lb-m-hide" style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 13, color: "var(--parchment)", fontVariantNumeric: "tabular-nums" }}>{fmtPct(p.win_pct)}</div>
                   <div style={{ marginTop: 3, height: 3, background: "var(--ink-800)", borderRadius: 2, overflow: "hidden" }}>
                     <div style={{
@@ -257,7 +244,7 @@ export default function Leaderboard({
 
                 {/* Avg */}
                 {showAvg && (
-                  <div style={{ textAlign: "right", fontSize: 13, color: "var(--parchment-muted)", fontVariantNumeric: "tabular-nums" }}>
+                  <div className="lb-m-hide" style={{ textAlign: "right", fontSize: 13, color: "var(--parchment-muted)", fontVariantNumeric: "tabular-nums" }}>
                     {fmtAvg(p.avg_pts)}
                   </div>
                 )}
@@ -271,8 +258,8 @@ export default function Leaderboard({
 
                 {/* Expand arrow */}
                 {!isEvent
-                  ? <span style={{ color: "var(--parchment-faint)", fontSize: 12, transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 200ms" }}>▸</span>
-                  : <span />}
+                  ? <span className="lb-m-hide" style={{ color: "var(--parchment-faint)", fontSize: 12, transform: isExpanded ? "rotate(90deg)" : "none", transition: "transform 200ms" }}>▸</span>
+                  : <span className="lb-m-hide" />}
               </button>
 
               {!isEvent && isExpanded && (
@@ -366,29 +353,32 @@ function TrophyCell({ count }: { count: number }) {
 // ---------- SortHead ----------
 interface SortHeadProps {
   label: string;
+  labelShort?: string;
   k: SortKey;
   align?: "left" | "center" | "right";
   sortKey: SortKey;
   sortDir: SortDir;
   onSort: (k: SortKey) => void;
   title?: string;
+  className?: string;
 }
 
-function SortHead({ label, k, align = "left", sortKey, sortDir, onSort, title }: SortHeadProps) {
+function SortHead({ label, labelShort, k, align = "left", sortKey, sortDir, onSort, title, className }: SortHeadProps) {
   const active = sortKey === k;
   const justifyMap = { left: "flex-start", center: "center", right: "flex-end" } as const;
   return (
-    <button onClick={() => onSort(k)} title={title} style={{
+    <button onClick={() => onSort(k)} title={title} className={`lb-sorthead${className ? ` ${className}` : ""}`} style={{
       background: "none", border: "none", cursor: "pointer", padding: 0,
       width: "100%", textAlign: align, whiteSpace: "nowrap",
-      fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", fontWeight: 600,
+      textTransform: "uppercase", fontWeight: 600,
       color: active ? "var(--accent-400)" : "var(--parchment-faint)",
       fontFamily: "inherit",
-      display: "inline-flex", alignItems: "center", gap: 4,
       justifyContent: justifyMap[align],
     }}>
-      <span>{label}</span>
-      <span style={{ fontSize: 9, opacity: active ? 1 : 0.5 }}>{active ? (sortDir === "desc" ? "▼" : "▲") : "⇅"}</span>
+      {labelShort != null
+        ? <><span className="lb-l-full">{label}</span><span className="lb-l-short">{labelShort}</span></>
+        : <span>{label}</span>}
+      <span className={active ? undefined : "lb-glyph-off"} style={{ fontSize: 9, opacity: active ? 1 : 0.5 }}>{active ? (sortDir === "desc" ? "▼" : "▲") : "⇅"}</span>
     </button>
   );
 }
@@ -404,12 +394,12 @@ interface ExpandedDetailProps {
 function ExpandedDetail({ player, scope, scopedEvents, onEventSelect }: ExpandedDetailProps) {
   const showPerEvent = scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime";
   return (
-    <div style={{
+    <div className="xp-grid" style={{
       marginTop: 4, padding: "16px 20px",
       background: "color-mix(in srgb, var(--ink-850) 80%, transparent)",
       border: "1px solid var(--ink-700)", borderRadius: "var(--radius-card)",
-      display: "grid", gridTemplateColumns: showPerEvent ? "1fr 1.2fr" : "1fr", gap: 24,
-    }}>
+      "--xp-cols": showPerEvent ? "1fr 1.2fr" : "1fr",
+    } as React.CSSProperties}>
       {showPerEvent && (
         <div>
           <div className="eyebrow" style={{ marginBottom: 10 }}>● Points by event</div>

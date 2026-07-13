@@ -34,6 +34,7 @@ export default function ManaSwitcher() {
     <div
       role="radiogroup"
       aria-label="Mana theme"
+      className="mana-roundel"
       style={{ position: "relative", width: PENTAGON_BOX, height: PENTAGON_BOX, flexShrink: 0 }}
     >
       {THEMES.map((code) => {

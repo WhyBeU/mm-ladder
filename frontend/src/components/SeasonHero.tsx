@@ -50,7 +50,7 @@ export function SeasonHero({ scope, season, cup, event, leader, stats, eventsCou
   }
 
   return (
-    <section style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 16, marginBottom: 20 }}>
+    <section className="hero-grid">
       {/* Title card */}
       <div className="themed-surface" style={{
         position: "relative", borderRadius: "var(--radius-card)",
@@ -86,7 +86,7 @@ export function SeasonHero({ scope, season, cup, event, leader, stats, eventsCou
               }}>{badge}</span>
             )}
           </div>
-          <h1 className="font-display" style={{ margin: 0, fontSize: 38, lineHeight: 1.05, letterSpacing: "0.01em", color: "var(--parchment)" }}>
+          <h1 className="font-display hero-title" style={{ margin: 0, lineHeight: 1.05, letterSpacing: "0.01em", color: "var(--parchment)" }}>
             {title}
           </h1>
           <div style={{ fontSize: 13, color: "var(--parchment-muted)", marginTop: 8, fontVariantNumeric: "tabular-nums" }}>
@@ -208,7 +208,7 @@ export function StatsStrip({ stats, totalPlayers }: StatsStripProps) {
     { label: "Avg attendance", value: stats.avgAttendance.toFixed(1), sub: "players per event" },
   ];
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+    <div className="stats-strip">
       {items.map((it, i) => (
         <div key={i} className="themed-surface" style={{
           background: "var(--ink-900)", border: "1px solid var(--ink-700)",

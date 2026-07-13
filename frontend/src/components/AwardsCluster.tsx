@@ -41,7 +41,7 @@ export default function AwardsCluster({
       label: `${c.season_name} Champion`,
       node: (
         <Award tip={`${c.season_name} Champion`}>
-          <i className={`ss ss-${c.set_code.toLowerCase()} aw-mythic`} style={{ fontSize: 20 }} />
+          <i className={`ss ss-${c.set_code.toLowerCase()} aw-mythic`} />
         </Award>
       ),
     });
