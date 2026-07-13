@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.14.2] - 2026-07-14 — Season 45 data + deployment doc
+
+### Added
+
+- **Season 45 (SOS) scrape data** — weekly results for `2026-06-30`, `2026-07-07`, `2026-07-14`
+  under `migration/data/season_45_sos_26-04-20_26-07-31/`, plus their `tournament_hashes.json`
+  entries. Data only — no code change.
+
+### Changed
+
+- **`README.md`** — anonymized the player names in the trophy-leaderboard command example.
+
 ## [0.14.1] - 2026-07-10 — Audit quick wins
 
 ### Fixed
