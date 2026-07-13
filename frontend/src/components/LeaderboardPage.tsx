@@ -303,7 +303,7 @@ export default function LeaderboardPage() {
         <ScopeBar scope={scope} setScope={setScope} yearlyCups={yearlyCups} seasons={seasons} events={events} />
 
         {/* Main content */}
-        <main style={{ flex: 1, padding: "28px 32px 32px", maxWidth: 1320, width: "100%", margin: "0 auto" }}>
+        <main className="page-main">
           <SeasonHero
             scope={scope}
             season={heroCtx.season}
@@ -334,10 +334,8 @@ export default function LeaderboardPage() {
         </main>
 
         {/* Footer */}
-        <footer style={{
-          marginTop: 24, padding: "20px 32px",
+        <footer className="page-footer" style={{
           borderTop: "1px solid color-mix(in srgb, var(--ink-700) 60%, transparent)",
-          display: "flex", justifyContent: "space-between", alignItems: "center",
           fontSize: 11, color: "var(--parchment-faint)",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

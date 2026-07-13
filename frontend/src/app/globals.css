@@ -204,6 +204,160 @@ body {
 }
 .aw:hover .aw-tip { opacity: 1; }
 
+/* ---- Responsive layout (desktop defaults; mobile overrides at the bottom) ---- */
+
+/* Page chrome */
+.page-main {
+  flex: 1;
+  padding: 28px 32px 32px;
+  max-width: 1320px;
+  width: 100%;
+  margin: 0 auto;
+}
+.page-footer {
+  margin-top: 24px;
+  padding: 20px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Masthead */
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--ink-950) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--ink-700);
+  padding: 12px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.masthead-logo {
+  width: var(--logo-size, 76px);
+  height: var(--logo-size, 76px);
+  border-radius: 14px;
+  padding: 5px;
+}
+.masthead-title { font-size: 24px; }
+.masthead-nav { display: flex; align-items: center; gap: 8px; }
+
+/* Scope bar */
+.scope-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 32px;
+  border-bottom: 1px solid var(--ink-700);
+  background: color-mix(in srgb, var(--ink-950) 92%, transparent);
+  backdrop-filter: blur(8px);
+  font-size: 13px;
+}
+
+/* Season hero + stats strip */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.hero-title { font-size: 38px; }
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* Leaderboard grid — column templates come from lib/leaderboardGrid.ts via
+   custom properties set on the surrounding <section>. */
+.lb-grid {
+  display: grid;
+  grid-template-columns: var(--lb-cols);
+  gap: 8px;
+  align-items: center;
+}
+.lb-head { padding: 10px 20px; }
+.lb-row { padding: 12px 16px; }
+.lb-row.lb-compact { padding: 8px 16px; }
+.lb-sorthead { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; letter-spacing: 0.18em; }
+.lb-counters { display: flex; gap: 16px; }
+.lb-rank { font-size: 22px; }
+.lb-pts { font-size: 20px; }
+.lb-l-short { display: none; }
+
+/* Expanded player detail */
+.xp-grid {
+  display: grid;
+  grid-template-columns: var(--xp-cols, 1fr);
+  gap: 24px;
+}
+
+/* ---- Mobile (< 640px) ---- */
+@media (max-width: 639px) {
+  /* Page chrome */
+  .page-main { padding-left: 16px; padding-right: 16px; }
+  .page-footer { padding: 16px; }
+
+  /* Masthead: smaller logo + title, nav wraps to its own row */
+  .masthead { padding: 10px 16px; }
+  .masthead-logo { --logo-size: 44px; border-radius: 10px; padding: 3px; }
+  .masthead-title { font-size: 17px; }
+  .masthead-nav { flex-basis: 100%; }
+  .mana-roundel {
+    transform: scale(0.65);
+    transform-origin: center;
+    margin: -13px -12px;
+  }
+
+  /* Scope bar: horizontal tab-strip scroll */
+  .scope-bar {
+    padding: 7px 16px;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .scope-bar::-webkit-scrollbar { display: none; }
+
+  /* Hero: stack cards, 2×2 stats */
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-title { font-size: 28px; }
+  .stats-strip { grid-template-columns: repeat(2, 1fr); }
+
+  /* Podium: hidden on phones */
+  .podium { display: none; }
+
+  /* Leaderboard: reduced columns; rows are display-only (no expand) */
+  .lb-grid { grid-template-columns: var(--lb-cols-m); gap: 6px; }
+  .lb-row { pointer-events: none; }
+  .lb-head { padding: 8px 13px; }
+  .lb-row, .lb-row.lb-compact { padding: 10px 12px; }
+  .lb-sorthead { font-size: 10px; letter-spacing: 0.08em; }
+  .lb-rank { font-size: 17px; }
+  .lb-pts { font-size: 17px; }
+  .lb-m-hide { display: none; }
+  .lb-glyph-off { display: none; }
+  .lb-l-full { display: none; }
+  .lb-l-short { display: inline; }
+  .lb-counters { display: none; }
+
+  /* Expanded player detail: unreachable on mobile (rows don't expand) */
+  .xp-grid { display: none; }
+
+  /* Awards: smaller icons */
+  .aw { font-size: 15px; }
+  .aw-mm { width: 15px; height: 15px; }
+  .aw-trophy { width: 14px; height: 14px; }
+  .aw-badge { font-size: 8px; right: -4px; bottom: -4px; }
+}
+
 /* ---- Admin Docs (markdown) ---- */
 .docs-md { color: var(--parchment); line-height: 1.6; font-size: 14px; max-width: 680px; }
 .docs-md h1 { font-family: var(--font-display); font-size: 22px; margin: 0 0 12px; color: var(--parchment); }

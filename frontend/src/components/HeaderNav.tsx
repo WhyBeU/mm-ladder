@@ -35,7 +35,7 @@ function NavLink({ href, label, active }: { href: string; label: string; active:
 
 export default function HeaderNav({ current }: { current: NavTarget }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div className="masthead-nav">
       <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
         <NavLink href="/" label="Ladder" active={current === "leaderboard"} />
         <NavLink href="/board" label="Board" active={current === "board"} />

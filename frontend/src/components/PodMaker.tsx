@@ -180,7 +180,7 @@ export default function PodMaker() {
       />
 
       {/* Main */}
-      <main style={{ flex: 1, padding: "28px 32px 48px", maxWidth: 1320, width: "100%", margin: "0 auto" }}>
+      <main className="page-main" style={{ paddingBottom: 48 }}>
         {loading ? (
           <p style={{ color: "var(--parchment-faint)" }}>Loading roster…</p>
         ) : (

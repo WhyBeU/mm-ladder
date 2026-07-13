@@ -42,13 +42,15 @@ function PortalDropdown({
   useEffect(() => {
     if (!open || !anchorRef.current) return;
     const rect = anchorRef.current.getBoundingClientRect();
-    setCoords({ top: rect.bottom + 6, left: rect.left });
+    // Clamp so the dropdown (min-width 200) never overflows the right viewport edge
+    const left = Math.max(8, Math.min(rect.left, window.innerWidth - 200 - 8));
+    setCoords({ top: rect.bottom + 6, left });
   }, [open, anchorRef]);
 
   if (!open || typeof document === "undefined") return null;
 
   return createPortal(
-    <div data-scopebar-portal style={{ ...DROPDOWN_STYLE, top: coords.top, left: coords.left }}>
+    <div data-scopebar-portal style={{ ...DROPDOWN_STYLE, top: coords.top, left: coords.left, maxWidth: "calc(100vw - 16px)" }}>
       {children}
     </div>,
     document.body,
@@ -107,16 +109,7 @@ export default function ScopeBar({ scope, setScope, yearlyCups, seasons, events 
   const sep = <span style={{ color: "var(--parchment-faint)", flexShrink: 0, padding: "0 2px" }}>›</span>;
 
   return (
-    <div
-      ref={barRef}
-      style={{
-        display: "flex", alignItems: "center", gap: 6,
-        padding: "7px 32px",
-        borderBottom: "1px solid var(--ink-700)",
-        background: "color-mix(in srgb, var(--ink-950) 92%, transparent)",
-        backdropFilter: "blur(8px)", fontSize: 13,
-      }}
-    >
+    <div ref={barRef} className="scope-bar">
       {/* All-time */}
       <button
         onClick={() => { setScope({ kind: "alltime" }); close(); }}

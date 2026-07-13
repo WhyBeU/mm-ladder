@@ -2,6 +2,29 @@
 
 ## [Unreleased]
 
+## [0.10.0] — 2026-07-13 — Mobile-friendly public pages
+
+### Added
+
+- **Phone layout (< 640px) for the public pages** (ladder, board, pod-maker) — one media-query
+  block in `globals.css`, CSS classes only (no JS width checks); desktop rendering unchanged.
+  - **Ladder** collapses to the ordering-relevant columns per scope: # · Player · Trophies ·
+    Pts · Evts · Best in season/cup/all-time, # · Player · Pts · W–L–D in event/pod. W–L–D,
+    Win %, Avg and the expand arrow are hidden; rows are display-only on phones (no
+    tap-to-expand). Sort headers stay tappable; the Trophies header becomes 🏆; inactive sort
+    glyphs and the showing/total counters are hidden.
+  - **Masthead** condenses: 44px logo, smaller title, nav + mana roundel (scaled to 65%) wrap
+    to a second row.
+  - **Scope bar** becomes a horizontally scrollable tab strip; its dropdowns are clamped to
+    the viewport so they can't overflow the right edge.
+  - **Season hero** stacks to one column with a 2×2 stats strip; **podium is hidden**;
+    qualified cards already collapsed naturally.
+  - **Awards** icons shrink (20 → 15px) on phones.
+  - Board and pod-maker inherit the 16px mobile gutters (their panels already stacked).
+- `lib/leaderboardGrid.ts` — leaderboard column templates (desktop + mobile) extracted from
+  `Leaderboard.tsx` into a unit-tested helper; the desktop template is byte-identical to the
+  previous inline builder.
+
 ## [0.9.1] — 2026-07-10 — Audit quick wins
 
 ### Fixed
