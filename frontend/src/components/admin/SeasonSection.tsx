@@ -8,6 +8,7 @@ import { useDraft, SaveResetBar } from "@/components/admin/DetailForm";
 import { Field, inputStyle, DangerButton, ConfirmDialog, useToast } from "@/components/admin/ui";
 import PlayerPicker from "@/components/admin/PlayerPicker";
 import { useAdminNav } from "@/components/admin/nav";
+import { weeklyEventCount } from "@/lib/seasonDates";
 
 export default function SeasonSection() {
   const qc = useQueryClient();
@@ -24,8 +25,13 @@ export default function SeasonSection() {
 
   const create = async () => {
     const y = new Date().getFullYear();
+    // Set code is unique — pick a free placeholder so repeated "+ New" clicks
+    // don't collide before the admin renames it.
+    const existing = new Set(seasons.map((s) => s.set_code.toUpperCase()));
+    let set_code = "NEW";
+    for (let n = 2; existing.has(set_code); n++) set_code = `NEW${n}`;
     try {
-      const s = await adminApi.createSeason({ name: "New Season", set_code: "AAA", starts_on: `${y}-01-01`, ends_on: `${y}-03-31` });
+      const s = await adminApi.createSeason({ name: "New Season", set_code, starts_on: `${y}-01-01`, ends_on: `${y}-03-31` });
       qc.invalidateQueries({ queryKey: ["seasons"] });
       setSel(s.id);
     } catch (e) {
@@ -77,6 +83,7 @@ function SeasonEditor({ season, onDeleted }: { season: ApiSeason; onDeleted: () 
   });
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const suggestedEvents = weeklyEventCount(draft.starts_on, draft.ends_on);
   const childTournaments = tournaments
     .filter((t) => t.season_id === season.id)
     .sort((a, b) => a.held_on.localeCompare(b.held_on));
@@ -157,6 +164,15 @@ function SeasonEditor({ season, onDeleted }: { season: ApiSeason; onDeleted: () 
         </Field>
         <Field label="Event count">
           <input type="number" value={draft.event_count} onChange={(e) => setDraft({ ...draft, event_count: Number(e.target.value) })} style={inputStyle} />
+          {suggestedEvents != null && suggestedEvents !== draft.event_count && (
+            <button
+              type="button"
+              onClick={() => setDraft({ ...draft, event_count: suggestedEvents })}
+              style={{ alignSelf: "flex-start", background: "none", border: "none", padding: "2px 0", color: "var(--primary-300)", cursor: "pointer", fontFamily: "inherit", fontSize: 11 }}
+            >
+              Suggested: {suggestedEvents} · apply
+            </button>
+          )}
         </Field>
         <Field label="🏅 Season champion">
           <PlayerPicker value={draft.champion_player_id} onChange={(id) => setDraft({ ...draft, champion_player_id: id })} />

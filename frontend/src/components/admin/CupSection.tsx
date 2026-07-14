@@ -17,7 +17,9 @@ export default function CupSection() {
   const current = cups.find((c) => c.id === sel);
 
   const create = async () => {
-    const year = new Date().getFullYear();
+    // Cups are unique per year — pick the next free year so "+ New" never
+    // collides with an existing cup (falls back to the current year).
+    const year = cups.length ? Math.max(...cups.map((c) => c.year)) + 1 : new Date().getFullYear();
     try {
       const c = await adminApi.createCup({ year, name: `${year} Cup`, starts_on: `${year}-01-01`, ends_on: `${year}-12-31` });
       qc.invalidateQueries({ queryKey: ["yearly-cups"] });

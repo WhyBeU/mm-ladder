@@ -30,8 +30,9 @@ export default function Masthead({
             alt="Magic Mates"
             width={logoSize - 12}
             height={logoSize - 12}
+            priority
             unoptimized
-            style={{ objectFit: "contain", width: "100%", height: "100%" }}
+            style={{ objectFit: "contain", maxWidth: "100%", maxHeight: "100%" }}
             onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
         </div>
