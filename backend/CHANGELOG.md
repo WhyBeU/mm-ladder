@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.15.1] - 2026-07-15 — Vercel deploy config + seed sequence fix
+
+### Added
+
+- **Vercel deployment config**: `vercel.json` (framework pinned to `fastapi` — required because the
+  dashboard preset is "Other", which skips FastAPI detection and fails the build looking for an
+  `api/` directory; Sydney region `syd1`; `maxDuration` 30 s; auto-deploy on `main` disabled —
+  production ships through the gated Actions workflow) and `[tool.vercel].entrypoint` in
+  `pyproject.toml` pointing at the src-layout app.
+
+### Changed
+
+- **`pyproject.toml` migrated to PEP 621** — runtime dependencies now live in the standard
+  `[project]` table (Vercel's uv-based builder reads it natively, so no `requirements.txt` export
+  is needed); dev/migration tooling remains in Poetry groups. Same pinned versions, relocked.
+
+### Fixed
+
+- **`migrate copy-to-pg` never reset Postgres sequences** — the guard checked
+  `col.autoincrement is True`, but mapped PKs report `"auto"`, so the setval loop was skipped for
+  every table and the first post-seed insert would have collided on id 1. Sequences are now
+  discovered by asking Postgres (`pg_get_serial_sequence`) and each reset is logged.
+
 ## [0.15.0] - 2026-07-15 — PostgreSQL support
 
 ### Added

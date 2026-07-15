@@ -95,6 +95,19 @@ Rules of thumb: **direct** URL for anything schema- or bulk-related (Alembic, `m
 seed); **pooled** URL for serving requests. The engine factory detects the `-pooler` host and
 disables client-side pooling/statement caching automatically (PgBouncer handles it).
 
+### Vercel deployment files
+
+The API deploys as a Vercel Python function. `vercel.json` pins the framework (`fastapi` — the
+dashboard preset must stay "Other"/overridable, and without the pin Vercel skips FastAPI detection
+and fails the build looking for an `api/` directory), the region (`syd1`, next to Neon), and
+disables auto-deploy on `main` (production ships through the gated GitHub Actions workflow);
+`[tool.vercel].entrypoint` in `pyproject.toml` points Vercel at the src-layout app.
+
+Runtime dependencies live in the standard **PEP 621 `[project]` table** of `pyproject.toml`, which
+Vercel's uv-based builder installs natively — no `requirements.txt` export needed. Dev and
+migration tooling stay in Poetry groups (`[tool.poetry.group.*]`), which Vercel ignores. Add
+runtime deps with `poetry add <pkg>` as usual (Poetry ≥ 2 writes the `[project]` table).
+
 ## Data migration (limitedspoiler.com)
 
 Backfills historical tournament results from limitedspoiler.com into the local database.
