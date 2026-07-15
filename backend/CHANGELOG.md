@@ -4,9 +4,11 @@
 
 ### Added
 
-- **Vercel deployment config**: `vercel.json` (Sydney region `syd1`, `maxDuration` 30 s, auto-deploy
-  on `main` disabled — production ships through the gated Actions workflow) and
-  `[tool.vercel].entrypoint` in `pyproject.toml` pointing at the src-layout app.
+- **Vercel deployment config**: `vercel.json` (framework pinned to `fastapi` — required because the
+  dashboard preset is "Other", which skips FastAPI detection and fails the build looking for an
+  `api/` directory; Sydney region `syd1`; `maxDuration` 30 s; auto-deploy on `main` disabled —
+  production ships through the gated Actions workflow) and `[tool.vercel].entrypoint` in
+  `pyproject.toml` pointing at the src-layout app.
 
 ### Changed
 
