@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "regions": ["syd1"],
+  "functions": {
+    "src/mm_ladder/app.py": { "maxDuration": 30 }
+  },
+  "git": { "deploymentEnabled": { "main": false } }
+}

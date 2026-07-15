@@ -38,12 +38,19 @@ def copy_database(src_url: str, dest_url: str, force: bool = False) -> dict[str,
         if dest.dialect.name == "postgresql":
             for table in Base.metadata.sorted_tables:
                 for col in table.primary_key.columns:
-                    if col.autoincrement is not True:
+                    # Ask Postgres which PKs own a sequence rather than trusting the ORM's
+                    # autoincrement flag (it stays "auto", never True, on mapped columns).
+                    seq = write.execute(
+                        text("SELECT pg_get_serial_sequence(:t, :c)"),
+                        {"t": table.name, "c": col.name},
+                    ).scalar()
+                    if seq is None:
                         continue
                     write.execute(
                         text(
-                            f"SELECT setval(pg_get_serial_sequence('{table.name}', '{col.name}'), "
+                            f"SELECT setval('{seq}', "
                             f"(SELECT COALESCE(MAX({col.name}), 0) + 1 FROM {table.name}), false)"
                         )
                     )
+                    log.info("sequence reset", table=table.name, sequence=seq)
     return counts
