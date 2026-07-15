@@ -11,9 +11,14 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from mm_ladder.app import create_app
 from mm_ladder.db import enable_sqlite_foreign_keys
+from mm_ladder.db_migrations import _sync_url
 from mm_ladder.models.base import Base
 
 TEST_ADMIN_TOKEN = "test-admin-token"
+
+# Default: fast in-memory SQLite. CI sets TEST_DATABASE_URL to an async Postgres URL to run the
+# same suite against the production dialect (see tox env `test-pg`).
+TEST_DB_URL = os.getenv("TEST_DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 
 
 @pytest.fixture(autouse=True)
@@ -26,13 +31,15 @@ def _set_admin_token() -> None:
 
 @pytest.fixture(scope="function")
 def engine() -> Generator[Engine]:
-    eng = create_engine("sqlite:///:memory:")
+    eng = create_engine(_sync_url(TEST_DB_URL))
 
-    @event.listens_for(eng, "connect")
-    def _fk_pragma(dbapi_conn: Any, _record: Any) -> None:  # type: ignore[reportUnusedFunction]
-        cursor = dbapi_conn.cursor()
-        cursor.execute("PRAGMA foreign_keys=ON")
-        cursor.close()
+    if eng.dialect.name == "sqlite":
+
+        @event.listens_for(eng, "connect")
+        def _fk_pragma(dbapi_conn: Any, _record: Any) -> None:  # type: ignore[reportUnusedFunction]
+            cursor = dbapi_conn.cursor()
+            cursor.execute("PRAGMA foreign_keys=ON")
+            cursor.close()
 
     Base.metadata.create_all(eng)
     yield eng
@@ -52,7 +59,7 @@ def session(engine: Engine) -> Generator[Session]:
 
 @pytest_asyncio.fixture  # type: ignore[misc]
 async def async_engine() -> AsyncGenerator[AsyncEngine]:
-    eng = create_async_engine("sqlite+aiosqlite:///:memory:")
+    eng = create_async_engine(TEST_DB_URL)
     enable_sqlite_foreign_keys(eng)
     async with eng.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

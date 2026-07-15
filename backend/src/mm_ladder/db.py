@@ -2,6 +2,7 @@ from typing import Any
 
 from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 
 def enable_sqlite_foreign_keys(engine: AsyncEngine) -> None:
@@ -21,7 +22,13 @@ def enable_sqlite_foreign_keys(engine: AsyncEngine) -> None:
 
 
 def make_engine(url: str = "sqlite+aiosqlite:///./mm_ladder.db") -> AsyncEngine:
-    engine = create_async_engine(url)
+    kwargs: dict[str, Any] = {}
+    if url.startswith("postgresql+asyncpg") and "-pooler" in url:
+        # Neon's pooled endpoint is PgBouncer (transaction mode): SQLAlchemy must not pool on
+        # top of it, and asyncpg's prepared-statement cache breaks across PgBouncer connections.
+        kwargs["poolclass"] = NullPool
+        kwargs["connect_args"] = {"statement_cache_size": 0}
+    engine = create_async_engine(url, **kwargs)
     enable_sqlite_foreign_keys(engine)
     return engine
 

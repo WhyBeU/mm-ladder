@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.15.0] - 2026-07-15 — PostgreSQL support
+
+### Added
+
+- **PostgreSQL support** alongside SQLite (which stays the local-dev and fast-test default):
+  - Drivers: `asyncpg` (async app engine) + `psycopg[binary]` (sync — Alembic, CLI tools).
+  - `_sync_url` maps `+asyncpg` → `+psycopg` and `?ssl=require` → `?sslmode=require` so one
+    `DATABASE_URL` drives both the app and Alembic.
+  - **Pooler-aware engine factory**: a Postgres URL with a `-pooler` host (Neon/PgBouncer) gets
+    `NullPool` + `statement_cache_size=0` automatically; direct URLs keep normal pooling.
+  - `alembic/env.py` now prefers the `DATABASE_URL` env var over `alembic.ini`, so
+    `alembic upgrade head` targets the same database as the app (CI, deploy pipeline).
+  - **Test suite parametrization**: `TEST_DATABASE_URL` switches the fixtures to any database;
+    new tox env `test-pg`; new CI job `test-postgres` (Postgres 18 service) replays the full
+    Alembic chain and runs the suite against Postgres on every backend PR.
+  - **`migrate copy-to-pg`** — one-time seed command copying the local SQLite database into
+    Postgres (FK-safe table order, skips generated columns, resets sequences); `--force` drops
+    and recreates the destination tables for a from-scratch re-run.
+- **`backend/README.md`** — "Production database (Neon Postgres)" section: connection-string
+  adaptations, `.env` conventions, direct-vs-pooled usage rules.
+
 ## [0.14.2] - 2026-07-14 — Season 45 data + deployment doc
 
 ### Added

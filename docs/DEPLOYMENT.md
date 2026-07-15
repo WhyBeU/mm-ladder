@@ -106,7 +106,7 @@ stateless backend. See §9.
 
 ### Fly.io ✅ recommended
 
-One `shared-cpu-1x` Machine + 1 GB volume in `cdg`/`ams` (close to the playgroup). With
+One `shared-cpu-1x` Machine + 1 GB volume in `syd` (close to the playgroup). With
 auto-stop/auto-start the machine sleeps when idle and Fly's proxy wakes it on request (cold start:
 a few seconds — uvicorn boot + Alembic no-op check). Dockerfile needed (straightforward for
 Poetry). Daily volume snapshots included. No monthly minimum — realistic bill **$1–3/month**.

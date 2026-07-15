@@ -56,6 +56,45 @@ poetry run alembic revision --autogenerate -m "describe the change"
 
 The database file (`mm_ladder.db`) is gitignored. Each developer runs `alembic upgrade head` locally. Tests use an in-memory SQLite instance via `Base.metadata.create_all` — Alembic is not involved in test setup.
 
+## Production database (Neon Postgres)
+
+Production runs on [Neon](https://neon.tech) (Postgres 18, region AWS ap-southeast-2 Sydney) instead
+of SQLite; local development keeps using SQLite. See `docs/DEPLOYMENT.md` for the full architecture.
+
+On the Neon project dashboard → **Connect**, use the **"Connect your app manually"** path (the
+AI-guided / MCP setup is not needed for this repo). Neon shows one connection string; you need
+**both variants** — toggle **Connection pooling** to get each — and they must be adapted for
+SQLAlchemy before use:
+
+1. Add an explicit driver: `postgresql://` → `postgresql+psycopg://` (sync: Alembic, seed CLI) or
+   `postgresql+asyncpg://` (async: the API server).
+2. Fix the TLS parameter: psycopg keeps `?sslmode=require`; asyncpg needs `?ssl=require` instead.
+3. Delete any `channel_binding=require` parameter — asyncpg rejects it.
+
+Store them in `backend/.env` (gitignored — never commit these; the password is in the URL):
+
+```dotenv
+# Direct endpoint (host WITHOUT -pooler) — Alembic migrations & one-time seed
+NEON_DIRECT_URL=postgresql+psycopg://<user>:<password>@ep-xxxx.ap-southeast-2.aws.neon.tech/neondb?sslmode=require
+# Pooled endpoint (host WITH -pooler) — the running API
+NEON_POOLED_URL=postgresql+asyncpg://<user>:<password>@ep-xxxx-pooler.ap-southeast-2.aws.neon.tech/neondb?ssl=require
+```
+
+Nothing auto-loads this file — it's a scratchpad for the values. To run against Neon, export the
+one you need as `DATABASE_URL`:
+
+```powershell
+# Apply migrations to Neon (PowerShell; use the DIRECT url, with +asyncpg — the app converts for Alembic)
+$env:DATABASE_URL = "<NEON_DIRECT_URL with +asyncpg and ?ssl=require>"; poetry run alembic upgrade head
+
+# Run the API against Neon (POOLED url)
+$env:DATABASE_URL = "<NEON_POOLED_URL>"; poetry run uvicorn mm_ladder.app:app --port 8000
+```
+
+Rules of thumb: **direct** URL for anything schema- or bulk-related (Alembic, `migrate copy-to-pg`
+seed); **pooled** URL for serving requests. The engine factory detects the `-pooler` host and
+disables client-side pooling/statement caching automatically (PgBouncer handles it).
+
 ## Data migration (limitedspoiler.com)
 
 Backfills historical tournament results from limitedspoiler.com into the local database.

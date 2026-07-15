@@ -1,9 +1,11 @@
 from datetime import UTC, datetime, timedelta
 
 from httpx import AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from mm_ladder.interface.board import FormatGenerateGroup, GenerateRequest, SignupCreateRequest
+from mm_ladder.models.board import PodFormat
 from mm_ladder.schemas.board import (
     PodEventRead,
     PodFormatRead,
@@ -16,6 +18,21 @@ from mm_ladder.services.board import AUTO_CLEAR_AFTER, BoardService
 
 async def _default_format_id(client: AsyncClient) -> int:
     return (await client.get("/board")).json()["formats"][0]["id"]
+
+
+async def test_get_board_persists_lazy_defaults(client: AsyncClient, async_engine: AsyncEngine) -> None:
+    """GET /board lazily creates the state row + default format — they must survive the request.
+
+    A second session (fresh transaction) must see the committed format; otherwise every request
+    re-creates it and ids drift on databases whose sequences advance across rollbacks (Postgres).
+    """
+    fid = await _default_format_id(client)
+
+    factory = async_sessionmaker(async_engine, expire_on_commit=False)
+    async with factory() as session:
+        formats = (await session.execute(select(PodFormat))).scalars().all()
+
+    assert [(f.id, f.ordinal) for f in formats] == [(fid, 1)]
 
 
 def _gen_body(format_id: int, pods: list[list[int]], label: str | None = None) -> dict:

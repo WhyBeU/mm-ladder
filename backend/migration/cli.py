@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from migration.consolidation import run_auto_consolidation, run_select_consolidation
+from migration.copy_to_pg import copy_database
 from migration.importer import run_import, seed_cups
 from migration.scraper import ScrapeSummary, scrape_season
 from migration.seasons import SEASONS
@@ -221,6 +222,20 @@ def seed_cups_cmd(db: str) -> None:
         raise SystemExit(1) from None
     finally:
         session.close()
+
+
+@cli.command("copy-to-pg")
+@click.option("--sqlite-path", default="mm_ladder.db", show_default=True, help="Source SQLite database file.")
+@click.option("--pg-url", envvar="PG_URL", required=True, help="Destination Postgres sync URL (Neon DIRECT, non-pooler).")
+@click.option("--force", is_flag=True, help="Drop and recreate all destination tables before copying.")
+def copy_to_pg(sqlite_path: str, pg_url: str, force: bool) -> None:
+    """Copy the local SQLite database into Postgres (one-time prod seed)."""
+    try:
+        counts = copy_database(f"sqlite:///{sqlite_path}", pg_url, force=force)
+    except Exception as e:
+        log.error("copy-to-pg failed", error=str(e))
+        raise SystemExit(1) from None
+    log.info("copy-to-pg complete", tables=len(counts), total_rows=sum(counts.values()), rows_per_table=counts)
 
 
 @cli.command()
