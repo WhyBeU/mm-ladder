@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.15.2] - 2026-07-16 — Root redirect to Swagger UI
+
+### Added
+
+- **`GET /` now redirects (307) to `/docs`** so opening the bare API URL
+  (e.g. `https://mm-ladder-api.vercel.app`) lands on the Swagger UI instead of a 404. Hidden from
+  the OpenAPI schema.
+
 ## [0.15.1] - 2026-07-15 — Vercel deploy config + seed sequence fix
 
 ### Added

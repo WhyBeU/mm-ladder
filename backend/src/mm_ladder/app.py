@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from sqlalchemy.exc import IntegrityError
 
 from mm_ladder import __version__
@@ -33,6 +33,11 @@ _health_router = APIRouter(tags=["health"])
 @_health_router.get("/health")
 async def health() -> JSONResponse:
     return JSONResponse(content={"status": "ok"})
+
+
+@_health_router.get("/", include_in_schema=False)
+async def root() -> RedirectResponse:
+    return RedirectResponse("/docs", status_code=307)
 
 
 @asynccontextmanager
