@@ -114,6 +114,10 @@ class BoardService:
 
     async def get_board(self) -> BoardData:
         state = await self._get_or_create_state()
+        # The state row and default format may have been lazily created just now; without a
+        # commit they roll back when this read-only session closes, and every subsequent GET
+        # re-creates them (with fresh ids on Postgres, whose sequences advance across rollbacks).
+        await self._session.commit()
         # SQLite returns naive datetimes for timezone-aware columns; assume UTC.
         last = state.last_activity_at
         if last.tzinfo is None:
