@@ -1,6 +1,6 @@
 [project]
 name = "mm-ladder"
-version = "0.15.1"
+version = "0.15.2"
 description = "Draft league ladder tracker for Magic Mates Monday"
 authors = [{ name = "Yoann", email = "yoann.buratti@gmail.com" }]
 readme = "README.md"
