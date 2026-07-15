@@ -61,3 +61,43 @@ jobs:
         run: poetry install
       - name: Run tests
         run: poetry run tox -e test
+
+  test-postgres:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: mm
+          POSTGRES_PASSWORD: mm
+          POSTGRES_DB: mm_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U mm"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Install dependencies
+        run: poetry install
+      # Two databases: mm_migrate proves the Alembic chain replays cleanly on Postgres;
+      # mm_test gives pytest a clean create_all/drop_all sandbox that never fights Alembic's tables.
+      - name: Create migration-replay database
+        run: PGPASSWORD=mm psql -h localhost -U mm -d postgres -c "CREATE DATABASE mm_migrate"
+      - name: Replay full Alembic chain on Postgres
+        run: poetry run alembic upgrade head
+        env:
+          DATABASE_URL: postgresql+asyncpg://mm:mm@localhost:5432/mm_migrate
+      - name: Run test suite against Postgres
+        run: poetry run tox -e test-pg
+        env:
+          TEST_DATABASE_URL: postgresql+asyncpg://mm:mm@localhost:5432/mm_test

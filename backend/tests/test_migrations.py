@@ -3,7 +3,16 @@ from pathlib import Path
 
 import pytest
 
-from mm_ladder.db_migrations import run_db_migrations
+from mm_ladder.db_migrations import _sync_url, run_db_migrations
+
+
+def test_sync_url_strips_aiosqlite() -> None:
+    assert _sync_url("sqlite+aiosqlite:///./mm_ladder.db") == "sqlite:///./mm_ladder.db"
+
+
+def test_sync_url_maps_asyncpg_to_psycopg() -> None:
+    url = "postgresql+asyncpg://u:p@host/db?ssl=require"
+    assert _sync_url(url) == "postgresql+psycopg://u:p@host/db?sslmode=require"
 
 
 def test_run_db_migrations_creates_tables(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

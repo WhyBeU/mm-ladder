@@ -7,8 +7,15 @@ log = get_logger("mm_ladder.migrations")
 
 
 def _sync_url(database_url: str) -> str:
-    """Alembic runs synchronously, so strip async driver suffixes from the app's DATABASE_URL."""
-    return database_url.replace("+aiosqlite", "")
+    """Alembic runs synchronously, so map async driver suffixes to their sync equivalents.
+
+    Also translates asyncpg's ssl= query param to psycopg's sslmode= (asyncpg and psycopg
+    spell the TLS requirement differently).
+    """
+    url = database_url.replace("+aiosqlite", "").replace("+asyncpg", "+psycopg")
+    if url.startswith("postgresql+psycopg"):
+        url = url.replace("?ssl=require", "?sslmode=require").replace("&ssl=require", "&sslmode=require")
+    return url
 
 
 def run_db_migrations() -> None:
