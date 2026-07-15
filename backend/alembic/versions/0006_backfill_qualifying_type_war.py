@@ -5,6 +5,8 @@ Revises: 0005
 Create Date: 2026-06-07
 """
 
+import datetime
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -15,7 +17,8 @@ depends_on = None
 
 # War of the Spark (set_code "war") starts on 2019-04-27 — the cup switched from
 # total-points qualification to "best N event scores" qualification from here on.
-BEST_QUALIFYING_FROM = "2019-04-27"
+# A date object, not a string: Postgres rejects date >= varchar (SQLite coerced it).
+BEST_QUALIFYING_FROM = datetime.date(2019, 4, 27)
 
 
 def upgrade() -> None:
