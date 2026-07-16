@@ -21,3 +21,5 @@ backend/logs
 
 # Secrets / local environment
 backend/.env
+.vercel
+.env*
