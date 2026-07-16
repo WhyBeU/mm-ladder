@@ -1,0 +1,50 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production # the gate: waits here for manual approval
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Install backend dependencies
+        working-directory: backend
+        run: poetry install
+
+      - name: Migrate database (Neon, direct URL)
+        working-directory: backend
+        run: poetry run alembic upgrade head
+        env:
+          DATABASE_URL: ${{ secrets.NEON_DIRECT_URL }}
+
+      - name: Deploy backend to Vercel
+        run: npx vercel@latest deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_BACKEND }}
+
+      - name: Deploy frontend to Vercel
+        run: npx vercel@latest deploy --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_FRONTEND }}
+
+      - name: Smoke test
+        run: |
+          curl --fail --silent https://mm-ladder-api.vercel.app/health
+          curl --fail --silent https://mm-ladder-api.vercel.app/seasons/ > /dev/null
+          curl --fail --silent --output /dev/null https://mm-ladder.vercel.app/

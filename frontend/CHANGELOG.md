@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [0.11.1] — 2026-07-16 — Gated production deploys
+
+### Added
+
+- **`vercel.json`** — pins the framework to `nextjs` (the Vercel project's dashboard preset was
+  left as "Other" by the experimental Services-preset detour, which served the build as a static
+  folder — every route 404'd) and disables Vercel auto-deploy on `main`; production now ships only
+  through the repo's gated `Deploy` GitHub Actions workflow (manual approval on the `production`
+  environment), which migrates the Neon database, deploys backend + frontend, and smoke-tests both.
+  PR branches keep their preview deploys.
+
 ## [0.11.0] — 2026-07-14 — Admin: add player, event-count suggestion, new-cup fix
 
 ### Added
