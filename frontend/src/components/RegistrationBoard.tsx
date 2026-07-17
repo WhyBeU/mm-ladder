@@ -8,6 +8,7 @@ import { buildGenerateGroups, type SeedMetrics } from "@/lib/boardGenerate";
 import { fmtMetric, podSizePreview, type SeedMethod } from "@/lib/pods";
 import Masthead from "@/components/Masthead";
 import SeedingSelector from "@/components/SeedingSelector";
+import SiteFooter from "@/components/SiteFooter";
 
 const ZERO: SeedMetrics = { total: 0, average: 0, best: 0 };
 
@@ -142,21 +143,25 @@ export default function RegistrationBoard() {
     }
   }
 
-  // Seasons available to add as the 2nd format (exclude the active one already in slot 1).
+  // Seasons available to add as the 2nd format (exclude the active one already in
+  // slot 1), ordered newest first.
   const pickableSeasons = useMemo(
-    () => seasons.filter((s) => s.id !== defaultFormat?.season_id),
+    () =>
+      seasons
+        .filter((s) => s.id !== defaultFormat?.season_id)
+        .sort((a, b) => b.starts_on.localeCompare(a.starts_on)),
     [seasons, defaultFormat],
   );
 
   return (
-    <div style={{ minHeight: "100vh", overflowX: "hidden" }}>
+    <div style={{ minHeight: "100vh", overflowX: "hidden", display: "flex", flexDirection: "column" }}>
       <Masthead
         current="board"
         title="Pod sign-up"
         eyebrow={defaultFormat ? `Seeding from ${defaultFormat.name}` : "Sign-up board"}
       />
 
-      <main className="page-main" style={{ paddingBottom: 48 }}>
+      <main className="page-main" style={{ paddingBottom: 48, flex: 1 }}>
         <p style={{ color: "var(--parchment-muted)", fontSize: 14, margin: "0 0 8px", maxWidth: 720 }}>
           Magic Mates draft pod sign-up. Tap your name to sign up, or add yourself as an extra. On the night
           the organiser marks who&apos;s here and generates the pods.
@@ -339,6 +344,8 @@ export default function RegistrationBoard() {
           </div>
         )}
       </main>
+
+      <SiteFooter />
 
       {confirmReset && (
         <ConfirmDialog

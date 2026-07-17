@@ -39,13 +39,25 @@ export default function Leaderboard({
   qualifiedCupYear,
 }: LeaderboardProps) {
   const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>(defaultSortKey);
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [expanded, setExpanded] = useState<number | null>(null);
+  // The user's manual sort choice, tagged with the scope it was made in. Until they
+  // pick a column, the sort falls back to defaultSortKey — which for a BEST season
+  // resolves only after the async season data loads, so deriving it here (rather than
+  // seeding useState once) fixes cold mobile loads wrongly staying on points. Tagging
+  // by scope means a new scope re-applies that scope's own default.
+  const [sortOverride, setSortOverride] = useState<{ sig: string; key: SortKey; dir: SortDir } | null>(null);
+
+  const scopeSig = `${scope.kind}:${scope.cupId ?? ""}:${scope.seasonId ?? ""}:${scope.eventId ?? ""}:${scope.podId ?? ""}`;
+  const activeOverride = sortOverride?.sig === scopeSig ? sortOverride : null;
+  const sortKey = activeOverride?.key ?? defaultSortKey;
+  const sortDir = activeOverride?.dir ?? "desc";
 
   const handleSort = (k: SortKey) => {
-    if (sortKey === k) setSortDir(d => d === "desc" ? "asc" : "desc");
-    else { setSortKey(k); setSortDir(k === "display_name" ? "asc" : "desc"); }
+    setSortOverride(prev => {
+      const cur = prev?.sig === scopeSig ? prev : null;
+      if (cur && cur.key === k) return { sig: scopeSig, key: k, dir: cur.dir === "desc" ? "asc" : "desc" };
+      return { sig: scopeSig, key: k, dir: k === "display_name" ? "asc" : "desc" };
+    });
   };
 
   const rows = useMemo(() => {
