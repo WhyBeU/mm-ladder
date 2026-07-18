@@ -18,7 +18,11 @@ import Leaderboard from "@/components/Leaderboard";
 import { SeasonHero, StatsStrip } from "@/components/SeasonHero";
 import { Podium } from "@/components/Podium";
 import { QualifiedCards } from "@/components/QualifiedCards";
+import AttendanceTimeline from "@/components/AttendanceTimeline";
+import { buildAttendanceSeries } from "@/lib/attendance";
 import ScopeBar from "@/components/ScopeBar";
+import SiteFooter, { DiscordButton } from "@/components/SiteFooter";
+import { WEEKLY_DRAFT_LINE } from "@/lib/site";
 
 // ---------- Data adapters ----------
 
@@ -285,6 +289,12 @@ export default function LeaderboardPage() {
 
   const showPodium = (scope.kind === "season" || scope.kind === "cup" || scope.kind === "alltime") && scopeStandings.length >= 3;
 
+  // All-time attendance-over-time timeline (desktop only; rendered under the podium).
+  const attendanceSeries = useMemo(
+    () => (scope.kind === "alltime" ? buildAttendanceSeries(events, rawParticipants, seasons, yearlyCups) : null),
+    [scope.kind, events, rawParticipants, seasons, yearlyCups],
+  );
+
   const heroCtx = {
     season: scope.kind === "alltime" ? null : (scope.kind === "cup" ? null : season),
     cup:    scope.kind === "alltime" ? null : cup,
@@ -297,7 +307,18 @@ export default function LeaderboardPage() {
       <div style={{ display: "flex", flexDirection: "column" }}>
 
         {/* Sticky header */}
-        <Masthead current="leaderboard" title="Magic Mates Draft Ladder" />
+        <Masthead
+          current="leaderboard"
+          title="Magic Mates Draft Ladder"
+          subtitle={
+            <>
+              <DiscordButton />
+              <span style={{ fontSize: 13, color: "var(--parchment-muted)" }}>
+                <span style={{ fontWeight: 700, color: "var(--parchment)" }}>Weekly Drafts</span> — {WEEKLY_DRAFT_LINE}
+              </span>
+            </>
+          }
+        />
 
         {/* Scope bar — the single scope selector */}
         <ScopeBar scope={scope} setScope={setScope} yearlyCups={yearlyCups} seasons={seasons} events={events} />
@@ -321,6 +342,7 @@ export default function LeaderboardPage() {
           {scope.kind === "cup"
             ? <QualifiedCards standings={scopeStandings} qualifiedPlayerIds={cup?.qualified_player_ids ?? []} />
             : showPodium && <Podium standings={scopeStandings} />}
+          {scope.kind === "alltime" && attendanceSeries && <AttendanceTimeline series={attendanceSeries} />}
           <Leaderboard
             standings={scopeStandings}
             scope={scope}
@@ -334,16 +356,10 @@ export default function LeaderboardPage() {
         </main>
 
         {/* Footer */}
-        <footer className="page-footer" style={{
-          borderTop: "1px solid color-mix(in srgb, var(--ink-700) 60%, transparent)",
-          fontSize: 11, color: "var(--parchment-faint)",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span className="pulse-soft" style={{ width: 6, height: 6, borderRadius: 3, background: "var(--win)", display: "inline-block" }} />
-            <span>Last updated <span style={{ color: "var(--parchment-muted)" }}>{relativeTime(lastUpdated)}</span> · {stats.players} players in scope</span>
-          </div>
-          <div className="eyebrow">Magic Mates Monday @ Chromatic Games</div>
-        </footer>
+        <SiteFooter>
+          <span className="pulse-soft" style={{ width: 6, height: 6, borderRadius: 3, background: "var(--win)", display: "inline-block" }} />
+          <span>Last updated <span style={{ color: "var(--parchment-muted)" }}>{relativeTime(lastUpdated)}</span> · {stats.players} players in scope</span>
+        </SiteFooter>
       </div>
     </div>
   );

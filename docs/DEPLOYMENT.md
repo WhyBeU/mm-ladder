@@ -174,23 +174,21 @@ static `output: "export"` build on CF Pages is even plausible.
 
 ## 5. Domain
 
-`magic-mates.com` (availability unverified — check before falling in love with it).
+**✅ Done (2026-07-18): `mtg-magic-mates.com`** — registered at Porkbun, 5 years (~$11/yr, WHOIS
+privacy + auto-renew on). Vercel's own registrar was tried first but its buy flow failed
+repeatedly (dashboard "Search stream stuck" + generic CLI purchase error), so Porkbun it is.
 
-| Registrar | .com price | Notes |
-| --- | --- | --- |
-| [Cloudflare Registrar](https://www.cloudflare.com/products/registrar/) ✅ | **$10.44/yr, at-cost, never marked up** | Free WHOIS privacy + DNSSEC. Must use Cloudflare nameservers (fine — we'd want Cloudflare DNS anyway) |
-| Porkbun | ~$11/yr | Comparable; slightly more flexible DNS delegation |
-| Namecheap | ~$10 first yr, ~$16 renewal | Promo pricing, higher renewals |
+Live configuration:
 
-Suggested DNS layout (Cloudflare DNS):
-
-- `magic-mates.com` + `www` → frontend (CNAME to Vercel, **DNS-only/grey-cloud** — proxying Vercel through Cloudflare causes TLS/caching weirdness)
-- `api.magic-mates.com` → backend (CNAME to the Fly app, `fly certs add` handles TLS)
-- Backend env: `CORS_ORIGINS=https://magic-mates.com,https://www.magic-mates.com`
-- Frontend env: `NEXT_PUBLIC_API_URL=https://api.magic-mates.com`
-
-A domain is optional for v1 — `<app>.fly.dev` + `<project>.vercel.app` work day one; the domain
-can be layered on later without redeploying anything except env vars.
+- Porkbun nameservers → `ns1.vercel-dns.com` / `ns2.vercel-dns.com` — Vercel manages all DNS
+  records and TLS; nothing is configured at Porkbun beyond the nameservers.
+- `mtg-magic-mates.com` → `mm-ladder` frontend project; `www.mtg-magic-mates.com` → 308 redirect
+  to the apex.
+- Backend env: `CORS_ORIGINS` includes `https://mtg-magic-mates.com` and `https://www.mtg-magic-mates.com`
+  (plus the `*.vercel.app` origins and localhost as fallbacks).
+- Frontend keeps `NEXT_PUBLIC_API_URL=https://mm-ladder-api.vercel.app` — the API stays on its
+  `.vercel.app` URL; an `api.mtg-magic-mates.com` subdomain can be layered on later by adding the
+  domain to the backend project and updating the frontend env var.
 
 ---
 
@@ -275,6 +273,7 @@ Postgres migration — worth revisiting only if the migration becomes desirable 
 - **Domain name** — `magic-mates.com` and `magicmates.com` are **taken** (RDAP, checked 2026-07-13).
   Available: `mm-ladder.com`, `mmladder.com`, `magicmatesmonday.com`, `magic-mates-monday.com`,
   `magicmates-mtg.com`. Or skip the domain for v1 (`*.fly.dev` + `*.vercel.app`).
+  **Resolved 2026-07-18:** bought `mtg-magic-mates.com` (Porkbun, 5 yr) — see §5.
 - Where does the prod SQLite file get seeded from — run the migration CLI against prod once, or upload the current `mm_ladder.db`?
 - Does anything commercial ever touch the site (league fees)? Determines Vercel Hobby eligibility long-term.
 
@@ -385,7 +384,7 @@ identical for both, so nothing is wasted. That's the decision point, and it come
 5. **Frontend project** + `NEXT_PUBLIC_API_URL`
 6. **Pipeline:** CI → gated `production` env → `alembic upgrade head` → deploy backend + frontend → smoke test
 7. **Ingest endpoint** + `INGEST_TOKEN`; extension changes tracked in the ThornyBlueCactus repo
-8. **Domain** (pick from §8's verified-available list), DNS, CORS update
+8. **Domain** — ✅ `mtg-magic-mates.com` live (see §5): NS → Vercel, `www` → apex redirect, CORS updated
 
 ---
 

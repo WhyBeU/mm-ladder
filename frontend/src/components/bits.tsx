@@ -27,28 +27,26 @@ interface PlayerAvatarProps {
   isVeteran?: boolean;
 }
 
-function VeteranLaurel({ size }: { size: number }) {
-  const pad = 5;
-  const total = size + pad * 2;
-  const cx = total / 2, cy = total / 2;
-  const r = total / 2 - 1.5;
-  // 14 small leaf-ellipses around the ring, alternating Byzantine purple and gold
-  const leaves = Array.from({ length: 14 }, (_, i) => {
-    const angle = (i / 14) * Math.PI * 2;
-    const lx = cx + r * Math.cos(angle);
-    const ly = cy + r * Math.sin(angle);
-    const deg = (angle * 180) / Math.PI + 90;
-    const fill = i % 2 === 0 ? "#5b2a6e" : "var(--accent-400)";
-    return <ellipse key={i} cx={lx} cy={ly} rx={1.8} ry={3.2} fill={fill} opacity="0.85" transform={`rotate(${deg},${lx},${ly})`} />;
-  });
+function VeteranHalo({ size }: { size: number }) {
+  // Static "purple gilt" ring: gold gilding over deep purple and black, scaled
+  // from the 36 px reference so it stays proportional on podium-sized avatars.
+  const ring = size + 9 * (size / 36);
+  const innerPct = (size / ring) * 100;
+  const mask = `radial-gradient(closest-side, transparent ${innerPct + 1}%, #000 ${innerPct + 3}%, #000 96%, transparent 100%)`;
   return (
-    <svg
-      style={{ position: "absolute", top: -pad, left: -pad, pointerEvents: "none" }}
-      width={total} height={total}
-    >
-      <title>Veteran</title>
-      {leaves}
-    </svg>
+    <div
+      role="img"
+      aria-label="Veteran"
+      style={{
+        position: "absolute", top: "50%", left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: ring, height: ring, borderRadius: "50%",
+        background: "conic-gradient(from 90deg,#f6d47a,#6a3a8f,#1a0a24,#0a0713,#6a3a8f,#f6d47a,#6a3a8f,#0a0713,#1a0a24,#6a3a8f,#f6d47a)",
+        WebkitMask: mask, mask,
+        filter: "drop-shadow(0 0 3px rgba(124,75,176,0.5))",
+        pointerEvents: "none",
+      }}
+    />
   );
 }
 
@@ -62,7 +60,7 @@ export function PlayerAvatar({ name, rank, size = 36, isVeteran }: PlayerAvatarP
     fontWeight: 700, fontSize: fs, fontFamily: "var(--font-sans)",
     flexShrink: 0, letterSpacing: "0.03em",
   };
-  const inner = isVeteran ? <VeteranLaurel size={size} /> : null;
+  const inner = isVeteran ? <VeteranHalo size={size} /> : null;
   if (rank === 1) return (
     <div className="bg-gold-sheen" style={{ ...base, color: "var(--ink-950)", boxShadow: "var(--shadow-gold-glow)" }}>
       {inner}{label}

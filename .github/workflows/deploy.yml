@@ -48,3 +48,4 @@ jobs:
           curl --fail --silent https://mm-ladder-api.vercel.app/health
           curl --fail --silent https://mm-ladder-api.vercel.app/seasons/ > /dev/null
           curl --fail --silent --output /dev/null https://mm-ladder.vercel.app/
+          curl --fail --silent --output /dev/null https://mtg-magic-mates.com/

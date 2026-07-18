@@ -305,6 +305,9 @@ body {
   .page-main { padding-left: 16px; padding-right: 16px; }
   .page-footer { padding: 16px; }
 
+  /* Attendance-over-time timeline is desktop-only */
+  .attendance-timeline { display: none; }
+
   /* Masthead: smaller logo + title, nav wraps to its own row */
   .masthead { padding: 10px 16px; }
   .masthead-logo { --logo-size: 44px; border-radius: 10px; padding: 3px; }

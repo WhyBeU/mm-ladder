@@ -9,11 +9,13 @@ export default function Masthead({
   current,
   title,
   eyebrow,
+  subtitle,
   logoSize = 76,
 }: {
   current: NavTarget;
   title: string;
   eyebrow?: React.ReactNode;
+  subtitle?: React.ReactNode;
   logoSize?: number;
 }) {
   return (
@@ -43,6 +45,11 @@ export default function Masthead({
           <h2 className="font-display masthead-title" style={{ margin: "1px 0 0", color: "var(--parchment)", letterSpacing: "0.02em" }}>
             {title}
           </h2>
+          {subtitle != null && (
+            <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+              {subtitle}
+            </div>
+          )}
         </div>
       </div>
       <HeaderNav current={current} />

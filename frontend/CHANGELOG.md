@@ -2,6 +2,41 @@
 
 ## [Unreleased]
 
+## [0.12.0] — 2026-07-16 — Discord promo, multi-format Pod-maker & UX fixes
+
+### Added
+
+- **Attendance-over-time timeline** on the all-time ladder (desktop only, under the podium) — an
+  area chart of weekly attendance (distinct players per event) drawn as a faint gold weekly line
+  under a prominent purple 4-week rolling average, with alternating cup-year background bands and a
+  start-of-season set-icon callout at each season's first week (hover shows the set code). Backed by
+  the pure, unit-tested `lib/attendance.ts` (`buildAttendanceSeries` + `rollingAverage`); reuses data
+  already fetched for the all-time scope, so no extra API calls.
+- **Discord + weekly-draft promotion** — a masthead subtitle on the Ladder
+  (`Weekly Drafts — Monday 6:30pm @ Chromatic Games (Ashfield)` + a **Join our Discord** button),
+  plus a shared `SiteFooter` with a Discord link on every page. Community links live in `lib/site.ts`.
+- **Multi-format groups in the Pod-maker** (`/pods`) — reworked to support up to two format groups
+  like the sign-up board. Add a second format (any season or a free-text "Other"), each group seeds
+  from its own season's stats, players move between groups with up/down arrows, and results render
+  grouped by format. A single format looks and behaves as before.
+
+### Changed
+
+- **Veteran avatar halo** redesigned — the alternating purple/gold leaf pips are replaced by a
+  "gilt" ring: gold gilding over deep byzantine purple and black, scaled proportionally so it reads
+  on both 36 px ladder rows and larger podium avatars.
+- **MM crown favicon** — `app/icon.svg` renders the Magic Mates crown on a parchment tile (was the
+  framework default `favicon.ico`, which surfaced as a non-MM icon in the browser tab).
+- **Format pickers list seasons newest-first** — the board's "Add format" dropdown (and the new
+  Pod-maker one) order seasons by start date descending.
+
+### Fixed
+
+- **Ladder sort now respects the season's default on mobile** — the sort seeded from
+  `defaultSortKey` before the season's `qualifying_type` had loaded, so a cold mobile load of a
+  BEST-qualifying season wrongly stayed on points. The active sort is now derived from the resolved
+  default (scoped per selection) until the user picks a column.
+
 ## [0.11.1] — 2026-07-16 — Gated production deploys
 
 ### Added
