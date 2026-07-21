@@ -85,10 +85,10 @@ one you need as `DATABASE_URL`:
 
 ```powershell
 # Apply migrations to Neon (PowerShell; use the DIRECT url, with +asyncpg — the app converts for Alembic)
-$env:DATABASE_URL = "<NEON_DIRECT_URL with +asyncpg and ?ssl=require>"; poetry run alembic upgrade head
+$env:DATABASE_URL = $env:NEON_DIRECT_URL_ASYNCPG; poetry run alembic upgrade head
 
 # Run the API against Neon (POOLED url)
-$env:DATABASE_URL = "<NEON_POOLED_URL>"; poetry run uvicorn mm_ladder.app:app --port 8000
+$env:DATABASE_URL = $env:NEON_POOLED_URL; poetry run uvicorn mm_ladder.app:app --port 8000
 ```
 
 Rules of thumb: **direct** URL for anything schema- or bulk-related (Alembic, `migrate copy-to-pg`

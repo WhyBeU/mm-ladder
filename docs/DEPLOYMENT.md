@@ -340,6 +340,13 @@ table. The scraper stays available for historical re-imports but is no longer th
 
 ### 9.4 The ingest endpoint (new API surface)
 
+> **Superseded (2026-07-21).** Results ingest shipped as an **admin PDF upload**, not a browser
+> extension: the admin uploads EventLink "Standings by Rank" PDF exports at
+> `POST /upload/tournament-results-from-pdf` (admin-auth via `X-Admin-Token`, no separate
+> `INGEST_TOKEN`), with a dry-run preview and a unique `tournament.eventlink_id` for idempotency.
+> See the admin how-to (`frontend/public/docs/upload-results.md`). The extension design below is
+> kept for historical context.
+
 EventLink → SpeedyImport extension → `POST /import/tournament-results` → mm-ladder.
 
 | Concern | Design | Lesson from ThornyBlueCactus docs |

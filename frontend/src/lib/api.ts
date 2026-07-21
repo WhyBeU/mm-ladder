@@ -29,6 +29,7 @@ export interface ApiTournament {
   season_id: number
   name: string | null
   notes: string | null
+  eventlink_id: string | null
   has_match_detail: boolean
 }
 

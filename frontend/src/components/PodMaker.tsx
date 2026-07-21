@@ -319,6 +319,19 @@ export default function PodMaker() {
           <p style={{ color: "var(--parchment-faint)" }}>Loading roster…</p>
         ) : (
           <>
+            {/* Generated pods sit at the top, above the roster/seeding controls. */}
+            {results && (
+              <div style={{ marginBottom: 28 }}>
+                <Results
+                  groups={results}
+                  multi={multi}
+                  method={method}
+                  copied={copied}
+                  onCopyPod={(pod, i, fmt) => copyText(podToText(pod, i, multi ? fmt.name : undefined), `pod-${fmt.key}-${i}`)}
+                  onCopyAll={copyAll}
+                />
+              </div>
+            )}
             <div style={{ display: "flex", gap: 20, flexWrap: "wrap", alignItems: "flex-start" }}>
               {/* Roster panel */}
               <section style={{ flex: "1 1 420px", minWidth: 320 }}>
@@ -422,18 +435,6 @@ export default function PodMaker() {
                 </div>
               </section>
             </div>
-
-            {/* Results */}
-            {results && (
-              <Results
-                groups={results}
-                multi={multi}
-                method={method}
-                copied={copied}
-                onCopyPod={(pod, i, fmt) => copyText(podToText(pod, i, multi ? fmt.name : undefined), `pod-${fmt.key}-${i}`)}
-                onCopyAll={copyAll}
-              />
-            )}
           </>
         )}
       </main>

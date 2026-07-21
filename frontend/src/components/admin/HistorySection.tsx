@@ -6,7 +6,7 @@ import { adminApi, type AuditEntry } from "@/lib/adminApi";
 import { inputStyle } from "@/components/admin/ui";
 
 const ENTITY_TYPES = ["", "player", "season", "yearly_cup", "tournament", "participant", "match"];
-const ACTIONS = ["", "CREATE", "UPDATE", "DELETE"];
+const ACTIONS = ["", "CREATE", "UPDATE", "DELETE", "IMPORT"];
 const PAGE = 50;
 
 const actionColor = (a: string) => (a === "CREATE" ? "var(--win)" : a === "DELETE" ? "var(--loss)" : "var(--accent-400)");

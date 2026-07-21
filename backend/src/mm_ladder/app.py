@@ -25,6 +25,7 @@ from mm_ladder.routes.board import router as board_router
 from mm_ladder.routes.player import router as player_router
 from mm_ladder.routes.season import router as season_router
 from mm_ladder.routes.tournament import router as tournament_router
+from mm_ladder.routes.upload import router as upload_router
 from mm_ladder.routes.yearly_cup import router as yearly_cup_router
 
 _health_router = APIRouter(tags=["health"])
@@ -82,6 +83,7 @@ def create_app() -> FastAPI:
     app.include_router(yearly_cup_router)
     app.include_router(season_router)
     app.include_router(tournament_router)
+    app.include_router(upload_router)
 
     return app
 
