@@ -9,6 +9,7 @@ import LoginForm from "@/components/admin/LoginForm";
 import CupSection from "@/components/admin/CupSection";
 import SeasonSection from "@/components/admin/SeasonSection";
 import TournamentSection from "@/components/admin/TournamentSection";
+import UploadSection from "@/components/admin/UploadSection";
 import PlayerSection from "@/components/admin/PlayerSection";
 import HistorySection from "@/components/admin/HistorySection";
 import DocsSection from "@/components/admin/DocsSection";
@@ -18,6 +19,7 @@ const NAV: { key: Section; label: string }[] = [
   { key: "cups", label: "🏆 Yearly Cups" },
   { key: "seasons", label: "📅 Seasons" },
   { key: "tournaments", label: "🎲 Tournaments" },
+  { key: "upload", label: "⬆️ Upload" },
   { key: "players", label: "👤 Players" },
   { key: "history", label: "📜 History" },
   { key: "docs", label: "📚 Docs" },
@@ -68,6 +70,7 @@ function Shell() {
         {section === "cups" && <CupSection />}
         {section === "seasons" && <SeasonSection />}
         {section === "tournaments" && <TournamentSection />}
+        {section === "upload" && <UploadSection />}
         {section === "players" && <PlayerSection />}
         {section === "history" && <HistorySection />}
         {section === "docs" && <DocsSection />}

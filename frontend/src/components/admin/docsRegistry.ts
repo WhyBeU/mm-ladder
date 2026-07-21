@@ -6,6 +6,7 @@ export interface DocEntry {
 // Order here drives the Docs section's table of contents.
 export const DOCS: DocEntry[] = [
   { slug: "monday-night", title: "Run a Monday night" },
+  { slug: "upload-results", title: "Upload results from EventLink PDF" },
   { slug: "participants", title: "Fix participants & results" },
   { slug: "merge-players", title: "Merge vs. rename players" },
   { slug: "awards", title: "Champions, POTY & cup winners" },

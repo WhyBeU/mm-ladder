@@ -1,20 +1,14 @@
 from datetime import date, timedelta
 
+# Canonical scoring mapping lives in the app package; re-exported here for the migration
+# tooling's existing importers and tests. The app must not depend on migration/ code.
+from mm_ladder.scoring import POINTS_TO_WLD
+
 # Seasons starting on/after War of the Spark switched qualification from total
 # points to "best N event scores"; earlier seasons qualified on points.
 BEST_QUALIFYING_FROM = date(2019, 4, 27)
 
-POINTS_TO_WLD: dict[int, tuple[int, int, int]] = {
-    9: (3, 0, 0),
-    7: (2, 0, 1),
-    6: (2, 1, 0),
-    5: (1, 0, 2),
-    4: (1, 1, 1),
-    3: (1, 2, 0),
-    2: (0, 1, 2),
-    1: (0, 2, 1),
-    0: (0, 3, 0),
-}
+__all__ = ["BEST_QUALIFYING_FROM", "POINTS_TO_WLD", "SEASONS", "season_dir_name"]
 
 # cup_year: which yearly cup this season contributes to.
 # qualifying: False marks non-qualifying seasons (e.g. holiday) — defaults to True.

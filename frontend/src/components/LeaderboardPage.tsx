@@ -247,6 +247,14 @@ export default function LeaderboardPage() {
     enabled: scopeTournamentIds.length > 0 && scope.kind !== "season",
   });
 
+  // Real per-pod participant counts, from the scope's fetched participants (events are built
+  // globally without counts since participants aren't fetched for every tournament up front).
+  const participantCountByTid = useMemo(() => {
+    const m = new Map<number, number>();
+    for (const p of rawParticipants) m.set(p.tournament_id, (m.get(p.tournament_id) ?? 0) + 1);
+    return m;
+  }, [rawParticipants]);
+
   // Champion awards, derived from already-fetched cups + seasons
   const playerAwards = useMemo(() => buildPlayerAwards(yearlyCups, seasons), [yearlyCups, seasons]);
 
@@ -261,7 +269,13 @@ export default function LeaderboardPage() {
   // Resolve context objects
   const cup    = scope.cupId    != null ? yearlyCups.find(y => y.id === scope.cupId)  ?? null : null;
   const season = scope.seasonId != null ? seasons.find(s => s.id === scope.seasonId)  ?? null : null;
-  const event  = scope.eventId  != null ? events.find(e => e.id === scope.eventId)    ?? null : null;
+  const event  = useMemo((): MMLEvent | null => {
+    if (scope.eventId == null) return null;
+    const e = events.find(ev => ev.id === scope.eventId);
+    if (!e) return null;
+    // Fill in each pod's real participant count for the hero.
+    return { ...e, pods: e.pods.map(pod => ({ ...pod, participant_count: participantCountByTid.get(pod.id) ?? 0 })) };
+  }, [scope.eventId, events, participantCountByTid]);
 
   // Scoped events for stats
   const scopedEvents = useMemo((): MMLEvent[] => {

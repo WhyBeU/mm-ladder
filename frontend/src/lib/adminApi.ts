@@ -36,7 +36,77 @@ async function req<T>(method: string, path: string, body?: unknown): Promise<T> 
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }
 
+async function upload<T>(path: string, file: File): Promise<T> {
+  const token = getToken();
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: { ...(token ? { "X-Admin-Token": token } : {}) },
+    body: form,
+  });
+  if (res.status === 401) {
+    clearToken();
+    throw new AuthError("Unauthorized");
+  }
+  if (!res.ok) {
+    let detail = `${res.status}`;
+    try {
+      detail = (await res.json()).detail ?? detail;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new Error(detail);
+  }
+  return (await res.json()) as T;
+}
+
 export const verifyToken = (): Promise<{ status: string }> => req("GET", "/admin/check");
+
+export interface ImportPreviewParticipant {
+  raw_name: string;
+  normalized_name: string;
+  points: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  player_id: number | null;
+  matched_name: string | null;
+  will_create: boolean;
+}
+export interface ImportPreview {
+  eventlink_id: string;
+  pod_number: number;
+  held_on: string;
+  rounds: number;
+  venue: string | null;
+  suggested_season_id: number | null;
+  suggested_season_name: string | null;
+  suggested_name: string;
+  already_imported_tournament_id: number | null;
+  participants: ImportPreviewParticipant[];
+}
+export interface ImportCommitParticipant {
+  player_id: number | null;
+  create_name: string | null;
+  wins: number;
+  losses: number;
+  draws: number;
+}
+export interface ImportCommitRequest {
+  eventlink_id: string;
+  held_on: string;
+  season_id: number;
+  name: string | null;
+  venue: string | null;
+  participants: ImportCommitParticipant[];
+}
+export interface ImportCommitResult {
+  tournament_id: number;
+  name: string | null;
+  participant_count: number;
+  created_player_ids: number[];
+}
 
 export interface AdminPlayer extends ApiPlayer {
   aliases: string[];
@@ -46,7 +116,7 @@ export interface AuditEntry {
   id: number;
   created_at: string;
   actor: string;
-  action: "CREATE" | "UPDATE" | "DELETE";
+  action: "CREATE" | "UPDATE" | "DELETE" | "IMPORT";
   entity_type: string;
   entity_id: number | null;
   label: string;
@@ -83,6 +153,9 @@ export const adminApi = {
   deletePlayer: (id: number) => req<void>("DELETE", `/players/${id}`),
   mergePlayers: (keep_id: number, duplicate_ids: number[]) =>
     req<AdminPlayer>("POST", "/players/merge", { keep_id, duplicate_ids }),
+  // pdf import
+  previewPdf: (file: File) => upload<ImportPreview>("/upload/tournament-results-from-pdf/preview", file),
+  commitPdf: (b: ImportCommitRequest) => req<ImportCommitResult>("POST", "/upload/tournament-results-from-pdf", b),
   // audit log
   listAudit: (params: { entity_type?: string; action?: string; limit: number; offset: number }) => {
     const q = new URLSearchParams();

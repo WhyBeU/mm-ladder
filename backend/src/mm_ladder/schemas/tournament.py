@@ -9,6 +9,7 @@ class TournamentRead(BaseReadSchema):
     season_id: int
     name: str | None
     notes: str | None
+    eventlink_id: str | None
     has_match_detail: bool
     created_at: datetime
     updated_at: datetime

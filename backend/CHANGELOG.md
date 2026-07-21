@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.16.0] - 2026-07-21 — EventLink PDF results import
+
+### Added
+
+- **PDF results import** — `POST /upload/tournament-results-from-pdf/preview` (multipart dry-run) and
+  `POST /upload/tournament-results-from-pdf` (JSON commit), both admin-only (`X-Admin-Token`). Parses
+  an EventLink "Standings by Rank" PDF (`services/pdf_import.py`, via `pypdf`), validates it is a
+  3-round pod, infers each player's W-L-D from points, resolves names against existing players and
+  aliases (unmatched rows flagged to create on the preview), then writes the tournament +
+  participants and an `IMPORT` audit-log entry. Re-importing the same pod is blocked (409; the
+  preview surfaces `already_imported_tournament_id`).
+- **`tournament.eventlink_id`** column — nullable, unique (`uq_tournament_eventlink_id`), Alembic
+  migration `0012`; the dedupe key, exposed on `TournamentRead`.
+- **`mm_ladder/scoring.py`** — canonical `POINTS_TO_WLD` / `wld_for_points()`, promoted out of the
+  `migration/` package so the running app no longer depends on migration tooling (migration now
+  imports it from here).
+
+### Dependencies
+
+- Added `pypdf` (PDF text extraction) and `python-multipart` (FastAPI file uploads).
+
 ## [0.15.2] - 2026-07-16 — Root redirect to Swagger UI
 
 ### Added

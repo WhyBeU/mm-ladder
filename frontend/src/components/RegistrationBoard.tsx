@@ -168,6 +168,43 @@ export default function RegistrationBoard() {
         </p>
         {error && <p style={{ color: "var(--loss)", fontSize: 13, margin: "0 0 8px" }}>{error}</p>}
 
+        {/* Generated pods sit at the top, above the sign-up controls. */}
+        {board && board.pods.length > 0 && (
+          <div style={{ marginBottom: 32, display: "flex", flexDirection: "column", gap: 24 }}>
+            {formats
+              .map((fmt) => ({ fmt, pods: board.pods.filter((p) => p.format_id === fmt.id) }))
+              .filter(({ pods }) => pods.length > 0)
+              .map(({ fmt, pods }) => (
+                <div key={fmt.id}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+                    <h3 className="font-display" style={{ margin: 0, fontSize: 18, color: "var(--parchment)" }}>
+                      {multi ? `${fmt.name} · ` : ""}
+                      {pods.length} pod{pods.length === 1 ? "" : "s"}
+                    </h3>
+                    {staleFor(fmt.id) && (
+                      <span style={{ color: "var(--accent-400)", fontSize: 12 }}>Sign-ups changed since generate — regenerate.</span>
+                    )}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
+                    {pods.map((pod) => (
+                      <PodCard
+                        key={pod.id}
+                        title={`${fmt.name} pod ${pod.ordinal}`}
+                        members={signups.filter((s) => s.pod_id === pod.id).sort((a, b) => (a.seat ?? 0) - (b.seat ?? 0))}
+                        code={pod.code}
+                        copied={copied === pod.id}
+                        onCopy={() => copyCode(pod)}
+                        onSaveCode={(code) => {
+                          if (code !== (pod.code ?? "")) run(() => boardApi.setPodCode(pod.id, code));
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
+
         {boardLoading ? (
           <p style={{ color: "var(--parchment-faint)" }}>Loading board…</p>
         ) : (
@@ -285,43 +322,6 @@ export default function RegistrationBoard() {
                 </button>
               </div>
             </section>
-          </div>
-        )}
-
-        {/* Pods, grouped by format */}
-        {board && board.pods.length > 0 && (
-          <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 24 }}>
-            {formats
-              .map((fmt) => ({ fmt, pods: board.pods.filter((p) => p.format_id === fmt.id) }))
-              .filter(({ pods }) => pods.length > 0)
-              .map(({ fmt, pods }) => (
-                <div key={fmt.id}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
-                    <h3 className="font-display" style={{ margin: 0, fontSize: 18, color: "var(--parchment)" }}>
-                      {multi ? `${fmt.name} · ` : ""}
-                      {pods.length} pod{pods.length === 1 ? "" : "s"}
-                    </h3>
-                    {staleFor(fmt.id) && (
-                      <span style={{ color: "var(--accent-400)", fontSize: 12 }}>Sign-ups changed since generate — regenerate.</span>
-                    )}
-                  </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
-                    {pods.map((pod) => (
-                      <PodCard
-                        key={pod.id}
-                        title={`${fmt.name} pod ${pod.ordinal}`}
-                        members={signups.filter((s) => s.pod_id === pod.id).sort((a, b) => (a.seat ?? 0) - (b.seat ?? 0))}
-                        code={pod.code}
-                        copied={copied === pod.id}
-                        onCopy={() => copyCode(pod)}
-                        onSaveCode={(code) => {
-                          if (code !== (pod.code ?? "")) run(() => boardApi.setPodCode(pod.id, code));
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
           </div>
         )}
 

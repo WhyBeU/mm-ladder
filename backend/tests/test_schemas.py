@@ -91,6 +91,7 @@ class TestTournamentSchemas:
                 "season_id": 1,
                 "name": None,
                 "notes": None,
+                "eventlink_id": None,
                 "has_match_detail": False,
                 "created_at": _NOW,
                 "updated_at": _NOW,

@@ -2,6 +2,28 @@
 
 ## [Unreleased]
 
+## [0.13.0] — 2026-07-21 — EventLink PDF upload, medallion podium & admin polish
+
+### Added
+
+- **Admin "Upload" section** — drop an EventLink "Standings by Rank" PDF, review the parsed result
+  (a set/season selector defaulting to the season covering the event date, editable date / venue /
+  event name, and a per-row player picker with W-L-D inferred from points), then commit it to the
+  ladder. Re-importing the same pod is blocked with a link to the existing event, and a collapsible
+  **Upload activity** log lists past imports as `date · #eventlink_id · event name · edit`. Ships
+  with an admin how-to (`public/docs/upload-results.md`).
+
+### Changed
+
+- **Podium redesigned as stacked medallions** — each of the top three is now a struck metal coin
+  (gold / silver / bronze rim, veteran gilt halo) above a stat plate, sized by rank so the champion
+  always reads largest no matter how many awards a runner-up carries.
+- **Generated pods render at the top** of the Pod-maker (`/pods`) and the sign-up board (`/board`),
+  above the roster and controls (were at the bottom).
+- **Admin → Tournaments** — the list is now searchable and season-filterable, imported events show a
+  📄 marker (with a read-only EventLink id field on the editor), and a new tournament defaults to the
+  season covering today instead of an arbitrary one.
+
 ## [0.12.0] — 2026-07-16 — Discord promo, multi-format Pod-maker & UX fixes
 
 ### Added
