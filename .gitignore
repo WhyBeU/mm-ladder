@@ -9,6 +9,7 @@ __pycache__
 # Brainstorm session files
 .superpowers/
 docs/superpowers/
+fixed.md
 
 # Node / Next.js
 node_modules/
