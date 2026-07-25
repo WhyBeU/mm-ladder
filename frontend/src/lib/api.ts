@@ -50,6 +50,12 @@ export interface ApiPlayer {
   is_veteran: boolean
 }
 
+export interface ApiPerEvent {
+  held_on: string
+  points: number | null
+  tournament_id: number | null
+}
+
 export interface ApiSeasonStanding {
   rank: number
   player_id: number
@@ -64,7 +70,7 @@ export interface ApiSeasonStanding {
   comp_avg: number | null
   comp_avg_n: number
   trophies: number
-  per_event_scores: (number | null)[]
+  per_event: ApiPerEvent[]
   is_veteran: boolean
   season_championships: { set_code: string; season_name: string }[]
   player_of_the_year_years: number[]

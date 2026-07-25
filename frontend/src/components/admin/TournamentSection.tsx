@@ -78,7 +78,7 @@ export default function TournamentSection() {
               <option value="">All seasons</option>
               {seasonsByDate.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name} ({s.set_code})
+                  {s.name} ({s.set_code.toUpperCase()})
                 </option>
               ))}
             </select>

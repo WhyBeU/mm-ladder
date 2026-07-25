@@ -58,6 +58,14 @@ export interface Player {
   is_hidden: boolean;
 }
 
+/** One event (Monday) for a player: the points they scored and the pod they played, or null if missed. */
+export interface PerEvent {
+  held_on: string;
+  season_id: number;
+  points: number | null;
+  tournament_id: number | null;
+}
+
 export interface StandingEntry {
   player_id: number;
   display_name: string;
@@ -72,8 +80,7 @@ export interface StandingEntry {
   rank: number;
   delta: number;
   streak: string;
-  per_event_points: (number | null)[];
-  attended: (0 | 1)[];
+  per_event: PerEvent[];
   comp_avg?: number | null;
   comp_avg_n?: number;
   is_veteran?: boolean;

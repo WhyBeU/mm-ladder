@@ -758,7 +758,7 @@ function AddFormatControl({
         <option value="">Choose a format…</option>
         {seasons.map((s) => (
           <option key={s.id} value={String(s.id)}>
-            {s.set_code} — {s.name}
+            {s.set_code.toUpperCase()} — {s.name}
           </option>
         ))}
         <option value="other">Other…</option>

@@ -67,10 +67,17 @@ function tournamentsToEvents(tournaments: ApiTournament[]): MMLEvent[] {
   return result;
 }
 
+/** One event (date) in scope: the pods held that day, for building per-event attendance/points. */
+interface EventGroup {
+  held_on: string;
+  season_id: number;
+  pod_ids: number[];
+}
+
 function buildStandings(
   participants: ApiParticipant[],
   players: ApiPlayer[],
-  scopeTournamentIds: number[],
+  eventGroups: EventGroup[],
   scopeKind: string = "alltime",
   awards: Map<number, PlayerAwards> = new Map(),
 ): StandingEntry[] {
@@ -105,8 +112,15 @@ function buildStandings(
       rank: 0,
       delta: 0,
       streak: "",
-      per_event_points: scopeTournamentIds.map(tid => byTId.get(tid)?.points ?? null),
-      attended: scopeTournamentIds.map(tid => (byTId.has(tid) ? 1 : 0)) as (0 | 1)[],
+      per_event: eventGroups.map(g => {
+        const played = g.pod_ids.map(id => byTId.get(id)).filter((p): p is ApiParticipant => !!p);
+        return {
+          held_on: g.held_on,
+          season_id: g.season_id,
+          points: played.length ? played.reduce((s, p) => s + p.points, 0) : null,
+          tournament_id: played.length ? played[0].tournament_id : null,
+        };
+      }),
       is_veteran: player.is_veteran,
       season_championships: awards.get(playerId)?.season_championships ?? [],
       player_of_the_year_years: awards.get(playerId)?.player_of_the_year_years ?? [],
@@ -119,7 +133,7 @@ function buildStandings(
   return sorted.map((e, i) => ({ ...e, rank: i + 1 }));
 }
 
-function apiSeasonStandingToEntry(s: ApiSeasonStanding): StandingEntry {
+function apiSeasonStandingToEntry(s: ApiSeasonStanding, seasonId: number): StandingEntry {
   return {
     player_id: s.player_id,
     display_name: s.display_name,
@@ -134,8 +148,7 @@ function apiSeasonStandingToEntry(s: ApiSeasonStanding): StandingEntry {
     rank: s.rank,
     delta: 0,
     streak: "",
-    per_event_points: s.per_event_scores,
-    attended: s.per_event_scores.map(v => (v != null ? 1 : 0)) as (0 | 1)[],
+    per_event: s.per_event.map(e => ({ ...e, season_id: seasonId })),
     comp_avg: s.comp_avg,
     comp_avg_n: s.comp_avg_n,
     is_veteran: s.is_veteran,
@@ -231,6 +244,21 @@ export default function LeaderboardPage() {
     }
   }, [scope, apiTournaments, apiSeasons, events]);
 
+  // Per-event groups for the current scope (one entry per date, pods held that day), aligned
+  // with how the attendance grid renders events — feeds each player's per_event array.
+  const scopeEventGroups = useMemo((): EventGroup[] => {
+    let evs: MMLEvent[];
+    switch (scope.kind) {
+      case "alltime": evs = events; break;
+      case "cup":     evs = events.filter(e => seasons.find(s => s.id === e.season_id)?.yearly_cup_id === scope.cupId); break;
+      case "season":  evs = events.filter(e => e.season_id === scope.seasonId); break;
+      case "event":
+      case "pod":     evs = events.filter(e => e.id === scope.eventId); break;
+      default:        evs = [];
+    }
+    return evs.map(e => ({ held_on: e.held_on, season_id: e.season_id, pod_ids: e.pods.map(p => p.id) }));
+  }, [scope, events, seasons]);
+
   // Season standings — server-computed (includes comp_avg, trophies)
   const { data: apiSeasonStandings } = useQuery({
     queryKey: ["season-standings", scope.seasonId],
@@ -261,10 +289,10 @@ export default function LeaderboardPage() {
   // Compute standings: API-backed for season scope, client-side otherwise
   const scopeStandings = useMemo(() => {
     if (scope.kind === "season" && apiSeasonStandings) {
-      return apiSeasonStandings.map(apiSeasonStandingToEntry);
+      return apiSeasonStandings.map(s => apiSeasonStandingToEntry(s, scope.seasonId!));
     }
-    return buildStandings(rawParticipants, apiPlayers, scopeTournamentIds, scope.kind, playerAwards);
-  }, [scope, apiSeasonStandings, rawParticipants, apiPlayers, scopeTournamentIds, playerAwards]);
+    return buildStandings(rawParticipants, apiPlayers, scopeEventGroups, scope.kind, playerAwards);
+  }, [scope, apiSeasonStandings, rawParticipants, apiPlayers, scopeEventGroups, playerAwards]);
 
   // Resolve context objects
   const cup    = scope.cupId    != null ? yearlyCups.find(y => y.id === scope.cupId)  ?? null : null;
@@ -345,6 +373,7 @@ export default function LeaderboardPage() {
             cup={heroCtx.cup}
             event={event}
             leader={heroLeader}
+            standings={scopeStandings}
             stats={stats}
             eventsCount={scopedEvents.length}
             compAvgN={scope.kind === "season" ? apiSeasonStandings?.[0]?.comp_avg_n : undefined}
@@ -361,6 +390,7 @@ export default function LeaderboardPage() {
             standings={scopeStandings}
             scope={scope}
             season={season}
+            seasons={seasons}
             scopedEvents={scopedEvents}
             defaultSortKey={scope.kind === "cup" ? "trophies" : scope.kind === "season" && season?.qualifying_type === "BEST" ? "comp_avg" : "points"}
             onEventSelect={(e) => setScope({ kind: "event", cupId: scope.cupId, seasonId: e.season_id, eventId: e.id })}

@@ -10,6 +10,7 @@ interface SeasonHeroProps {
   cup: YearlyCup | null;
   event: MMLEvent | null;
   leader: StandingEntry | undefined;
+  standings?: StandingEntry[];
   stats: SeasonStats;
   eventsCount: number;
   compAvgN?: number;
@@ -18,7 +19,7 @@ interface SeasonHeroProps {
   onSeasonSelect?: (season: Season) => void;
 }
 
-export function SeasonHero({ scope, season, cup, event, leader, stats, eventsCount, compAvgN, qualifyingType, cupSeasons, onSeasonSelect }: SeasonHeroProps) {
+export function SeasonHero({ scope, season, cup, event, leader, standings, stats, eventsCount, compAvgN, qualifyingType, cupSeasons, onSeasonSelect }: SeasonHeroProps) {
   let eyebrowLeft = "Standings", eyebrowRight = "";
   let title = "", subtitle = "", badge: string | null = null, keyrune: string | null = null;
 
@@ -135,8 +136,10 @@ export function SeasonHero({ scope, season, cup, event, leader, stats, eventsCou
         </div>
       </div>
 
-      {/* Leader card */}
-      {leader && (
+      {/* All-time: records card in place of the (season-only) current-leader card. */}
+      {scope.kind === "alltime" ? (
+        <AllTimeRecords standings={standings ?? []} />
+      ) : leader && (
         <div className="themed-surface" style={{
           position: "relative", borderRadius: "var(--radius-card)",
           border: "1px solid color-mix(in srgb, var(--accent-400) 30%, transparent)",
@@ -181,7 +184,7 @@ export function SeasonHero({ scope, season, cup, event, leader, stats, eventsCou
               <div style={{ width: 1, alignSelf: "stretch", background: "color-mix(in srgb, var(--accent-400) 25%, transparent)" }} />
               <div style={{ flex: 1 }}>
                 <Sparkline
-                  data={leader.per_event_points.filter((v): v is number => v != null)}
+                  data={leader.per_event.map(e => e.points).filter((v): v is number => v != null)}
                   width={150} height={36}
                   color="var(--primary-300)"
                 />
@@ -192,6 +195,63 @@ export function SeasonHero({ scope, season, cup, event, leader, stats, eventsCou
         </div>
       )}
     </section>
+  );
+}
+
+// ---------- AllTimeRecords ----------
+// Record-holder card shown in the all-time hero (replaces the season "current leader").
+function bestBy(entries: StandingEntry[], score: (e: StandingEntry) => number): StandingEntry | undefined {
+  return entries.reduce<StandingEntry | undefined>(
+    (best, e) => (best === undefined || score(e) > score(best) ? e : best),
+    undefined,
+  );
+}
+
+const RATE_MIN_EVENTS = 52; // matches the veteran threshold — enough events to be meaningful
+
+function AllTimeRecords({ standings }: { standings: StandingEntry[] }) {
+  // Best win-rate is restricted to players with a full season's worth of events; fall back to
+  // all players only if nobody qualifies (won't happen with real data).
+  const ratePool = standings.filter(e => e.tournaments_played >= RATE_MIN_EVENTS);
+  const records = [
+    { icon: "🏆", label: "Most 3-0 nights", caveat: undefined as string | undefined, holder: bestBy(standings, e => e.trophies), fmt: (e: StandingEntry) => `${e.trophies}` },
+    { icon: "📅", label: "Most events", caveat: undefined, holder: bestBy(standings, e => e.tournaments_played), fmt: (e: StandingEntry) => `${e.tournaments_played}` },
+    { icon: "🎯", label: "Best win rate", caveat: `min. ${RATE_MIN_EVENTS} events`, holder: bestBy(ratePool.length ? ratePool : standings, e => e.win_pct), fmt: (e: StandingEntry) => fmtPct(e.win_pct) },
+    { icon: "💠", label: "Most points", caveat: undefined, holder: bestBy(standings, e => e.points), fmt: (e: StandingEntry) => `${e.points}` },
+  ];
+
+  return (
+    <div className="themed-surface" style={{
+      position: "relative", borderRadius: "var(--radius-card)",
+      border: "1px solid color-mix(in srgb, var(--accent-400) 30%, transparent)",
+      background: "linear-gradient(135deg, color-mix(in srgb, var(--accent-400) 10%, var(--ink-900)) 0%, var(--ink-850) 70%)",
+      padding: "18px 22px", overflow: "hidden", boxShadow: "var(--shadow-card)",
+    }}>
+      <div style={{
+        position: "absolute", right: -20, top: -20, width: 140, height: 140, borderRadius: "50%",
+        background: "radial-gradient(circle, color-mix(in srgb, var(--accent-400) 30%, transparent), transparent 70%)",
+      }} />
+      <div style={{ position: "relative" }}>
+        <div className="eyebrow" style={{ color: "var(--accent-300)", marginBottom: 12 }}>● All-time records</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {records.map(r => (
+            <div key={r.label} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 15, width: 20, textAlign: "center", flexShrink: 0 }} aria-hidden>{r.icon}</span>
+              <span style={{ width: 108, flexShrink: 0, display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
+                <span style={{ fontSize: 12, color: "var(--parchment-faint)" }}>{r.label}</span>
+                {r.caveat && <span style={{ fontSize: 9, color: "var(--parchment-faint)", opacity: 0.7 }}>{r.caveat}</span>}
+              </span>
+              <span className="font-display" style={{ fontSize: 14, color: "var(--parchment)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {r.holder?.display_name ?? "—"}
+              </span>
+              <span className="font-display" style={{ marginLeft: "auto", fontSize: 16, color: "var(--accent-300)", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
+                {r.holder ? r.fmt(r.holder) : "—"}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 

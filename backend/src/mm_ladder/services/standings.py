@@ -1,4 +1,6 @@
 from collections import defaultdict
+from datetime import date
+from itertools import groupby
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -28,6 +30,10 @@ class StandingsService:
             return []
 
         tournament_ids = [t.id for t in tournaments]
+
+        event_groups: list[tuple[date, list[int]]] = [
+            (held_on, [t.id for t in grp]) for held_on, grp in groupby(tournaments, key=lambda t: t.held_on)
+        ]
 
         result = await self._session.execute(
             select(TournamentParticipant, Player)
@@ -74,11 +80,17 @@ class StandingsService:
             trophies = sum(1 for tp, _ in parts if tp.points == 9)
 
             by_tournament = {tp.tournament_id: tp.points for tp, _ in parts}
-            per_event_scores: list[int | None] = [by_tournament.get(t.id) for t in tournaments[:event_count]]
-            while len(per_event_scores) < event_count:
-                per_event_scores.append(None)
+            per_event: list[dict[str, object]] = []
+            comp_points: list[int] = []
+            for idx, (held_on, pod_ids) in enumerate(event_groups):
+                played_points = [by_tournament[tid] for tid in pod_ids if tid in by_tournament]
+                played_tid = next((tid for tid in pod_ids if tid in by_tournament), None)
+                pts = sum(played_points) if played_points else None
+                per_event.append({"held_on": held_on, "points": pts, "tournament_id": played_tid})
+                if idx < event_count and pts is not None:
+                    comp_points.append(pts)
 
-            non_null_sorted = sorted([s for s in per_event_scores if s is not None], reverse=True)
+            non_null_sorted = sorted(comp_points, reverse=True)
             comp_avg: float | None = sum(non_null_sorted[:comp_avg_n]) / comp_avg_n if non_null_sorted else None
 
             stats_list.append(
@@ -95,7 +107,7 @@ class StandingsService:
                     "comp_avg": comp_avg,
                     "comp_avg_n": comp_avg_n,
                     "trophies": trophies,
-                    "per_event_scores": per_event_scores,
+                    "per_event": per_event,
                     "is_veteran": total_events_by_player.get(player_id, 0) > VETERAN_THRESHOLD,
                     "season_championships": player_awards[player_id]["season_championships"],
                     "player_of_the_year_years": player_awards[player_id]["player_of_the_year_years"],
