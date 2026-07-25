@@ -16,7 +16,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "MM Ladder",
+  title: "Magic Mates",
   description: "Magic Mates Monday draft league tracker",
 };
 

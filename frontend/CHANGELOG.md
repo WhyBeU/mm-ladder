@@ -2,6 +2,33 @@
 
 ## [Unreleased]
 
+## [0.14.0] — 2026-07-25 — Event-attendance visualisations & all-time records
+
+### Fixed
+
+- **Per-event attendance mis-highlighting** — a player who attended a draft on a date that had two
+  pods was shown as having *missed* it, with every later event shifted. Attendance and points now key
+  off a structured per-event model (aligned per event date, not per pod), so multi-pod dates render
+  correctly.
+
+### Added
+
+- **All-time attendance heatmap** — the flat cell strip is replaced, in all-time scope, by a
+  GitHub-style year × week heatmap: cells shaded by points earned (0→9), a trophy on 9-point nights,
+  years the player never attended hidden, and season boundaries marked by a divider + horizontal
+  set-code label (flips left when the next season starts within two weeks).
+- **All-time records card** — replaces the (season-only) "current leader" in the all-time hero:
+  most 3-0 nights, most events, best win rate (min. 52 events), and most points.
+
+### Changed
+
+- **Points-by-event chart** — season/cup hover now shows `#pod · date · pts`. In all-time the chart
+  is dropped in favour of the points-shaded heatmap.
+- **Cup attendance** — shown as one compact strip per season with attended/total counts.
+- **Set codes are capitalised** across the app (heatmap, cup strips, timeline tooltip, admin,
+  Pod-maker and sign-up board selectors).
+- **Browser tab title** — "MM Ladder" → "Magic Mates".
+
 ## [0.13.0] — 2026-07-21 — EventLink PDF upload, medallion podium & admin polish
 
 ### Added

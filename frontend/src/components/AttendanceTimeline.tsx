@@ -73,7 +73,7 @@ export default function AttendanceTimeline({ series }: { series: AttendanceSerie
                 style={{ position: "absolute", left: x, top: 0, transform: "translateX(-50%)", fontSize: 18 }}
               >
                 <i className={`ss ss-${m.keyrune} ss-fw`} style={{ color }} />
-                <span className="aw-tip">{m.setCode}</span>
+                <span className="aw-tip">{m.setCode.toUpperCase()}</span>
               </span>
             );
           })}

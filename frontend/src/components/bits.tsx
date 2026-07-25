@@ -1,7 +1,5 @@
 "use client";
 
-import type { StandingEntry } from "@/lib/types";
-
 // ---------- Format helpers ----------
 export const fmtPct = (n: number) => `${(n * 100).toFixed(0)}%`;
 export const fmtAvg = (n: number) => n.toFixed(1);
@@ -133,22 +131,25 @@ interface SparklineProps {
   height?: number;
   color?: string;
   showLabels?: boolean;
+  /** Per-point tooltip text, aligned to `data` (nulls in `data` are dropped alongside their tip). */
+  tips?: (string | null)[];
 }
 
-export function Sparkline({ data, width = 80, height = 24, color = "var(--accent-400)", showLabels }: SparklineProps) {
-  const valid = data.filter((v): v is number => v != null);
-  if (!valid.length) return null;
+export function Sparkline({ data, width = 80, height = 24, color = "var(--accent-400)", showLabels, tips }: SparklineProps) {
+  // Keep only points with a value, carrying each point's tip through the same filter.
+  const kept = data
+    .map((v, i) => ({ v, tip: tips?.[i] ?? null }))
+    .filter((d): d is { v: number; tip: string | null } => d.v != null);
+  if (!kept.length) return null;
+  const valid = kept.map(d => d.v);
   const max = Math.max(...valid);
   const min = Math.min(...valid);
   const flat = max === min;
   const labelPad = showLabels ? 16 : 0;
   const chartHeight = height - labelPad;
-  const stepX = valid.length > 1 ? width / (valid.length - 1) : 0;
-  const pts = valid.map((v, i) => {
-    const x = i * stepX;
-    const y = labelPad + (flat ? chartHeight / 2 : chartHeight - ((v - min) / (max - min)) * chartHeight * 0.85 - chartHeight * 0.075);
-    return [x, y, v] as [number, number, number];
-  });
+  const stepX = kept.length > 1 ? width / (kept.length - 1) : 0;
+  const yFor = (v: number) => labelPad + (flat ? chartHeight / 2 : chartHeight - ((v - min) / (max - min)) * chartHeight * 0.85 - chartHeight * 0.075);
+  const pts = kept.map((d, i) => [i * stepX, yFor(d.v), d.v, d.tip] as [number, number, number, string | null]);
   const path = pts.map(([x, y], i) => (i ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1)).join(" ");
   const area = path + ` L ${width},${height} L 0,${height} Z`;
   const gradId = `sl-${color.replace(/[^a-z0-9]/gi, "")}`;
@@ -162,13 +163,13 @@ export function Sparkline({ data, width = 80, height = 24, color = "var(--accent
       </defs>
       <path d={area} fill={`url(#${gradId})`} />
       <path d={path} fill="none" stroke={color} strokeWidth="1.4" strokeLinejoin="round" strokeLinecap="round" />
-      {pts.map(([x, y, v], i) => (
+      {pts.map(([x, y, v, tip], i) => (
         <g key={i}>
           <circle cx={x} cy={y} r={i === pts.length - 1 ? 1.8 : 1.2} fill={color} />
-          {/* Invisible larger hit area so hovering a point reveals its total — useful
+          {/* Invisible larger hit area so hovering a point reveals its detail — useful
               when per-point labels are hidden (many events). */}
           <circle cx={x} cy={y} r={6} fill="transparent" style={{ cursor: "default" }}>
-            <title>{`${v} pts`}</title>
+            <title>{tip ?? `${v} pts`}</title>
           </circle>
           {showLabels && (
             <text x={x} y={y - 4} textAnchor="middle" fontSize={9} fill={color} opacity="0.9" fontFamily="var(--font-mono)">
@@ -178,42 +179,5 @@ export function Sparkline({ data, width = 80, height = 24, color = "var(--accent
         </g>
       ))}
     </svg>
-  );
-}
-
-// ---------- PointsByEventChart ----------
-interface PointsByEventChartProps { player: StandingEntry }
-
-export function PointsByEventChart({ player }: PointsByEventChartProps) {
-  const pts = player.per_event_points;
-  const validValues = pts.filter((v): v is number => v != null);
-  const max = Math.max(...validValues, 1);
-  return (
-    <>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 60 }}>
-        {pts.map((v, idx) => {
-          if (v == null) {
-            return (
-              <div key={idx} style={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
-                <div style={{ height: 6, borderTop: "2px dashed color-mix(in srgb, var(--parchment-faint) 50%, transparent)" }} />
-              </div>
-            );
-          }
-          const h = `${(v / max) * 100}%`;
-          const bg = v >= 7
-            ? "linear-gradient(180deg, var(--accent-400), var(--accent-500))"
-            : "linear-gradient(180deg, var(--primary-400), var(--primary-700))";
-          return (
-            <div key={idx} title={`Event ${idx + 1}: ${v} pts`}
-              style={{ flex: 1, height: h, minHeight: 4, background: bg, borderRadius: 2, position: "relative" }}>
-              <div style={{ position: "absolute", top: -16, left: 0, right: 0, textAlign: "center", fontSize: 9, color: "var(--parchment-muted)", fontVariantNumeric: "tabular-nums" }}>{v}</div>
-            </div>
-          );
-        })}
-      </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "var(--parchment-faint)", marginTop: 8, fontVariantNumeric: "tabular-nums" }}>
-        <span>Event 1</span><span>Event {pts.length}</span>
-      </div>
-    </>
   );
 }

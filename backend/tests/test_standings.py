@@ -76,7 +76,7 @@ async def test_standings_basic_order(client: AsyncClient) -> None:
     assert abs(data[1]["comp_avg"] - 4.5) < 0.01
 
 
-async def test_standings_per_event_scores_has_nulls_for_missed(client: AsyncClient) -> None:
+async def test_standings_per_event_has_nulls_for_missed(client: AsyncClient) -> None:
     season_id = await _make_season(client, event_count=2)
     player_a = await _make_player(client, "Alice")
     t1 = await _make_tournament(client, season_id, "2026-02-01")
@@ -87,7 +87,33 @@ async def test_standings_per_event_scores_has_nulls_for_missed(client: AsyncClie
     resp = await client.get(f"/seasons/{season_id}/standings")
     data = resp.json()
     assert len(data) == 1
-    assert data[0]["per_event_scores"] == [9, None]
+    per_event = data[0]["per_event"]
+    assert [e["points"] for e in per_event] == [9, None]
+    assert [e["held_on"] for e in per_event] == ["2026-02-01", "2026-03-01"]
+    assert per_event[0]["tournament_id"] == t1
+    assert per_event[1]["tournament_id"] is None
+
+
+async def test_standings_two_pods_same_date_collapse_to_one_event(client: AsyncClient) -> None:
+    # Two pods on the same Monday → one event. A player in only one pod contributes a single
+    # per-event slot (its points + the pod they played), not two.
+    season_id = await _make_season(client, event_count=2)
+    player_a = await _make_player(client, "Alice")
+    pod1 = await _make_tournament(client, season_id, "2026-02-01")
+    await _make_tournament(client, season_id, "2026-02-01")  # pod2 same date — Alice not in it
+    t_next = await _make_tournament(client, season_id, "2026-02-08")
+
+    await _add_participant(client, pod1, player_a, wins=3, losses=0, draws=0)  # 9 pts
+    await _add_participant(client, t_next, player_a, wins=2, losses=1, draws=0)  # 6 pts
+
+    resp = await client.get(f"/seasons/{season_id}/standings")
+    data = resp.json()
+    per_event = data[0]["per_event"]
+    # Feb 1 (two pods) collapses to a single event, then Feb 8 — two events, not three.
+    assert [e["held_on"] for e in per_event] == ["2026-02-01", "2026-02-08"]
+    assert [e["points"] for e in per_event] == [9, 6]
+    assert per_event[0]["tournament_id"] == pod1
+    assert per_event[1]["tournament_id"] == t_next
 
 
 async def test_standings_comp_avg_none_if_no_games(client: AsyncClient) -> None:

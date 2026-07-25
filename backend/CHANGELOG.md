@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.17.0] - 2026-07-25 — Structured per-event season standings
+
+### Changed
+
+- **Season standings now return a structured `per_event` array** in place of the flat
+  `per_event_scores` list. Each entry is `{ held_on, points, tournament_id }` — the event date, the
+  player's points that night (`null` if they missed it), and the pod (`Tournament`) they played.
+  Pods sharing a date (multiple tournaments on one Monday) are **grouped into a single event**, so
+  per-event attendance and points align 1:1 with how the front-end groups events — fixing attendance
+  that shifted once a date had two pods.
+- **All real events are returned** (no truncation to `event_count`); a season that runs more dates
+  than its planned `event_count` now surfaces them all. `comp_avg` is **unchanged** — still the best
+  `comp_avg_n` scores among the first `event_count` events.
+
+### API
+
+- `SeasonStandingRead.per_event_scores: list[int | None]` → `per_event: list[PerEventRead]`
+  (`PerEventRead = { held_on: date, points: int | None, tournament_id: int | None }`).
+
 ## [0.16.0] - 2026-07-21 — EventLink PDF results import
 
 ### Added
