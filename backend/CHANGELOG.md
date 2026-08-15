@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.17.1] - 2026-08-15 — Prod database snapshot script
+
+Tooling and docs only — no API or schema change.
+
+### Added
+
+- **`scripts/pull_prod_db.py`** — copies the live Neon database into a local SQLite file
+  (`backend/mm_ladder_prod.db` by default; `--dest` for another path, `--dest-url` for another
+  database). The destination is built with `alembic upgrade head` so `alembic_version` is stamped
+  and the API's start-up auto-migrate stays a no-op, then every table is copied in FK-safe order via
+  the existing `migration.copy_to_pg.copy_database`, leaving computed columns for the destination to
+  recompute. The source is only ever read from; an existing snapshot needs `--force`, and copying a
+  database onto itself is refused (SQLite URLs compared as resolved paths). `alembic/env.py` prefers
+  `$DATABASE_URL`, so the variable is pinned to the destination during the upgrade — a shell already
+  aimed at Neon cannot migrate prod by accident.
+- **`scripts/attendance_report.py`** — attendance & revenue report: unique players per ISO week,
+  rolled up per month, priced at a per-person rate that steps up on a cut-off date. Totals per
+  calendar year (`--years`) or per yearly cup (`--cup-years`); `--weekly` also writes a CSV.
+  Read-only.
+- **`scripts/_db_url.py`** — the URL plumbing both scripts share: `NEON_DIRECT_URL` resolution
+  (environment, falling back to `backend/.env`) and password masking before any URL is printed.
+
+### Changed
+
+- **`README.md`** — new "Local scripts" section documenting both scripts.
+
 ## [0.17.0] - 2026-07-25 — Structured per-event season standings
 
 ### Changed
