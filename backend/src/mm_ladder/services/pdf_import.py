@@ -30,7 +30,9 @@ REQUIRED_ROUNDS = 3
 
 _EVENT_RE = re.compile(r"Event:\s*(?P<title>.+?)\s*\((?P<id>\d+)\)")
 _POD_RE = re.compile(r"Pod\s*(\d+)", re.IGNORECASE)
-_DATE_RE = re.compile(r"Event Date:\s*(\d{2})/(\d{2})/(\d{4})")
+_DATE_RE = re.compile(r"Event Date:\s*(\d{1,2})/(\d{1,2})/(\d{4})")
+_ANY_DATE_RE = re.compile(r"\b(\d{1,2})/(\d{1,2})/\d{2,4}\b")
+_TWELVE_HOUR_RE = re.compile(r"\d{1,2}:\d{2}\s*[AP]M", re.IGNORECASE)
 _VENUE_RE = re.compile(r"Event Information:\s*(?P<venue>.+?)\s+Opponents\b")
 _ROUNDS_RE = re.compile(r"Round\s+(\d+)\s+Standings by Rank")
 # A standings row: rank, name, then Pod, Points, OMW%, GW%, OGW% (five integers).
@@ -69,6 +71,39 @@ def tidy_name(raw: str) -> str:
     return re.sub(r"\s+", " ", raw.replace("\xa0", " ")).strip()
 
 
+def _today() -> date:
+    """Indirection so tests can freeze "now" for the ambiguous-date tie-break."""
+    return date.today()
+
+
+def _is_month_first(flat: str, first: int, second: int, year: int) -> bool:
+    """Decide whether this report writes dates M/D/Y rather than D/M/Y.
+
+    EventLink is printed from the browser, so the dates carry whoever printed it's locale —
+    the same playgroup yields "20/07/2026, 22:01" from one laptop and "8/13/2026, 4:08 PM"
+    from another. A component over 12 can only be a day, so it pins the ordering: we trust
+    the event date's own digits first, then the print timestamps in the header/footer, then
+    fall back to a 12-hour clock as a US-locale tell.
+
+    When nothing pins it — 01/02/2026 is a valid 1 February and a valid 2 January — pick
+    whichever reading lands closest to today. Standings are imported within days of the pod
+    they report, so the near date is the real one and the far one is months out. An exact
+    tie goes to day-first, the playgroup's own locale.
+    """
+    candidates = [(first, second)] + [(int(a), int(b)) for a, b in _ANY_DATE_RE.findall(flat)]
+    for a, b in candidates:
+        if a > 12:
+            return False
+        if b > 12:
+            return True
+    if _TWELVE_HOUR_RE.search(flat):
+        return True
+    if not (1 <= first <= 12 and 1 <= second <= 12):
+        return False  # a 0 component: invalid either way, let the caller report it day-first
+    today = _today()
+    return abs((date(year, first, second) - today).days) < abs((date(year, second, first) - today).days)
+
+
 def _extract_text(data: bytes) -> str:
     try:
         reader = PdfReader(BytesIO(data))
@@ -100,11 +135,12 @@ def parse_standings_text(raw_text: str) -> ParsedPdf:
     date_match = _DATE_RE.search(flat)
     if not date_match:
         raise BadRequestError("Could not find the event date in the PDF.")
-    dd, mm, yyyy = (int(g) for g in date_match.groups())
+    first, second, yyyy = (int(g) for g in date_match.groups())
+    mm, dd = (first, second) if _is_month_first(flat, first, second, yyyy) else (second, first)
     try:
         held_on = date(yyyy, mm, dd)
     except ValueError:
-        raise BadRequestError(f"Invalid event date: {dd:02d}/{mm:02d}/{yyyy}.") from None
+        raise BadRequestError(f"Invalid event date: {first}/{second}/{yyyy}.") from None
 
     rounds_match = _ROUNDS_RE.search(flat)
     if not rounds_match:

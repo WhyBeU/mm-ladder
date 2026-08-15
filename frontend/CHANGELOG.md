@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.14.1] — 2026-08-15 — Ladder opens on the season being drafted
+
+### Fixed
+
+- **The ladder landed on Cube 2027 instead of The Hobbit.** Seasons overlap — the Cube season runs
+  a full year underneath the set seasons — and the default scope took the *first* season covering
+  today, i.e. whichever the API happened to list first. It now uses `pickActiveSeason`: among the
+  seasons covering today, a qualifying one (`qualifier_count > 0`) wins, otherwise the one that
+  started most recently, so a new set takes over the landing page the day it starts. Unchanged
+  between seasons: the most recently ended season. Matches `SeasonService.current_season` on the
+  backend.
+
 ## [0.14.0] — 2026-07-25 — Event-attendance visualisations & all-time records
 
 ### Fixed

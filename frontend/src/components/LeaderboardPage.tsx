@@ -20,6 +20,7 @@ import { Podium } from "@/components/Podium";
 import { QualifiedCards } from "@/components/QualifiedCards";
 import AttendanceTimeline from "@/components/AttendanceTimeline";
 import { buildAttendanceSeries } from "@/lib/attendance";
+import { pickActiveSeason } from "@/lib/seasonDates";
 import ScopeBar from "@/components/ScopeBar";
 import SiteFooter, { DiscordButton } from "@/components/SiteFooter";
 import { WEEKLY_DRAFT_LINE } from "@/lib/site";
@@ -205,12 +206,9 @@ export default function LeaderboardPage() {
   const seasons = useMemo(() => apiSeasons.map(s => toSeason(s, today)), [apiSeasons, today]);
   const events = useMemo(() => tournamentsToEvents(apiTournaments), [apiTournaments]);
 
-  // Derive default scope from loaded seasons (current season, or most recent)
+  // Derive default scope from loaded seasons (the active season, or the most recent)
   const defaultScope = useMemo((): Scope => {
-    if (seasons.length === 0) return { kind: "season" };
-    const current =
-      seasons.find(s => s.starts_on <= today && today <= s.ends_on) ??
-      [...seasons].sort((a, b) => b.ends_on.localeCompare(a.ends_on))[0];
+    const current = pickActiveSeason(seasons, today);
     return current
       ? { kind: "season", cupId: current.yearly_cup_id ?? undefined, seasonId: current.id }
       : { kind: "season" };

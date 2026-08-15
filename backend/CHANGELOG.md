@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.17.2] - 2026-08-15 — Active season with overlapping seasons + EventLink date locales
+
+### Fixed
+
+- **The active season is now the latest-started season covering today, preferring a qualifying
+  one** (`SeasonService.current_season`). It ranked by `ends_on`, so the year-long Cube season —
+  which runs underneath every set season — won every day it covered: the ladder opened on Cube 2027
+  instead of The Hobbit, the board's default format followed it, and PDF imports were filed under
+  Cube. A season that sends players to the yearly cup (`qualifier_count > 0`) still wins over a
+  later-started one, so a cup race in its final weeks keeps the spotlight.
+
+### Added
+
+- **Locale-aware EventLink event dates** — the report is printed from a browser, so its dates carry
+  whoever printed it's locale (`20/07/2026, 22:01` from one laptop, `8/13/2026, 4:08 PM` from
+  another). `parse_standings_text` now reads D/M/Y or M/D/Y: a component over 12 pins the ordering
+  (event date first, then the print timestamps), then a 12-hour clock as a US-locale tell, and when
+  a date is genuinely ambiguous (`01/02/2026`) it takes whichever reading lands closest to today —
+  standings are imported within days of the pod they report. Exact ties stay day-first.
+- **`tests/fixtures/eventlink_pod3.pdf`** — a real US-locale printout (11-player pod, unpadded
+  `8/10/2026` dates, 12-hour clock) covering the above end to end.
+
 ## [0.17.1] - 2026-08-15 — Prod database snapshot script
 
 Tooling and docs only — no API or schema change.
