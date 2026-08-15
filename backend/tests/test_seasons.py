@@ -168,3 +168,57 @@ async def test_current_season_none_when_empty(async_session) -> None:
     from mm_ladder.services.season import SeasonService
 
     assert await SeasonService(async_session).current_season() is None
+
+
+async def test_current_season_prefers_the_latest_started_of_overlapping_seasons(async_session) -> None:
+    from datetime import date
+
+    from mm_ladder.interface.season import SeasonCreateRequest
+    from mm_ladder.services.season import SeasonService
+
+    svc = SeasonService(async_session)
+    # A year-long Cube season runs underneath the set seasons; the set that just started is
+    # the one being drafted, even though Cube ends much later.
+    await svc.create(
+        SeasonCreateRequest(
+            name="Cube", set_code="C27", starts_on=date(2026, 8, 3), ends_on=date(2027, 9, 26), qualifier_count=0
+        )
+    )
+    await svc.create(
+        SeasonCreateRequest(
+            name="Hobbit", set_code="HOB", starts_on=date(2026, 8, 10), ends_on=date(2026, 9, 27), qualifier_count=0
+        )
+    )
+
+    season = await svc.current_season(today=date(2026, 8, 15))
+    assert season is not None
+    assert season.set_code == "HOB"
+
+
+async def test_current_season_prefers_a_qualifying_season_over_a_later_start(async_session) -> None:
+    from datetime import date
+
+    from mm_ladder.interface.season import SeasonCreateRequest
+    from mm_ladder.services.season import SeasonService
+
+    svc = SeasonService(async_session)
+    await svc.create(
+        SeasonCreateRequest(
+            name="Cube", set_code="C27", starts_on=date(2026, 8, 3), ends_on=date(2027, 9, 26), qualifier_count=0
+        )
+    )
+    await svc.create(
+        SeasonCreateRequest(
+            name="Fracture", set_code="FRA", starts_on=date(2026, 9, 28), ends_on=date(2026, 11, 27), qualifier_count=2
+        )
+    )
+    await svc.create(
+        SeasonCreateRequest(
+            name="Star Trek", set_code="TRK", starts_on=date(2026, 11, 9), ends_on=date(2026, 12, 31), qualifier_count=0
+        )
+    )
+
+    # Star Trek started most recently, but Fracture is still running and sends players to the cup.
+    season = await svc.current_season(today=date(2026, 11, 15))
+    assert season is not None
+    assert season.set_code == "FRA"

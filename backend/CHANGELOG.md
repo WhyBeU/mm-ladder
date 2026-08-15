@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.18.0] - 2026-08-15 — Active season with overlapping seasons, EventLink date locales & prod snapshot script
+
+### Fixed
+
+- **The active season is now the latest-started season covering today, preferring a qualifying
+  one** (`SeasonService.current_season`). It ranked by `ends_on`, so the year-long Cube season —
+  which runs underneath every set season — won every day it covered: the ladder opened on Cube 2027
+  instead of The Hobbit, the board's default format followed it, and PDF imports were filed under
+  Cube. A season that sends players to the yearly cup (`qualifier_count > 0`) still wins over a
+  later-started one, so a cup race in its final weeks keeps the spotlight.
+
+### Added
+
+- **Locale-aware EventLink event dates** — the report is printed from a browser, so its dates carry
+  whoever printed it's locale (`20/07/2026, 22:01` from one laptop, `8/13/2026, 4:08 PM` from
+  another). `parse_standings_text` now reads D/M/Y or M/D/Y: a component over 12 pins the ordering
+  (event date first, then the print timestamps), then a 12-hour clock as a US-locale tell, and when
+  a date is genuinely ambiguous (`01/02/2026`) it takes whichever reading lands closest to today —
+  standings are imported within days of the pod they report. Exact ties stay day-first.
+- **`tests/fixtures/eventlink_pod3.pdf`** — a real US-locale printout (11-player pod, unpadded
+  `8/10/2026` dates, 12-hour clock) covering the above end to end.
+- **`scripts/pull_prod_db.py`** — copies the live Neon database into a local SQLite file
+  (`backend/mm_ladder_prod.db` by default; `--dest` for another path, `--dest-url` for another
+  database). The destination is built with `alembic upgrade head` so `alembic_version` is stamped
+  and the API's start-up auto-migrate stays a no-op, then every table is copied in FK-safe order via
+  the existing `migration.copy_to_pg.copy_database`, leaving computed columns for the destination to
+  recompute. The source is only ever read from; an existing snapshot needs `--force`, and copying a
+  database onto itself is refused (SQLite URLs compared as resolved paths). `alembic/env.py` prefers
+  `$DATABASE_URL`, so the variable is pinned to the destination during the upgrade — a shell already
+  aimed at Neon cannot migrate prod by accident.
+- **`scripts/attendance_report.py`** — attendance & revenue report: unique players per ISO week,
+  rolled up per month, priced at a per-person rate that steps up on a cut-off date. Totals per
+  calendar year (`--years`) or per yearly cup (`--cup-years`); `--weekly` also writes a CSV.
+  Read-only.
+- **`scripts/_db_url.py`** — the URL plumbing both scripts share: `NEON_DIRECT_URL` resolution
+  (environment, falling back to `backend/.env`) and password masking before any URL is printed.
+
+### Changed
+
+- **`README.md`** — new "Local scripts" section documenting both scripts.
+
 ## [0.17.0] - 2026-07-25 — Structured per-event season standings
 
 ### Changed

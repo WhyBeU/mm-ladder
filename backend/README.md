@@ -225,6 +225,45 @@ breakdown listing one award per line — ordered by total descending, then name:
                               ...
 ```
 
+## Local scripts (`scripts/`)
+
+Standalone helpers, run with `poetry run python scripts/<name>.py` from `backend/`. Anything
+touching prod reads `NEON_DIRECT_URL` from the environment, falling back to `backend/.env`, so no
+export is needed; passwords are masked before any URL is printed.
+
+### Prod database snapshot
+
+Copies the live Neon database into a local SQLite file — handy for poking at real data, testing a
+migration against real rows, or running the API on a copy without any risk to prod (the source is
+only ever read from).
+
+```bash
+poetry run python scripts/pull_prod_db.py                      # -> backend/mm_ladder_prod.db
+poetry run python scripts/pull_prod_db.py --force              # replace an existing snapshot
+poetry run python scripts/pull_prod_db.py --dest logs/2026-08-15.db
+poetry run python scripts/pull_prod_db.py --dest-url postgresql+psycopg://localhost/mm --force
+```
+
+The destination is built by `alembic upgrade head` (so `alembic_version` is stamped and the API's
+start-up auto-migrate is a no-op), then every table is copied in FK-safe order, leaving computed
+columns for the destination to recompute. Snapshots are `*.db` files, which are gitignored. Run the
+API against one with:
+
+```powershell
+$env:DATABASE_URL = "sqlite+aiosqlite:///./mm_ladder_prod.db"; poetry run uvicorn mm_ladder.app:app --port 8000
+```
+
+### Attendance & revenue report
+
+Counts unique players per ISO week, rolls them up per month, and prices each attendance at a rate
+that steps up on a cut-off date. Read-only — see the module docstring for every flag.
+
+```bash
+poetry run python scripts/attendance_report.py                 # local mm_ladder.db, 2025+2026
+poetry run python scripts/attendance_report.py --prod          # Neon prod
+poetry run python scripts/attendance_report.py --prod --cup-years --weekly
+```
+
 ## Running the API server
 
 All commands must be run from the `backend/` directory.

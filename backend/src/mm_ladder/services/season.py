@@ -43,15 +43,21 @@ class SeasonService:
         return season
 
     async def current_season(self, today: date | None = None) -> Season | None:
-        """The season covering ``today``, else the most recent by ``ends_on``, else None."""
+        """The season covering ``today``, else the most recent by ``ends_on``, else None.
+
+        Seasons overlap — a Cube season runs for a year underneath the set seasons — so several
+        usually cover a given day. A qualifying season (one that sends players to the yearly cup)
+        wins; otherwise the one that started most recently, i.e. the set being drafted right now.
+        Ranking by ``ends_on`` instead would hand every day to the long Cube season.
+        """
         today = today or date.today()
         seasons = list(await self.list())
         if not seasons:
             return None
         covering = [s for s in seasons if s.starts_on <= today <= s.ends_on]
         if covering:
-            return max(covering, key=lambda s: s.ends_on)
-        return max(seasons, key=lambda s: s.ends_on)
+            return max(covering, key=lambda s: (s.qualifier_count > 0, s.starts_on, s.id))
+        return max(seasons, key=lambda s: (s.ends_on, s.id))
 
     async def create(self, data: SeasonCreateRequest) -> Season:
         season = Season(
