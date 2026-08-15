@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.17.2] - 2026-08-15 — Active season with overlapping seasons + EventLink date locales
+## [0.18.0] - 2026-08-15 — Active season with overlapping seasons, EventLink date locales & prod snapshot script
 
 ### Fixed
 
@@ -21,13 +21,6 @@
   standings are imported within days of the pod they report. Exact ties stay day-first.
 - **`tests/fixtures/eventlink_pod3.pdf`** — a real US-locale printout (11-player pod, unpadded
   `8/10/2026` dates, 12-hour clock) covering the above end to end.
-
-## [0.17.1] - 2026-08-15 — Prod database snapshot script
-
-Tooling and docs only — no API or schema change.
-
-### Added
-
 - **`scripts/pull_prod_db.py`** — copies the live Neon database into a local SQLite file
   (`backend/mm_ladder_prod.db` by default; `--dest` for another path, `--dest-url` for another
   database). The destination is built with `alembic upgrade head` so `alembic_version` is stamped
