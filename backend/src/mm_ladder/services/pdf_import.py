@@ -104,24 +104,28 @@ def _is_month_first(flat: str, first: int, second: int, year: int) -> bool:
     return abs((date(year, first, second) - today).days) < abs((date(year, second, first) - today).days)
 
 
-def _extract_text(data: bytes) -> str:
+def _extract_text(data: bytes) -> tuple[str, str | None]:
+    """Return the page text plus the document title — the round count's most reliable home."""
     try:
         reader = PdfReader(BytesIO(data))
         pages = [page.extract_text() or "" for page in reader.pages]
+        metadata = reader.metadata
+        title = metadata.title if metadata else None
     except Exception as exc:  # pragma: no cover - pypdf raises many concrete types
         raise BadRequestError(f"Could not read the PDF: {exc}") from None
     text = "\n".join(pages)
     if not text.strip():
         raise BadRequestError("The PDF has no extractable text — it may be a scan or image.")
-    return text
+    return text, title
 
 
 def parse_standings_pdf(data: bytes) -> ParsedPdf:
     """Parse an EventLink 'Standings by Rank' PDF. Raises BadRequestError on any mismatch."""
-    return parse_standings_text(_extract_text(data))
+    text, title = _extract_text(data)
+    return parse_standings_text(text, doc_title=title)
 
 
-def parse_standings_text(raw_text: str) -> ParsedPdf:
+def parse_standings_text(raw_text: str, doc_title: str | None = None) -> ParsedPdf:
     """Parse already-extracted standings text (split out so it's unit-testable without a PDF)."""
     flat = _flatten(raw_text)
 
@@ -142,7 +146,10 @@ def parse_standings_text(raw_text: str) -> ParsedPdf:
     except ValueError:
         raise BadRequestError(f"Invalid event date: {first}/{second}/{yyyy}.") from None
 
-    rounds_match = _ROUNDS_RE.search(flat)
+    # The round count only ever appears in the page title. Chrome stamps that title into the
+    # PDF's /Title metadata unconditionally, but prints it in the page footer only when
+    # "Headers and footers" is ticked — so read the metadata first, footer text as fallback.
+    rounds_match = _ROUNDS_RE.search(doc_title or "") or _ROUNDS_RE.search(flat)
     if not rounds_match:
         raise BadRequestError("Could not determine the round count — is this a 'Standings by Rank' report?")
     rounds = int(rounds_match.group(1))

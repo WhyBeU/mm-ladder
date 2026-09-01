@@ -62,6 +62,26 @@ def test_parse_pod3_us_locale_dates() -> None:
     assert (parsed.rows[-1].rank, parsed.rows[-1].raw_name, parsed.rows[-1].points) == (11, "Matt Sellas", 0)
 
 
+def test_parse_pod4_printed_without_footer() -> None:
+    """Printed with Chrome's "Headers and footers" off, so the round count is only in /Title."""
+    parsed = parse_standings_pdf(_read("eventlink_pod4.pdf"))
+    assert parsed.eventlink_id == "11289056"
+    assert parsed.pod_number == 1
+    assert parsed.held_on == date(2026, 8, 31)
+    assert parsed.rounds == 3
+    assert parsed.venue == "Draft at Chromatic games"
+    assert [(r.rank, r.raw_name, r.points) for r in parsed.rows] == [
+        (1, "Bruno Nicoletti", 9),
+        (2, "Robert McDougall", 6),
+        (3, "Nicholas Talbot", 6),
+        (4, "J J", 6),
+        (5, "Alex Kwong", 3),
+        (6, "alexander colbert", 3),
+        (7, "Sam Abbott", 3),
+        (8, "Harold Evans", 0),
+    ]
+
+
 # ── Text-level parsing & reject paths ────────────────────────────────────────
 
 _HEADER = (
@@ -89,6 +109,23 @@ def test_reject_non_three_rounds() -> None:
     text = _doc("1 Alice 1 9 44 75 46 ", rounds="Round 4 Standings by Rank")
     with pytest.raises(BadRequestError, match="4 rounds"):
         parse_standings_text(text)
+
+
+def test_rounds_read_from_pdf_title_when_footer_absent() -> None:
+    # Chrome's "Headers and footers" print option off: no footer line, /Title still carries it.
+    parsed = parse_standings_text(_HEADER + "1 Alice 1 9 44 75 46 " + _FOOTER, doc_title="Round 3 Standings by Rank")
+    assert parsed.rounds == 3
+
+
+def test_pdf_title_outranks_the_printed_footer() -> None:
+    text = _doc("1 Alice 1 9 44 75 46 ", rounds="Round 3 Standings by Rank")
+    with pytest.raises(BadRequestError, match="4 rounds"):
+        parse_standings_text(text, doc_title="Round 4 Standings by Rank")
+
+
+def test_reject_when_round_count_is_nowhere() -> None:
+    with pytest.raises(BadRequestError, match="round count"):
+        parse_standings_text(_HEADER + "1 Alice 1 9 44 75 46 " + _FOOTER)
 
 
 def test_reject_no_event_header() -> None:

@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.18.1] - 2026-09-01 — EventLink reports printed without browser headers/footers
+
+### Fixed
+
+- **The round count is now read from the PDF's `/Title` metadata**, with the printed page footer
+  as the fallback. The count only ever appears in the page title, and Chrome renders that title
+  into the page footer only when "Headers and footers" is ticked — a report exported with that
+  option off ends at the copyright line, so a perfectly good 3-round standings report was rejected
+  with *"Could not determine the round count"*. Chrome stamps `/Title` unconditionally, so the
+  metadata is the reliable source. `parse_standings_text` takes an optional `doc_title` so the
+  text-level parser stays testable without a PDF.
+
+### Added
+
+- **`tests/fixtures/eventlink_pod4.pdf`** — a real footer-less printout (8-player pod, US-locale
+  `8/31/2026` dates) covering the above end to end.
+
 ## [0.18.0] - 2026-08-15 — Active season with overlapping seasons, EventLink date locales & prod snapshot script
 
 ### Fixed
