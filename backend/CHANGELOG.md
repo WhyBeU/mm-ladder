@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.18.2] - 2026-10-07 — Production API down: SQLAlchemy 2.1 dropped greenlet
+
+### Fixed
+
+- **Every API route returned 500 `FUNCTION_INVOCATION_FAILED` after the frontend v0.14.2 deploy.**
+  Vercel ignores `poetry.lock` and resolves dependencies fresh from `pyproject.toml`; the range
+  `sqlalchemy>=2.0,<3.0` picked up the newly released SQLAlchemy 2.1, which no longer installs
+  `greenlet` by default. `sqlalchemy.ext.asyncio` then failed at import, so the function crashed
+  before serving any request — `/health` included. Now `sqlalchemy[asyncio]>=2.0,<2.1`: the
+  `asyncio` extra guarantees `greenlet`, and the `<2.1` cap keeps production on the 2.0 line that
+  CI tests against.
+
 ## [0.18.1] - 2026-09-01 — EventLink reports printed without browser headers/footers
 
 ### Fixed
