@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.14.2] — 2026-10-07 — Attendance per Monday & podium ranking label
+
+### Fixed
+
+- **"Avg attendance" was per pod, not per Monday.** The stats strip divided total attendances by
+  the number of pods, so a night with two pods of 8 read as 8 players instead of 16. It now
+  averages over events (one per Monday) and counts each player once per night, even if they
+  played two pods. "Matches played — avg / event" had the same per-pod divisor and is fixed too.
+- **All-time attendance timeline double-counted multi-pod players.** Weekly attendance summed
+  participant rows across that night's pods; it now counts distinct players.
+- **Podium showed "Best" on points-ranked seasons.** The plinth headline used the best-N total
+  whenever it existed, which the API returns for every season. It now shows Points unless the
+  season is ranked by BEST, and the caption names the ranking rule in use.
+
 ## [0.14.1] — 2026-08-15 — Ladder opens on the season being drafted
 
 ### Fixed

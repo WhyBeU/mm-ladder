@@ -6,7 +6,7 @@ import type { MMLEvent, Season, YearlyCup } from "@/lib/types";
 export interface AttendancePoint {
   eventNumber: number;
   heldOn: string;
-  /** Distinct players that week = participant rows across the event's pods. */
+  /** Distinct players that week — a player in two pods the same night counts once. */
   attendance: number;
   seasonId: number;
 }
@@ -36,14 +36,14 @@ export interface AttendanceSeries {
   maxAttendance: number;
 }
 
-type ParticipantLike = { tournament_id: number };
+type ParticipantLike = { tournament_id: number; player_id: number };
 type SeasonLike = Pick<Season, "id" | "set_code" | "keyrune" | "name" | "yearly_cup_id">;
 type CupLike = Pick<YearlyCup, "id" | "year" | "name">;
 
 /**
  * Build the timeline series from already-fetched all-time data. Events are sorted
- * chronologically; attendance for a week sums the participant counts of that event's
- * pods. Season markers mark each season's first appearance; cup bands are maximal runs
+ * chronologically; attendance for a week is the number of distinct players across that
+ * event's pods. Season markers mark each season's first appearance; cup bands are maximal runs
  * of consecutive events sharing a `yearly_cup_id` (un-cup'd events form "—" bands).
  */
 export function buildAttendanceSeries(
@@ -52,9 +52,11 @@ export function buildAttendanceSeries(
   seasons: SeasonLike[],
   yearlyCups: CupLike[],
 ): AttendanceSeries {
-  const countByTournament = new Map<number, number>();
+  const playersByTournament = new Map<number, number[]>();
   for (const p of participants) {
-    countByTournament.set(p.tournament_id, (countByTournament.get(p.tournament_id) ?? 0) + 1);
+    const ids = playersByTournament.get(p.tournament_id);
+    if (ids) ids.push(p.player_id);
+    else playersByTournament.set(p.tournament_id, [p.player_id]);
   }
 
   const ordered = [...events].sort((a, b) => a.held_on.localeCompare(b.held_on) || a.number - b.number);
@@ -64,7 +66,7 @@ export function buildAttendanceSeries(
   const points: AttendancePoint[] = ordered.map((e) => ({
     eventNumber: e.number,
     heldOn: e.held_on,
-    attendance: e.pods.reduce((sum, pod) => sum + (countByTournament.get(pod.id) ?? 0), 0),
+    attendance: new Set(e.pods.flatMap((pod) => playersByTournament.get(pod.id) ?? [])).size,
     seasonId: e.season_id,
   }));
 
