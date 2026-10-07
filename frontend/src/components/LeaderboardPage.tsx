@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import type { Scope, StandingEntry, SeasonStats, MMLEvent, YearlyCup, Season } from "@/lib/types";
+import type { Scope, StandingEntry, MMLEvent, YearlyCup, Season } from "@/lib/types";
 import type { ApiParticipant, ApiPlayer, ApiTournament, ApiSeasonStanding, ApiSeason, ApiYearlyCup } from "@/lib/api";
 import {
   fetchYearlyCups,
@@ -20,6 +20,7 @@ import { Podium } from "@/components/Podium";
 import { QualifiedCards } from "@/components/QualifiedCards";
 import AttendanceTimeline from "@/components/AttendanceTimeline";
 import { buildAttendanceSeries } from "@/lib/attendance";
+import { computeStats } from "@/lib/seasonStats";
 import { pickActiveSeason } from "@/lib/seasonDates";
 import ScopeBar from "@/components/ScopeBar";
 import SiteFooter, { DiscordButton } from "@/components/SiteFooter";
@@ -160,20 +161,6 @@ function apiSeasonStandingToEntry(s: ApiSeasonStanding, seasonId: number): Stand
 }
 
 // ---------- Helpers ----------
-function computeStats(scopedEvents: MMLEvent[], scopeStandings: StandingEntry[]): SeasonStats {
-  const podCount = scopedEvents.reduce((s, e) => s + e.pods.length, 0);
-  const totalMatches = scopeStandings.reduce((s, p) => s + p.match_wins + p.match_losses + p.match_draws, 0) / 2;
-  const totalAttendances = scopeStandings.reduce((s, p) => s + p.tournaments_played, 0);
-  return {
-    events: scopedEvents.length,
-    pods: podCount,
-    players: scopeStandings.length,
-    matches: Math.round(totalMatches),
-    matchesPerEvent: podCount ? totalMatches / podCount : 0,
-    avgAttendance: podCount ? totalAttendances / podCount : 0,
-  };
-}
-
 function relativeTime(date: Date): string {
   const diff = Date.now() - date.getTime();
   const min = Math.floor(diff / 60000);
@@ -382,7 +369,7 @@ export default function LeaderboardPage() {
           <StatsStrip stats={stats} totalPlayers={apiPlayers.filter(p => !p.is_hidden).length} />
           {scope.kind === "cup"
             ? <QualifiedCards standings={scopeStandings} qualifiedPlayerIds={cup?.qualified_player_ids ?? []} />
-            : showPodium && <Podium standings={scopeStandings} />}
+            : showPodium && <Podium standings={scopeStandings} qualifyingType={scope.kind === "season" ? (season?.qualifying_type ?? "POINTS") : undefined} />}
           {scope.kind === "alltime" && attendanceSeries && <AttendanceTimeline series={attendanceSeries} />}
           <Leaderboard
             standings={scopeStandings}

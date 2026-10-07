@@ -20,12 +20,16 @@ const cups = [
   { id: 11, year: 2025, name: "Cup 2025" },
 ];
 
-// tournament_id -> attendance rows
+// `count` participant rows in a pod, with player ids firstPlayer..firstPlayer+count-1
+function rows(tournamentId: number, count: number, firstPlayer: number) {
+  return Array.from({ length: count }, (_, i) => ({ tournament_id: tournamentId, player_id: firstPlayer + i }));
+}
+
 const participants = [
-  ...Array(8).fill({ tournament_id: 100 }),
-  ...Array(8).fill({ tournament_id: 101 }),
-  ...Array(6).fill({ tournament_id: 102 }),
-  ...Array(7).fill({ tournament_id: 103 }),
+  ...rows(100, 8, 1),
+  ...rows(101, 8, 1),
+  ...rows(102, 6, 9),
+  ...rows(103, 7, 1),
 ];
 
 const events = [
@@ -40,6 +44,13 @@ describe("buildAttendanceSeries", () => {
     const { points, maxAttendance } = buildAttendanceSeries(events, participants, seasons, cups);
     expect(points.map((p) => p.attendance)).toEqual([8, 14, 7, 0]);
     expect(maxAttendance).toBe(14);
+  });
+
+  it("counts a player in two pods on the same night once", () => {
+    // Pod 101 = players 3..10, pod 102 = players 9..14: players 9 and 10 played both.
+    const overlapping = [...rows(100, 8, 1), ...rows(101, 8, 3), ...rows(102, 6, 9), ...rows(103, 7, 1)];
+    const { points } = buildAttendanceSeries(events, overlapping, seasons, cups);
+    expect(points.map((p) => p.attendance)).toEqual([8, 12, 7, 0]);
   });
 
   it("marks each season's first event", () => {

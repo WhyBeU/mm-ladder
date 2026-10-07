@@ -6,11 +6,15 @@ import AwardsCluster from "@/components/AwardsCluster";
 
 interface PodiumProps {
   standings: StandingEntry[];
+  /** Season's ranking rule; "BEST" headlines each plinth with the best-N total instead of points. */
+  qualifyingType?: "POINTS" | "BEST";
 }
 
-export function Podium({ standings }: PodiumProps) {
+export function Podium({ standings, qualifyingType = "POINTS" }: PodiumProps) {
   if (standings.length < 3) return null;
   const top3 = standings.slice(0, 3);
+  const byBest = qualifyingType === "BEST";
+  const compAvgN = top3[0].comp_avg_n;
   const order = [1, 0, 2]; // silver, gold, bronze left-to-right
   // Coin diameter carries the ranking: a bigger gold medallion always reads as the champion,
   // so award count can never invert the podium order. The avatar sits ~30px inside the coin's rim.
@@ -26,14 +30,16 @@ export function Podium({ standings }: PodiumProps) {
     <section className="podium" style={{ marginBottom: 24 }}>
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
         <div className="eyebrow">● Podium</div>
-        <div style={{ fontSize: 11, color: "var(--parchment-faint)" }}>Top 3 by points · win % tiebreak</div>
+        <div style={{ fontSize: 11, color: "var(--parchment-faint)" }}>
+          {byBest ? `Top 3 by best ${compAvgN != null ? `${compAvgN} events` : "events"} · trophies, win % tiebreak` : "Top 3 by points · win % tiebreak"}
+        </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1.15fr 1fr", gap: 16, alignItems: "end" }}>
         {order.map(idx => {
           const p = top3[idx];
           const c = cfg[idx as 0 | 1 | 2];
           const gold = idx === 0;
-          const bestTotal = p.comp_avg != null && p.comp_avg_n != null
+          const bestTotal = byBest && p.comp_avg != null && p.comp_avg_n != null
             ? Math.round(p.comp_avg * p.comp_avg_n)
             : null;
           return (
