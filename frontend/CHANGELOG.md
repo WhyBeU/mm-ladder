@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.14.3] — 2026-10-08 — New venue: 88 Games Arena (Canterbury)
+
+### Changed
+
+- **Weekly drafts moved from Chromatic Games (Ashfield) to 88 Games Arena (Canterbury).** The
+  promo line and footer now read "Monday 6:30pm @ 88 Games Arena (Canterbury)". The footer's
+  "Magic Mates Monday @ …" tag was hardcoded separately; it now reads the venue from
+  `lib/site.ts` too, so the next move is a one-line change.
+
 ## [0.14.2] — 2026-10-07 — Attendance per Monday & podium ranking label
 
 ### Fixed

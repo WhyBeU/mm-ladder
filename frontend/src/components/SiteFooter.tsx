@@ -1,4 +1,4 @@
-import { DISCORD_URL, WEEKLY_DRAFT_LINE } from "@/lib/site";
+import { DISCORD_URL, WEEKLY_DRAFT, WEEKLY_DRAFT_LINE } from "@/lib/site";
 
 /** Discord "clyde" mark. */
 export function DiscordGlyph({ size = 16 }: { size?: number }) {
@@ -82,7 +82,7 @@ export default function SiteFooter({ children }: { children?: React.ReactNode })
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
         <DiscordLink />
-        <span className="eyebrow">Magic Mates Monday @ Chromatic Games</span>
+        <span className="eyebrow">Magic Mates Monday @ {WEEKLY_DRAFT.venue}</span>
       </div>
     </footer>
   );

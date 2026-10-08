@@ -6,8 +6,9 @@ export const DISCORD_URL = "https://discord.gg/bSEJEY2Vs";
 export const WEEKLY_DRAFT = {
   day: "Monday",
   time: "6:30pm",
-  venue: "Chromatic Games (Ashfield)",
+  venue: "88 Games Arena",
+  suburb: "Canterbury",
 } as const;
 
-/** e.g. "Monday 6:30pm @ Chromatic Games (Ashfield)" */
-export const WEEKLY_DRAFT_LINE = `${WEEKLY_DRAFT.day} ${WEEKLY_DRAFT.time} @ ${WEEKLY_DRAFT.venue}`;
+/** e.g. "Monday 6:30pm @ 88 Games Arena (Canterbury)" */
+export const WEEKLY_DRAFT_LINE = `${WEEKLY_DRAFT.day} ${WEEKLY_DRAFT.time} @ ${WEEKLY_DRAFT.venue} (${WEEKLY_DRAFT.suburb})`;
