@@ -2,7 +2,7 @@
 
 ## Context
 
-mm-ladder is a leaderboard for **Magic Mates Monday**, a weekly Booster Draft FNM at Chromatic Games. It rebuilds the limitedspoiler.com leaderboard (reference: LimitedSpoiler / ThornyBlueCactus) retaining only the leaderboard subset.
+mm-ladder is a leaderboard for **Magic Mates Monday**, a weekly Booster Draft FNM at 88 Games Arena (Canterbury) — held at Chromatic Games (Ashfield) until October 2026. It rebuilds the limitedspoiler.com leaderboard (reference: LimitedSpoiler / ThornyBlueCactus) retaining only the leaderboard subset.
 
 ---
 
