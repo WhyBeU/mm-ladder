@@ -9,6 +9,7 @@ import { draftMonday, formatDraftDate } from "@/lib/draftDate";
 import { fmtMetric, podSizePreview, type SeedMethod } from "@/lib/pods";
 import Masthead from "@/components/Masthead";
 import SeedingSelector from "@/components/SeedingSelector";
+import ShareSignUp from "@/components/ShareSignUp";
 import SiteFooter from "@/components/SiteFooter";
 
 const ZERO: SeedMetrics = { total: 0, average: 0, best: 0 };
@@ -165,16 +166,22 @@ export default function RegistrationBoard() {
       />
 
       <main className="page-main" style={{ paddingBottom: 48, flex: 1 }}>
-        <div style={{ color: "var(--parchment)", fontSize: 17, lineHeight: 1.5, margin: "0 0 14px", maxWidth: 760 }}>
-          <p style={{ margin: "0 0 6px" }}>
-            <strong>Playing Monday?</strong> Select your name from the Roster.
-          </p>
-          <p style={{ margin: "0 0 6px" }}>
-            <strong style={{ color: "var(--accent-400)" }}>First time with us?</strong> Add yourself as an Extra.
-          </p>
-          <p style={{ margin: 0, color: "var(--parchment-muted)" }}>
-            Pay in store when you arrive and the organiser will tick you off.
-          </p>
+        {/* Welcome text (70%) beside the Share QR button (30%); stacks on narrow screens. */}
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 20, margin: "0 0 14px" }}>
+          <div style={{ flex: "7 1 320px", color: "var(--parchment)", fontSize: 17, lineHeight: 1.5 }}>
+            <p style={{ margin: "0 0 6px" }}>
+              <strong>Playing Monday?</strong> Select your name from the Roster.
+            </p>
+            <p style={{ margin: "0 0 6px" }}>
+              <strong style={{ color: "var(--accent-400)" }}>First time with us?</strong> Add yourself as an Extra.
+            </p>
+            <p style={{ margin: 0, color: "var(--parchment-muted)" }}>
+              Pay in store when you arrive and the organiser will tick you off.
+            </p>
+          </div>
+          <div style={{ flex: "3 1 200px" }}>
+            <ShareSignUp />
+          </div>
         </div>
         {error && <p style={{ color: "var(--loss)", fontSize: 13, margin: "0 0 8px" }}>{error}</p>}
 

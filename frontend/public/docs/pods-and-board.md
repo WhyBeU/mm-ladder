@@ -18,6 +18,9 @@ A shared, always-on, public board you can post to Discord each week. Its heading
    "Other…" name). The list splits per format, sign-ups can move between them with
    **▲/▼**, and Generate runs **within each format**.
 
+**Share sign-up** (beside the intro text) pops up a QR code for the sign-up page, plus
+**Copy link**: hold it up or put it on screen in store.
+
 The board polls every few seconds so sign-ups and pods stay live across devices.
 **Clear board** resets it (confirm-guarded).
 

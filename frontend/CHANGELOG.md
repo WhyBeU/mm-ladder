@@ -14,6 +14,13 @@
   name from the Roster; **"First time with us?"** (called out in gold) — add yourself as an Extra;
   pay in store and the organiser ticks you off.
 
+### Added
+
+- **Share sign-up QR code.** A **Share sign-up** button sits beside the welcome text (70/30,
+  stacking on mobile) and pops up a QR code for `https://mtg-magic-mates.com/sign-up`, with a
+  **Copy link** button, so the organiser can put it on screen in store. Rendered locally with
+  `qrcode.react` (no external QR service), with the MM logo in the centre.
+
 ### Removed
 
 - **The standalone pod-maker (`/pods`) is gone.** The Sign Up board does the same job and stays
