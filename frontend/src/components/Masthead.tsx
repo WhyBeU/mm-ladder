@@ -3,7 +3,7 @@
 import Image from "next/image";
 import HeaderNav from "@/components/HeaderNav";
 
-type NavTarget = "leaderboard" | "board" | "pods";
+type NavTarget = "leaderboard" | "board";
 
 export default function Masthead({
   current,

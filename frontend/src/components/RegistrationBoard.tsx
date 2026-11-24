@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchPlayers, fetchSeasons, fetchSeasonStandings } from "@/lib/api";
 import { boardApi, type ApiBoard, type ApiBoardFormat, type ApiBoardPod, type ApiBoardSignup } from "@/lib/boardApi";
 import { buildGenerateGroups, type SeedMetrics } from "@/lib/boardGenerate";
+import { draftMonday, formatDraftDate } from "@/lib/draftDate";
 import { fmtMetric, podSizePreview, type SeedMethod } from "@/lib/pods";
 import Masthead from "@/components/Masthead";
 import SeedingSelector from "@/components/SeedingSelector";
@@ -82,6 +83,8 @@ export default function RegistrationBoard() {
   const multi = formats.length > 1;
   const defaultFormat = formats[0];
   const presentCount = signups.filter((s) => s.present).length;
+  // Gated on `board` so the date is only computed client-side (no SSR/build-time date).
+  const draftDate = board ? draftMonday(new Date()) : null;
 
   const claimedPlayerIds = useMemo(
     () => new Set(signups.filter((s) => s.player_id != null).map((s) => s.player_id)),
@@ -157,15 +160,22 @@ export default function RegistrationBoard() {
     <div style={{ minHeight: "100vh", overflowX: "hidden", display: "flex", flexDirection: "column" }}>
       <Masthead
         current="board"
-        title="Pod sign-up"
-        eyebrow={defaultFormat ? `Seeding from ${defaultFormat.name}` : "Sign-up board"}
+        title={draftDate ? `Monday Draft – ${formatDraftDate(draftDate)}` : "Monday Draft"}
+        eyebrow={defaultFormat ? `Seeding from ${defaultFormat.name}` : "Sign up"}
       />
 
       <main className="page-main" style={{ paddingBottom: 48, flex: 1 }}>
-        <p style={{ color: "var(--parchment-muted)", fontSize: 14, margin: "0 0 8px", maxWidth: 720 }}>
-          Magic Mates draft pod sign-up. Tap your name to sign up, or add yourself as an extra. On the night
-          the organiser marks who&apos;s here and generates the pods.
-        </p>
+        <div style={{ color: "var(--parchment)", fontSize: 17, lineHeight: 1.5, margin: "0 0 14px", maxWidth: 760 }}>
+          <p style={{ margin: "0 0 6px" }}>
+            <strong>Playing Monday?</strong> Tap your name in the Roster.
+          </p>
+          <p style={{ margin: "0 0 6px" }}>
+            <strong style={{ color: "var(--accent-400)" }}>First time with us?</strong> Add yourself as an Extra.
+          </p>
+          <p style={{ margin: 0, color: "var(--parchment-muted)" }}>
+            Pay in store when you arrive and the organiser will tick you off.
+          </p>
+        </div>
         {error && <p style={{ color: "var(--loss)", fontSize: 13, margin: "0 0 8px" }}>{error}</p>}
 
         {/* Generated pods sit at the top, above the sign-up controls. */}
