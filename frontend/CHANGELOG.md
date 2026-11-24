@@ -2,6 +2,34 @@
 
 ## [Unreleased]
 
+## [0.15.0] — 2026-11-24 — Sign Up page wording, dated heading & pod-maker retired
+
+### Changed
+
+- **"Board" is now "Sign Up".** The nav label and the address both changed: the page lives at
+  `/sign-up`, and `/board` redirects there so links already posted to Discord still work.
+- **The sign-up page heading reads "Monday Draft – (date)".** The date is today if it's Monday,
+  otherwise the coming Monday (Sydney time), so it rolls to next week's date on Tuesday.
+- **Bigger, clearer instructions** at the top of the sign-up page: "Playing Monday?" — select your
+  name from the Roster; **"First time with us?"** (called out in gold) — add yourself as an Extra;
+  pay in store and the organiser ticks you off.
+
+### Added
+
+- **Share sign-up QR code.** A **Share sign-up** button sits beside the welcome text (70/30,
+  stacking on mobile) and pops up a QR code for `https://mtg-magic-mates.com/sign-up`, with a
+  **Copy link** button, so the organiser can put it on screen in store. Rendered locally with
+  `qrcode.react` (no external QR service), with the MM logo in the centre.
+
+### Removed
+
+- **The standalone pod-maker (`/pods`) is gone.** The Sign Up board does the same job and stays
+  live across devices. The **Pod** nav link is removed and `/pods` redirects to `/sign-up`.
+
+### Fixed
+
+- **"Top 0 qualify for the cup" no longer shows** on seasons with no qualifying spots.
+
 ## [0.14.3] — 2026-10-08 — New venue: 88 Games Arena (Canterbury)
 
 ### Changed

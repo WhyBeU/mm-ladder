@@ -12,3 +12,6 @@ export const WEEKLY_DRAFT = {
 
 /** e.g. "Monday 6:30pm @ 88 Games Arena (Canterbury)" */
 export const WEEKLY_DRAFT_LINE = `${WEEKLY_DRAFT.day} ${WEEKLY_DRAFT.time} @ ${WEEKLY_DRAFT.venue} (${WEEKLY_DRAFT.suburb})`;
+
+/** Public address of the sign-up page — what the Share QR code encodes. */
+export const SIGN_UP_URL = "https://mtg-magic-mates.com/sign-up";

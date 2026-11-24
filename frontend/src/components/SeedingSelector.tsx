@@ -2,7 +2,7 @@
 
 import { SEED_METHODS, type SeedMethod } from "@/lib/pods";
 
-/** Segmented Random / Average / Best / Total selector, shared by /pods and /board. */
+/** Segmented Random / Average / Best / Total selector, used by the Sign Up board. */
 export default function SeedingSelector({
   method,
   onChange,

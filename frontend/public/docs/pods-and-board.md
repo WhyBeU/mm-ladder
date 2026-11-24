@@ -1,28 +1,30 @@
-# Pod-maker & sign-up board
+# Sign-up board
 
-Two tools for splitting players into draft pods. Neither touches official
+The tool for splitting players into draft pods. It doesn't touch official
 standings.
 
-## Sign-up board (`/board`)
+## Sign-up board (`/sign-up`, **Sign Up** in the nav)
 
-A shared, always-on, public board you can post to Discord each week.
+A shared, always-on, public board you can post to Discord each week. Its heading reads
+**Monday Draft – (date)**: today if it's Monday, otherwise the coming Monday
+(Sydney time), so it rolls to next week's date on Tuesday.
 
 1. Players **claim themselves** from the roster (live-season players first, then
    everyone, with search) or add themselves as a free-text **extra**.
-2. On the night, mark who's **present** (per player, or **Mark all present**).
+2. On the night, tick who's **present** once they've paid in store (per player, or **Mark all present**).
 3. Anyone can **Generate** pods, then set each pod's **Wizards pod code** (with
    **Copy**).
 4. **Up to two formats:** add a second format (an existing season or a typed
    "Other…" name). The list splits per format, sign-ups can move between them with
    **▲/▼**, and Generate runs **within each format**.
 
+**Share sign-up** (beside the intro text) pops up a QR code for the sign-up page, plus
+**Copy link**: hold it up or put it on screen in store.
+
 The board polls every few seconds so sign-ups and pods stay live across devices.
 **Clear board** resets it (confirm-guarded).
 
-## Pod-maker (`/pods`)
-
-A quick, local tool for building pods in one sitting — pick players from the roster
-and generate. Same seeding options as the board (Random / Average / Best / Total).
+The old `/board` address and the retired standalone pod-maker (`/pods`) both redirect here.
 
 ## Seeding options
 

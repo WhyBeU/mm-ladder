@@ -118,7 +118,7 @@ export function SeasonHero({ scope, season, cup, event, leader, standings, stats
             </div>
           )}
 
-          {scope.kind === "season" && season?.yearly_cup_id && (
+          {scope.kind === "season" && season?.yearly_cup_id && season.qualifier_count > 0 && (
             <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "var(--parchment-muted)" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
                 <path style={{ fill: "var(--accent-300)" }} d="M5 4h14l-1 8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4L5 4Zm5 13h4l1 3H9l1-3Z" />
