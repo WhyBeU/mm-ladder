@@ -38,7 +38,7 @@ export default function HeaderNav({ current }: { current: NavTarget }) {
     <div className="masthead-nav">
       <nav style={{ display: "flex", alignItems: "center", gap: 4 }}>
         <NavLink href="/" label="Ladder" active={current === "leaderboard"} />
-        <NavLink href="/board" label="Sign Up" active={current === "board"} />
+        <NavLink href="/sign-up" label="Sign Up" active={current === "board"} />
         <NavLink href="/admin" label="Admin" active={false} />
       </nav>
       <span style={{ width: 1, height: 22, background: "var(--ink-700)", margin: "0 2px" }} />

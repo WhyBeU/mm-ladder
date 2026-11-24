@@ -167,7 +167,7 @@ export default function RegistrationBoard() {
       <main className="page-main" style={{ paddingBottom: 48, flex: 1 }}>
         <div style={{ color: "var(--parchment)", fontSize: 17, lineHeight: 1.5, margin: "0 0 14px", maxWidth: 760 }}>
           <p style={{ margin: "0 0 6px" }}>
-            <strong>Playing Monday?</strong> Tap your name in the Roster.
+            <strong>Playing Monday?</strong> Select your name from the Roster.
           </p>
           <p style={{ margin: "0 0 6px" }}>
             <strong style={{ color: "var(--accent-400)" }}>First time with us?</strong> Add yourself as an Extra.

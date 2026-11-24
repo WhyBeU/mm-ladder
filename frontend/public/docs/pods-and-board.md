@@ -3,7 +3,7 @@
 The tool for splitting players into draft pods. It doesn't touch official
 standings.
 
-## Sign-up board (`/board`, **Sign Up** in the nav)
+## Sign-up board (`/sign-up`, **Sign Up** in the nav)
 
 A shared, always-on, public board you can post to Discord each week. Its heading reads
 **Monday Draft – (date)**: today if it's Monday, otherwise the coming Monday
@@ -21,7 +21,7 @@ A shared, always-on, public board you can post to Discord each week. Its heading
 The board polls every few seconds so sign-ups and pods stay live across devices.
 **Clear board** resets it (confirm-guarded).
 
-The old standalone pod-maker (`/pods`) is retired; that address now redirects here.
+The old `/board` address and the retired standalone pod-maker (`/pods`) both redirect here.
 
 ## Seeding options
 

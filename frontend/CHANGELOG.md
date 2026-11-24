@@ -6,18 +6,18 @@
 
 ### Changed
 
-- **"Board" is now "Sign Up" in the nav.** The URL stays `/board`, so links already posted
-  to Discord still work.
+- **"Board" is now "Sign Up".** The nav label and the address both changed: the page lives at
+  `/sign-up`, and `/board` redirects there so links already posted to Discord still work.
 - **The sign-up page heading reads "Monday Draft – (date)".** The date is today if it's Monday,
   otherwise the coming Monday (Sydney time), so it rolls to next week's date on Tuesday.
-- **Bigger, clearer instructions** at the top of the sign-up page: "Playing Monday?" — tap your
-  name in the Roster; **"First time with us?"** (called out in gold) — add yourself as an Extra;
+- **Bigger, clearer instructions** at the top of the sign-up page: "Playing Monday?" — select your
+  name from the Roster; **"First time with us?"** (called out in gold) — add yourself as an Extra;
   pay in store and the organiser ticks you off.
 
 ### Removed
 
 - **The standalone pod-maker (`/pods`) is gone.** The Sign Up board does the same job and stays
-  live across devices. The **Pod** nav link is removed and `/pods` redirects to `/board`.
+  live across devices. The **Pod** nav link is removed and `/pods` redirects to `/sign-up`.
 
 ### Fixed
 
